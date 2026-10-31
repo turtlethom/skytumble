@@ -19,6 +19,8 @@ const COLORS = {
 const GROUP_COLORS = [0xf4a940, 0xb57edc, 0x4fc3f7, 0xef6f6c];
 
 const ROLL_MS = 170;
+/** Hover height of the goal marker: its tip stays above a standing block's top (y = 2). */
+const MARKER_Y = 2.45;
 
 interface Tween {
   start: number;
@@ -49,7 +51,7 @@ export class World {
   private tiles = new Map<number, TileView>();
   private switches = new Map<number, THREE.Object3D>();
   private bridges: BridgeView[] = [];
-  private goalBeam: THREE.Mesh | null = null;
+  private goalMarker: THREE.Object3D | null = null;
   private tweens: Tween[] = [];
   private last = performance.now();
 
@@ -102,7 +104,7 @@ export class World {
     this.tiles.clear();
     this.switches.clear();
     this.bridges = [];
-    this.goalBeam = null;
+    this.goalMarker = null;
 
     for (let y = 0; y < level.height; y++) {
       for (let x = 0; x < level.width; x++) {
@@ -168,19 +170,24 @@ export class World {
         edge.receiveShadow = true;
         g.add(edge);
       }
-      this.goalBeam = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.36, 0.42, 3, 24, 1, true),
-        new THREE.MeshBasicMaterial({
+      // A square pyramid hovering point-down over the hole: "drop in here", in the tiles' own shape.
+      const marker = new THREE.Mesh(
+        new THREE.ConeGeometry(0.34, 0.56, 4),
+        new THREE.MeshStandardMaterial({
           color: COLORS.goal,
-          transparent: true,
-          opacity: 0.16,
-          side: THREE.DoubleSide,
-          depthWrite: false,
-          blending: THREE.AdditiveBlending,
+          emissive: COLORS.goal,
+          emissiveIntensity: 0.45,
+          roughness: 0.35,
+          metalness: 0.2,
+          flatShading: true,
         }),
       );
-      this.goalBeam.position.y = 1.5;
-      g.add(this.goalBeam);
+      marker.rotation.x = Math.PI;
+      const spinner = new THREE.Group();
+      spinner.add(marker);
+      spinner.position.y = MARKER_Y;
+      this.goalMarker = spinner;
+      g.add(spinner);
       return g;
     }
 
@@ -252,6 +259,7 @@ export class World {
   syncState(state: State): void {
     this.placeBlock(state.block);
     this.block.visible = true;
+    this.goalMarker?.scale.setScalar(1);
     for (const view of this.tiles.values()) {
       view.obj.position.y = view.baseY;
       view.obj.rotation.set(0, 0, 0);
@@ -350,10 +358,11 @@ export class World {
 
   async win(): Promise<void> {
     const start = this.block.position.y;
-    const beam = this.goalBeam?.material as THREE.MeshBasicMaterial | undefined;
+    const marker = this.goalMarker;
     await this.tween(650, (t) => {
       this.block.position.y = start - 2.4 * easeIn(t);
-      if (beam) beam.opacity = 0.16 + Math.sin(t * Math.PI) * 0.5;
+      // The marker swells briefly, then shrinks away as the block sinks.
+      if (marker) marker.scale.setScalar(Math.max((1 - t) * (1 + Math.sin(t * Math.PI) * 0.5), 0.001));
     });
     this.block.visible = false;
   }
@@ -401,7 +410,10 @@ export class World {
       c.position.x += c.userData.speed * dt;
       if (c.position.x > this.center.x + 30) c.position.x = this.center.x - 30;
     }
-    if (this.goalBeam) this.goalBeam.rotation.y += dt * 0.6;
+    if (this.goalMarker) {
+      this.goalMarker.rotation.y += dt * 0.8;
+      this.goalMarker.position.y = MARKER_Y + Math.sin(now / 520) * 0.1;
+    }
 
     // Ease the camera toward its 90° snap, taking the short way round.
     const target = this.camIndex * (Math.PI / 2);
