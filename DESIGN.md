@@ -151,6 +151,19 @@ is. Ice rules raised no complaints → frozen. Notes:
 - Browser extensions (Vimium) swallowed N, D, R → the game keeps a hidden read-only field
   focused so vim-style extensions and find-as-you-type pass keys through.
 
+**2026-10-31 — Frost Isle.** 01–04 and 08 solid: bigger maps (02), combos (04's belt
+ratchet), and 08's complexity landed. Vimium fix confirmed. Notes:
+- 05–07 felt "meh" and blurred together: each showcased one gimmick on a small, nearly
+  linear map. Redesigned around a two-mechanic idea each: 05 Switchback (the switch also
+  raises posts in the rink, so the return trip slides differently), 06 Heavy Footing (a
+  belt delivers you upright onto the heavy switch), 07 Relay (two boosters, down and back
+  out).
+- frost-05's description promised a double-back its solution never made → descriptions
+  are now re-read against the solver trace whenever a level changes.
+- The one-move chain still didn't register → belts now flare when they push the block.
+- Lesson: a high explored-state count from the search often means maze clutter, not a
+  puzzle; judge levels after stripping to the cells the solution touches.
+
 ## Architecture
 
 ```

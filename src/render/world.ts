@@ -63,8 +63,15 @@ export class World {
   private switches = new Map<number, THREE.Object3D>();
   private bridges: BridgeView[] = [];
   private goalMarker: THREE.Object3D | null = null;
-  /** Conveyor chevrons, each with a phase offset so they stream along the belt. */
-  private chevrons: { obj: THREE.Object3D; phase: number }[] = [];
+  /** Conveyor chevrons, each with a phase offset so they stream along the belt; cell keys as for switches. */
+  private chevrons: {
+    obj: THREE.Object3D;
+    phase: number;
+    cell: number;
+    mat: THREE.MeshStandardMaterial;
+    /** 0–1 flare while the belt is shoving the block. */
+    boost: number;
+  }[] = [];
   private tweens: Tween[] = [];
   private last = performance.now();
 
@@ -235,7 +242,7 @@ export class World {
       for (const phase of [0, 0.5]) {
         const chevron = makeChevron(CONVEYOR_COLORS[dir]);
         top.add(chevron);
-        this.chevrons.push({ obj: chevron, phase });
+        this.chevrons.push({ obj: chevron, phase, cell: y * 10000 + x, mat: chevron.userData.mat, boost: 0 });
       }
       g.add(top);
       return g;
@@ -358,12 +365,22 @@ export class World {
 
   /** Carry the block without turning it: a glide that eases to a stop on ice, a steady shove on a belt. */
   async move(m: Motion): Promise<void> {
+    if (m.kind === 'push') this.flareBelts(m.from);
     const start = blockPosition(m.from);
     const end = blockPosition(m.to);
     const tiles = Math.abs(m.to.x - m.from.x) + Math.abs(m.to.y - m.from.y);
     const [ms, ease] = m.kind === 'slide' ? [SLIDE_MS_BASE + SLIDE_MS_PER_TILE * tiles, easeOut] : [PUSH_MS, easeInOut];
     await this.tween(ms, (t) => this.block.position.lerpVectors(start, end, ease(t)));
     this.placeBlock(m.to);
+  }
+
+  /** Make the belts under a block flare as they shove it, so a push reads as the belt acting. */
+  private flareBelts(b: Block): void {
+    const cells = new Set(blockCells(b).map(([x, y]) => y * 10000 + x));
+    const lit = this.chevrons.filter((c) => cells.has(c.cell));
+    void this.tween(420, (t) => {
+      for (const c of lit) c.boost = Math.sin(t * Math.PI);
+    });
   }
 
   pressSwitches(cells: { x: number; y: number }[]): void {
@@ -468,7 +485,8 @@ export class World {
       // Each chevron travels across the tile, growing in at the back and shrinking out at the front.
       const p = (now / BELT_MS + c.phase) % 1;
       c.obj.position.x = (p - 0.5) * 0.56;
-      c.obj.scale.setScalar(Math.max(Math.sin(p * Math.PI), 0.001));
+      c.obj.scale.setScalar(Math.max(Math.sin(p * Math.PI), 0.001) * (1 + c.boost * 0.35));
+      c.mat.emissiveIntensity = 0.5 + c.boost * 2.2;
     }
     if (this.goalMarker) {
       this.goalMarker.rotation.y += dt * 0.8;
@@ -523,6 +541,7 @@ const BELT_ROTATION: Record<Dir, number> = { right: 0, up: Math.PI / 2, left: Ma
 function makeChevron(color: number): THREE.Object3D {
   const g = new THREE.Group();
   const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.5 });
+  g.userData.mat = mat;
   for (const side of [-1, 1]) {
     const arm = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.035, 0.11), mat);
     arm.rotation.y = side * Math.PI / 4;
