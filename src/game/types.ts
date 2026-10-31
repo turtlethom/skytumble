@@ -6,6 +6,10 @@ export enum Tile {
   SoftSwitch = 4,
   HeavySwitch = 5,
   Bridge = 6,
+  /** A lying block fully on ice slides; a standing block grips. */
+  Ice = 7,
+  /** Shifts a block that is fully on conveyors one tile along its arrow after each move. */
+  Conveyor = 8,
 }
 
 /** Standing upright, lying along the x axis, or lying along the y axis. */
@@ -23,7 +27,10 @@ export interface Level {
   height: number;
   /** Row-major, index = y * width + x. */
   tiles: Tile[];
-  /** Bridge group for Bridge tiles, switch target group for switch tiles, -1 otherwise. */
+  /**
+   * Bridge group for Bridge tiles, switch target group for switch tiles,
+   * arrow direction (index into DIRS) for Conveyor tiles, -1 otherwise.
+   */
   groups: number[];
   start: { x: number; y: number };
   /** Bitmask of bridge groups that start switched on. */

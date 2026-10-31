@@ -118,7 +118,8 @@ class Game {
     this.status = 'busy';
     this.renderChrome();
 
-    await this.world.roll(from.block, result.state.block, dir);
+    await this.world.roll(from.block, result.rolled, dir);
+    for (const motion of result.motions) await this.world.move(motion);
     this.world.pressSwitches(result.pressed);
     if (result.toggled) await this.world.setBridges(result.state.bridges);
     this.state = result.state;

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { blockCells } from '../game/rules';
-import { Block, Dir, Level, State, Tile } from '../game/types';
+import { Motion, blockCells } from '../game/rules';
+import { Block, DIRS, Dir, Level, State, Tile } from '../game/types';
 
 const COLORS = {
   grass: 0x86d07a,
@@ -13,12 +13,23 @@ const COLORS = {
   block: 0xf0c987,
   blockEdge: 0x8a6436,
   cloud: 0xffffff,
+  ice: 0xbfe6ff,
+  glint: 0xffffff,
+  belt: 0x4a5266,
+  rail: 0x8a93a8,
+  arrow: 0xf4a940,
 };
 
 /** Each bridge group gets its own colour so you can see which switch drives which bridge. */
 const GROUP_COLORS = [0xf4a940, 0xb57edc, 0x4fc3f7, 0xef6f6c];
 
 const ROLL_MS = 170;
+const PUSH_MS = 190;
+/** Ice slides start fast and glide to a stop: a base time plus a little per tile. */
+const SLIDE_MS_BASE = 90;
+const SLIDE_MS_PER_TILE = 75;
+/** Conveyor chevrons travel one tile length per this many ms. */
+const BELT_MS = 1100;
 /** Hover height of the goal marker: its tip stays above a standing block's top (y = 2). */
 const MARKER_Y = 2.45;
 
@@ -52,6 +63,8 @@ export class World {
   private switches = new Map<number, THREE.Object3D>();
   private bridges: BridgeView[] = [];
   private goalMarker: THREE.Object3D | null = null;
+  /** Conveyor chevrons, each with a phase offset so they stream along the belt. */
+  private chevrons: { obj: THREE.Object3D; phase: number }[] = [];
   private tweens: Tween[] = [];
   private last = performance.now();
 
@@ -105,6 +118,7 @@ export class World {
     this.switches.clear();
     this.bridges = [];
     this.goalMarker = null;
+    this.chevrons = [];
 
     for (let y = 0; y < level.height; y++) {
       for (let x = 0; x < level.width; x++) {
@@ -191,6 +205,41 @@ export class World {
       return g;
     }
 
+    if (tile === Tile.Ice) {
+      const ice = box(0.98, 0.18, 0.98, COLORS.ice, { roughness: 0.08, metalness: 0.1 });
+      ice.position.y = -0.09;
+      g.add(ice, earth(jitter));
+      // A couple of diagonal glints so ice reads as slick even without reflections.
+      for (const [off, len] of [[-0.18, 0.5], [0.16, 0.3]]) {
+        const glint = box(len, 0.01, 0.05, COLORS.glint, { transparent: true, opacity: 0.7, roughness: 0.1 });
+        glint.rotation.y = Math.PI / 4;
+        glint.position.set(off, 0.005, off * 0.6);
+        g.add(glint);
+      }
+      return g;
+    }
+
+    if (tile === Tile.Conveyor) {
+      const belt = box(0.98, 0.18, 0.98, COLORS.belt, { roughness: 0.9 });
+      belt.position.y = -0.09;
+      g.add(belt, earth(jitter));
+      // Chevrons are built pointing +x (right), then the whole belt top turns to face its arrow.
+      const top = new THREE.Group();
+      top.rotation.y = BELT_ROTATION[DIRS[group]];
+      for (const side of [-1, 1]) {
+        const rail = box(0.98, 0.05, 0.08, COLORS.rail);
+        rail.position.set(0, 0.02, side * 0.44);
+        top.add(rail);
+      }
+      for (const phase of [0, 0.5]) {
+        const chevron = makeChevron();
+        top.add(chevron);
+        this.chevrons.push({ obj: chevron, phase });
+      }
+      g.add(top);
+      return g;
+    }
+
     const grass = box(0.98, 0.18, 0.98, COLORS.grass);
     grass.position.y = -0.09;
     g.add(grass, earth(jitter));
@@ -273,15 +322,9 @@ export class World {
 
   private placeBlock(b: Block): void {
     this.block.rotation.set(0, 0, 0);
-    if (b.o === 'S') {
-      this.block.position.set(b.x, 1, b.y);
-    } else if (b.o === 'X') {
-      this.block.position.set(b.x + 0.5, 0.5, b.y);
-      this.block.rotation.z = Math.PI / 2;
-    } else {
-      this.block.position.set(b.x, 0.5, b.y + 0.5);
-      this.block.rotation.x = Math.PI / 2;
-    }
+    this.block.position.copy(blockPosition(b));
+    if (b.o === 'X') this.block.rotation.z = Math.PI / 2;
+    else if (b.o === 'Y') this.block.rotation.x = Math.PI / 2;
   }
 
   /** Tip the block over its leading bottom edge. */
@@ -310,6 +353,16 @@ export class World {
     this.scene.attach(this.block);
     this.scene.remove(pivot);
     this.placeBlock(to);
+  }
+
+  /** Carry the block without turning it: a glide that eases to a stop on ice, a steady shove on a belt. */
+  async move(m: Motion): Promise<void> {
+    const start = blockPosition(m.from);
+    const end = blockPosition(m.to);
+    const tiles = Math.abs(m.to.x - m.from.x) + Math.abs(m.to.y - m.from.y);
+    const [ms, ease] = m.kind === 'slide' ? [SLIDE_MS_BASE + SLIDE_MS_PER_TILE * tiles, easeOut] : [PUSH_MS, easeInOut];
+    await this.tween(ms, (t) => this.block.position.lerpVectors(start, end, ease(t)));
+    this.placeBlock(m.to);
   }
 
   pressSwitches(cells: { x: number; y: number }[]): void {
@@ -410,6 +463,12 @@ export class World {
       c.position.x += c.userData.speed * dt;
       if (c.position.x > this.center.x + 30) c.position.x = this.center.x - 30;
     }
+    for (const c of this.chevrons) {
+      // Each chevron travels across the tile, growing in at the back and shrinking out at the front.
+      const p = (now / BELT_MS + c.phase) % 1;
+      c.obj.position.x = (p - 0.5) * 0.7;
+      c.obj.scale.setScalar(Math.max(Math.sin(p * Math.PI), 0.001));
+    }
     if (this.goalMarker) {
       this.goalMarker.rotation.y += dt * 0.8;
       this.goalMarker.position.y = MARKER_Y + Math.sin(now / 520) * 0.1;
@@ -454,6 +513,29 @@ function box(
   mesh.receiveShadow = true;
   mesh.castShadow = !opts.transparent;
   return mesh;
+}
+
+/** Turns a +x-pointing belt top to face each grid direction ("up" is -z). */
+const BELT_ROTATION: Record<Dir, number> = { right: 0, up: Math.PI / 2, left: Math.PI, down: -Math.PI / 2 };
+
+/** A flat ">" pointing +x, sitting on the belt surface. */
+function makeChevron(): THREE.Object3D {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: COLORS.arrow, emissive: COLORS.arrow, emissiveIntensity: 0.35 });
+  for (const side of [-1, 1]) {
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.03, 0.07), mat);
+    arm.rotation.y = side * Math.PI / 4;
+    arm.position.set(0, 0.015, side * 0.1);
+    g.add(arm);
+  }
+  return g;
+}
+
+/** Centre of the block's mesh for a grid position. */
+function blockPosition(b: Block): THREE.Vector3 {
+  if (b.o === 'S') return new THREE.Vector3(b.x, 1, b.y);
+  if (b.o === 'X') return new THREE.Vector3(b.x + 0.5, 0.5, b.y);
+  return new THREE.Vector3(b.x, 0.5, b.y + 0.5);
 }
 
 /** The dirt and hanging rock under a floating tile. */

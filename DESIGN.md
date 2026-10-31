@@ -71,7 +71,8 @@ detour away from the goal). Solution length alone is not the target.
 | **Conveyor** (Frost) | After a move, a block fully on conveyors shifts one tile along the arrow |
 
 **Whole-block rule:** a special tile (ice, conveyor) acts only when the entire block is on
-it. A lying block half on ice and half on floor does not slide.
+it. A lying block half on ice and half on floor does not slide. A lying block on two conveyors
+pointing different ways is not pushed.
 
 **Move resolution:** roll → slide while fully on ice → the slide stops as soon as any part
 leaves ice → the tile it rests on acts (a conveyor pushes once per move; if that leaves a

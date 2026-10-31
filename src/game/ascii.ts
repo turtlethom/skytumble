@@ -1,9 +1,12 @@
-import { Level, Tile } from './types';
+import { DIRS, Dir, Level, Tile } from './types';
+
+const CONVEYOR_CHARS: Record<Dir, string> = { up: '^', down: 'v', left: '<', right: '>' };
 
 /**
  * Text level format, one character per cell:
  *   .  empty        #  floor        f  fragile      G  goal
  *   S  start        o  soft switch  x  heavy switch 0-9  bridge (group = digit)
+ *   ~  ice          ^ v < >  conveyor pointing that way
  * Switches target group 0 unless `switchGroups` lists groups in reading order.
  */
 export function parseLevel(rows: string[], switchGroups: number[] = [], bridgesOn = 0): Level {
@@ -28,6 +31,11 @@ export function parseLevel(rows: string[], switchGroups: number[] = [], bridgesO
       } else if (c === 'o' || c === 'x') {
         tile = c === 'o' ? Tile.SoftSwitch : Tile.HeavySwitch;
         group = switchGroups[switchIndex++] ?? 0;
+      } else if (c === '~') {
+        tile = Tile.Ice;
+      } else if ('^v<>'.includes(c)) {
+        tile = Tile.Conveyor;
+        group = DIRS.findIndex((d) => CONVEYOR_CHARS[d] === c);
       } else if (c >= '0' && c <= '9') {
         tile = Tile.Bridge;
         group = Number(c);
@@ -50,6 +58,8 @@ const CHARS: Record<Tile, string> = {
   [Tile.SoftSwitch]: 'o',
   [Tile.HeavySwitch]: 'x',
   [Tile.Bridge]: '?',
+  [Tile.Ice]: '~',
+  [Tile.Conveyor]: '?',
 };
 
 export function formatLevel(level: Level): string {
@@ -61,6 +71,7 @@ export function formatLevel(level: Level): string {
       const t = level.tiles[i];
       if (x === level.start.x && y === level.start.y) row += 'S';
       else if (t === Tile.Bridge) row += String(level.groups[i]);
+      else if (t === Tile.Conveyor) row += CONVEYOR_CHARS[DIRS[level.groups[i]]];
       else row += CHARS[t];
     }
     rows.push(row);
