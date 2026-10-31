@@ -71,6 +71,7 @@ class Game {
   }
 
   private async start(level: Level, par: number): Promise<void> {
+    await revealPage();
     $('loading').classList.remove('show');
     this.level = level;
     this.par = par;
@@ -126,7 +127,7 @@ class Game {
       this.queued = null;
       await this.world.fall(level, result.state.block, result.broke);
       this.status = 'fallen';
-      this.toast('You fell! Z to undo · R to restart', 0);
+      $('fell').classList.remove('hidden');
       return;
     }
     if (result.outcome === 'win') {
@@ -154,7 +155,7 @@ class Game {
     this.moves--;
     this.status = 'playing';
     this.world.syncState(prev);
-    this.hideToast();
+    this.hideModals();
     this.renderChrome();
   }
 
@@ -166,7 +167,6 @@ class Game {
     this.status = 'playing';
     this.world.syncState(this.state);
     this.hideModals();
-    this.hideToast();
     this.renderChrome();
   }
 
@@ -230,6 +230,7 @@ class Game {
 
   private hideModals(): void {
     $('win').classList.add('hidden');
+    $('fell').classList.add('hidden');
     $('stats').classList.add('hidden');
     this.hideToast();
   }
@@ -278,6 +279,9 @@ class Game {
     click('btn-stats', () => this.showStats());
     click('win-next', () => this.nextLevel());
     click('win-retry', () => this.restart());
+    click('fell-undo', () => this.undo());
+    click('fell-retry', () => this.restart());
+    click('fell-next', () => this.nextLevel());
     click('stats-close', () => $('stats').classList.add('hidden'));
 
     window.addEventListener('keydown', (e) => {
@@ -307,6 +311,7 @@ class Game {
           break;
         case 'Enter':
           if (this.status === 'won') this.nextLevel();
+          else if (this.status === 'fallen') this.restart();
           break;
         case 'Escape':
           $('stats').classList.add('hidden');
@@ -345,9 +350,24 @@ function hasWebGL(): boolean {
   }
 }
 
+let revealed: Promise<void> | null = null;
+
+/** Fade the splash out once fonts are in (or after 2s), so the first thing seen is the styled game. */
+function revealPage(): Promise<void> {
+  revealed ??= Promise.race([document.fonts.ready, new Promise((r) => window.setTimeout(r, 2000))]).then(
+    () =>
+      new Promise<void>((resolve) => {
+        $('splash').classList.add('gone');
+        window.setTimeout(resolve, 250);
+      }),
+  );
+  return revealed;
+}
+
 function bootFailed(title: string, html: string): void {
-  $('boot').querySelector('h2')!.textContent = title;
-  $('boot-detail').innerHTML = html;
+  $('splash').classList.add('failed');
+  $('splash-status').textContent = title;
+  $('splash-help').innerHTML = html;
 }
 
 if (!hasWebGL()) {
@@ -363,7 +383,6 @@ if (!hasWebGL()) {
 } else {
   try {
     new Game();
-    $('boot').classList.add('hidden');
   } catch (err) {
     console.error(err);
     bootFailed('Skytumble failed to start', `<code>${String(err)}</code><br><br>Check the browser console for details.`);

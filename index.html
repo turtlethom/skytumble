@@ -7,8 +7,77 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap" rel="stylesheet" />
+    <!-- Inline so the splash paints before style.css and the scripts arrive. -->
+    <style>
+      html { background: #6fb6ff; }
+      .splash {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(180deg, #6fb6ff 0%, #a9d7ff 45%, #e6f4ff 75%, #fff1dc 100%);
+        font-family: 'Nunito', system-ui, sans-serif;
+        font-weight: 600;
+        color: #23304a;
+        transition: opacity 0.5s ease;
+      }
+      .splash.gone { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.5s ease, visibility 0s 0.5s; }
+      .splash-inner { display: flex; flex-direction: column; align-items: center; gap: 18px; max-width: 520px; padding: 0 16px; }
+      .splash-title {
+        margin: 0;
+        font-size: 56px;
+        font-weight: 900;
+        letter-spacing: -1px;
+        color: #fff;
+        text-shadow: 0 3px 0 #4a8fd8, 0 8px 24px rgba(30, 80, 160, 0.35);
+      }
+      .splash-block {
+        width: 22px;
+        height: 44px;
+        margin: 10px 0;
+        border-radius: 3px;
+        background: #f0c987;
+        border: 2px solid #8a6436;
+        animation: splash-tumble 1.6s ease-in-out infinite;
+      }
+      @keyframes splash-tumble {
+        0% { transform: rotate(0deg); }
+        25% { transform: rotate(90deg); }
+        50% { transform: rotate(180deg); }
+        75% { transform: rotate(270deg); }
+        100% { transform: rotate(360deg); }
+      }
+      .splash-status { margin: 0; font-size: 18px; font-weight: 800; }
+      /* Shown only if loading stalls, e.g. index.html opened straight from disk. */
+      .splash-help {
+        margin: 0;
+        line-height: 1.5;
+        text-align: center;
+        color: #5b6884;
+        opacity: 0;
+        animation: splash-help 0.4s ease 8s forwards;
+      }
+      @keyframes splash-help { to { opacity: 1; } }
+      .splash.failed .splash-block { display: none; }
+      .splash.failed .splash-help { opacity: 1; animation: none; text-align: left; color: #23304a; }
+      .splash code { font-size: 0.9em; padding: 1px 5px; border-radius: 5px; background: rgba(35, 48, 74, 0.08); }
+    </style>
   </head>
   <body>
+    <!-- Covers the page until the first level is built; also shows startup errors. -->
+    <div id="splash" class="splash">
+      <div class="splash-inner">
+        <h1 class="splash-title">Skytumble</h1>
+        <div class="splash-block"></div>
+        <p id="splash-status" class="splash-status">Building islands…</p>
+        <p id="splash-help" class="splash-help">
+          Still loading? Make sure you opened the <code>http://localhost</code> link that
+          <code>npm run dev</code> printed, not the <code>index.html</code> file itself.
+        </p>
+      </div>
+    </div>
+
     <div id="stage"></div>
 
     <header class="top">
@@ -42,14 +111,26 @@
     <div id="toast" class="toast"></div>
     <div id="loading" class="loading">Building islands…</div>
 
-    <div id="win" class="modal hidden">
+    <div id="win" class="modal end hidden">
       <div class="card dialog">
         <h2>Landed!</h2>
         <div id="win-stars" class="big-stars"></div>
         <p id="win-detail"></p>
         <div class="dialog-actions">
-          <button id="win-retry">Retry <kbd>R</kbd></button>
+          <button id="win-retry">Start over <kbd>R</kbd></button>
           <button id="win-next" class="primary">Next level <kbd>Enter</kbd></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="fell" class="modal end hidden">
+      <div class="card dialog">
+        <h2>You fell!</h2>
+        <p>Take back the last move, or try the island again.</p>
+        <div class="dialog-actions">
+          <button id="fell-undo">Undo <kbd>Z</kbd></button>
+          <button id="fell-retry" class="primary">Start over <kbd>R</kbd></button>
+          <button id="fell-next">Next level <kbd>N</kbd></button>
         </div>
       </div>
     </div>
@@ -61,17 +142,6 @@
         <div class="dialog-actions">
           <button id="stats-close" class="primary">Close</button>
         </div>
-      </div>
-    </div>
-
-    <!-- Visible until the game starts, so a failed start is never silent. -->
-    <div id="boot" class="modal">
-      <div class="card dialog boot">
-        <h2>Starting Skytumble…</h2>
-        <p id="boot-detail">
-          If this message doesn't go away, make sure you opened the <code>http://localhost</code> link that
-          <code>npm run dev</code> printed, not the <code>index.html</code> file itself.
-        </p>
       </div>
     </div>
 
