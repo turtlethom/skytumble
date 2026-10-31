@@ -164,6 +164,16 @@ ratchet), and 08's complexity landed. Vimium fix confirmed. Notes:
 - Lesson: a high explored-state count from the search often means maze clutter, not a
   puzzle; judge levels after stripping to the cells the solution touches.
 
+**2026-10-31 — Frost redesigns.** 05 (switch also raises the posts), 06 (belt delivers you
+onto the heavy switch) and 07 (two boosters) all landed, each with its own spin; the
+chapter climbs steadily. Notes:
+- frost-08 now felt too simple next to them → rebuilt as a finale that combines the
+  chapter's ideas: fragile stepping stones, a soft switch raising rink posts, a belt
+  delivering you onto a heavy switch that opens the gate (two bridge groups), and a decoy
+  booster chute. 22 moves and 387 states, against 07's 18 and 66.
+- The belt flare wasn't clearly noticed; it's explained now, and size is open for the
+  next playtest.
+
 ## Architecture
 
 ```
