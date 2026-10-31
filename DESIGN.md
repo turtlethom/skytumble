@@ -69,6 +69,7 @@ detour away from the goal). Solution length alone is not the target.
 | Bridge | Solid only while its group is on |
 | **Ice** (Frost) | A lying block fully on ice slides in the roll direction; a standing block grips |
 | **Conveyor** (Frost) | After a move, a block fully on conveyors shifts one tile along the arrow |
+| **Launch pad** (Windy Peaks) | Flings the block along the pad's arrow: standing = long fling, lying fully on two same-arrow pads = short hop |
 
 **Whole-block rule:** a special tile (ice, conveyor) acts only when the entire block is on
 it. A lying block half on ice and half on floor does not slide. A lying block on two conveyors
@@ -87,11 +88,33 @@ distinct ways. Checked with the solver before a level reaches playtest. The ways
 that slides on); *slide→switch* (a slide comes to rest on a switch). A lengthwise slide
 always ends half on ice, so that alone doesn't count as an anchor.
 
+**Launch pads** (Windy Peaks, planned 2026-10-31; in the lab, not frozen):
+- *Trigger:* a pad fires when the block comes to rest standing on it, or lying fully on two
+  pads with the same arrow (mixed arrows don't fire, like belts). Lying half on a pad is safe:
+  an *anchor*. Pads are solid floor otherwise.
+- *Flight:* along the arrow, over everything. The landing's nearest cell is **4** tiles past
+  the block's leading edge for a standing *fling* and **2** for a lying *hop*. Mechanically:
+  fly N−1 tiles, then tip once with an ordinary roll in the flight direction, so a standing
+  block lands lying along the flight line, a block lying along it lands standing, and one
+  lying across stays lying across.
+- *Landing:* checked like any resting spot: over empty space → fall; standing on fragile →
+  break; switches press; standing on the goal wins. Landing on pads that fire chains another
+  flight; each pad fires at most once per move (no loops). Pads act after ice and belts, and
+  a landing doesn't start a slide or push (no mixing in Windy Peaks).
+- *Readability:* subtle landing marks on every cell a flight can land on, computed from the
+  rules. They show where, not in what pose.
+- *One-trick guard* (`signature: pads`): the optimal solution uses pads in at least two
+  distinct ways: *fling*, *hop*, *chain* (2+ flights in one move), *flight→switch* (a
+  landing presses a switch), *flight→goal* (a landing wins), *anchor* (rest lying half on a
+  pad). Teaching levels opt out with `guard: off`.
+
 ### Idea backlog
 
 Wanted, not yet scheduled. Each becomes a biome's signature mechanic or a crossing.
 
-- **Tiles:** teleporters, launch pads (fling the block across a gap), crumbling/timed tiles
+- **Tiles:** teleporters, crumbling/timed tiles
+- **Momentum pads:** fling the block onward in the direction it rolled onto the pad (deferred
+  from Windy Peaks to keep one pad kind per chapter)
 - **Block changes:** grow/shrink (1×1×3, 1×1×1 cube; goal needs a size), paint (color
   gates), split into two cubes, fuse with a second block into a new shape
 - **Vertical:** drop-down to lower islands, 1-tile ledges (standing block tips up),
@@ -105,7 +128,7 @@ Wanted, not yet scheduled. Each becomes a biome's signature mechanic or a crossi
 **v1 (done):** rolling, fragile tiles, switches & bridges; Easy and Medium generated; seed
 links; stars; stats; snapping camera; undo; reference levels.
 
-**Next release — Frost**, built in this order:
+**Frost release (done 2026-10-31)**, built in this order:
 
 1. **Polish** (from the v1 playtest) — done
    - Goal marker: replace the cylinder with a geometric indicator that fits the look.
@@ -131,6 +154,33 @@ links; stars; stats; snapping camera; undo; reference levels.
    id, name, idea, par, best); click or Enter plays it. A bare URL lands on the map with the
    suggested level loaded behind it; L, the Map button and the Campaign tab open it. It
    replaces the level picker; `levels.html` stays as the dev index.
+
+**Next release — Windy Peaks** (launch pads), planned in a grilling session 2026-10-31:
+
+- *Goal:* "surprise reach", the "I can get there?!" moment. Success = the same test as
+  Frost: I pick Windy Peaks levels unprompted, weeks later.
+- *Why pads:* the fling was the most wanted finale moment, and pads plug into the move
+  pipeline like a slide (no core change). Teleporters, lower layers, and the stretch block
+  stay in the backlog; deep core changes were acceptable only if clearly best.
+- *Scope:* arrow pads only; base layer (fragile, switches, bridges) plus pads; no ice or
+  belts (ice stays in Frost; belts may travel to a later biome). Handmade only: no generator
+  support, no level editor, no sound. The camera gets a patch only if long flings leave frame.
+- *Audience:* assumes Tutorial and Frost are done.
+- *Depth* (the pre-mortem was "shallow levels: find the pad, use it, done"): pose setup
+  (getting upright on the far pad), switch combos (a landing flips the way back), route
+  order. Decoy pads are not a focus.
+- *If the lab plays flat:* iterate the pad rules (distances, triggers, momentum pads) in
+  another lab round before abandoning pads.
+
+1. **Pad rules**: rules, solver, landing marks, fling animation, tests, pad-use report and
+   guard.
+2. **Wind lab**: 6 throwaway levels, one playtest round: long fling, short hop, pose setup,
+   chain (also the camera stress test), hard landing on a switch or fragile tile, one combo.
+   Rules freeze after sign-off.
+3. **Windy Peaks chapter** (`wind-01`…`wind-08`): two teaching levels (fling, hop;
+   `guard: off`), five guarded levels each pairing two depth sources, a finale combining
+   them. Theme: rocky spires, gusts, banners.
+4. **Map island** for Windy Peaks after Frost on the suggested path.
 
 **Later:** endless climb + daily seed, Frost in the generator, archipelago generation,
 more biomes from the backlog, visual level editor, full-level links (needed for handmade
@@ -227,6 +277,11 @@ On the map: ←/→ level · ↑/↓ island · Enter play · Esc/L back to the l
   the climb.
 - Splitting may be very hard to generate well.
 - "Beats the original" has no concrete test yet; judged by feel.
+- **Pads are just bridges** (Windy Peaks pre-mortem): once you know where a pad goes, the
+  level is done. Guarded by the two-uses rule and the three depth sources.
+- **Landing pose unreadable:** marks show where a flight lands, not how. Watch for it in the
+  lab playtest.
+- **Long flights leave the frame** or read as random; lab level 4 is the stress test.
 - Seed links break when the generator changes. Full-level links fix this.
 
 ## Running
