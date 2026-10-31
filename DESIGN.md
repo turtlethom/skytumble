@@ -186,7 +186,7 @@ src/game/      pure logic (no Three.js): types, rules, solver, generator, RNG
 src/levels/    handmade levels: one <chapter>.txt per chapter (format in format.ts),
                index.ts lists chapters in play order, validate.ts checks them
 src/levels-page.ts  levels.html: level index with mini-maps, validation, play links
-scripts/       check-levels.ts (npm run levels:check)
+scripts/       check-levels.ts (npm run levels:check); design/ level-design tools (see CLAUDE.md)
 src/render/    Three.js scene: tiles, block roll animation, camera
 src/ui/        HUD, panels, persistence (localStorage)
 src/worker.ts  runs the generator off the main thread
