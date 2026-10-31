@@ -115,7 +115,7 @@ links; stars; stats; snapping camera; undo; reference levels.
    A visual editor comes later. — done: chapter `.txt` files, `npm run levels:check`,
    `levels.html`, and `?level=<id>` in the game.
 4. **Ice lab**: ~4 throwaway levels exercising the rules, for one playtest week. Rules
-   freeze after sign-off.
+   freeze after sign-off. — built: `lab-01`…`lab-05` in `src/levels/lab.txt`; awaiting playtest.
 5. **Campaign chapters**: Tutorial (the 5 reference levels, reordered as needed) and
    ~8 Frost levels.
 6. **Campaign map** with soft order.

@@ -1,0 +1,55 @@
+title: Ice Lab
+
+=== lab-01
+par: 9
+name: Glide
+idea: Lying blocks slide on ice; standing blocks grip. The floor post is your brake.
+###.......
+#S#~~#~~..
+###~#~~~..
+...~~~.~##
+.....##G##
+.....####.
+
+=== lab-02
+par: 15
+name: Posts and Holes
+idea: Floor posts stop a slide, holes swallow one. Plan each slide from a standing start.
+###...........
+#S#~~#~~~#~...
+###~.~~~#~~###
+...~~~.~~~~#G#
+...#~~~~#~~###
+
+=== lab-03
+par: 9
+name: Currents
+idea: Belts push a block that is fully on them. Where two arrows disagree, the block can rest.
+###.vvvv.....
+#S##vvvv##...
+####v^v^##...
+....vvvv#G#..
+....vvvv###..
+
+=== lab-04
+par: 16
+name: Ice Works
+idea: Slide onto the switch to open the bridge, then find a way back across the rink.
+###.............
+#S#>>~~~~~o.....
+###..~~~~~......
+.....~~#~~00####
+.....~~~~~..##G#
+.....##.....####
+
+=== lab-05
+par: 13
+name: Relay
+idea: A slide can end on a belt, and the push can start a new slide, all in one move.
+###............
+#S##...##~###..
+###~#~~~~~~##..
+.......vv......
+.......~~......
+......###.##~G#
+......##~#~~###
