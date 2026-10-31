@@ -5,7 +5,7 @@ import { DIRS } from './game/types';
 import { CHAPTERS } from './levels';
 import { HandmadeLevel } from './levels/format';
 import { LevelReport, validateChapters } from './levels/validate';
-import { ARROW_DEG, miniMap } from './render/minimap';
+import { ARROW_DEG, PAD_ARROW, miniMap } from './render/minimap';
 import { CONVEYOR_COLORS, cssColor } from './render/palette';
 import { esc } from './ui/html';
 
@@ -15,6 +15,7 @@ function card(h: HandmadeLevel, r: LevelReport): string {
   const meta = [`par ${r.par ?? '–'}`, `${r.explored} states`];
   if (r.iceUses.length) meta.push(`ice: ${r.iceUses.join(', ')}`);
   if (r.pushes) meta.push(`${r.pushes} pushes`);
+  if (r.padUses.length) meta.push(`pads: ${r.padUses.join(', ')}`);
   const status = r.errors.length
     ? `<ul class="errors">${r.errors.map((e) => `<li>${esc(e)}</li>`).join('')}</ul>`
     : '<p class="ok">✓ Valid</p>';
@@ -46,6 +47,7 @@ function legend(): string {
         `<path d="M3 7H10M7 4L10.5 7L7 10" stroke="${cssColor(CONVEYOR_COLORS[d])}" stroke-width="1.8" fill="none" transform="rotate(${ARROW_DEG[i]} 7 7)"/>`,
       ),
     ),
+    swatch('#dfe5ec', 'Launch pad', `<path d="M3 5.8H7V3L11.5 7L7 11V8.2H3Z" fill="${PAD_ARROW}"/>`),
     swatch('#86d07a', 'Switch', '<circle cx="7" cy="7" r="4" fill="#f4a940"/>'),
     swatch('#f4a940', 'Bridge'),
     swatch('#1d1a2b', 'Goal', '<rect x="1.5" y="1.5" width="11" height="11" fill="none" stroke="#ffd36b" stroke-width="2"/>'),

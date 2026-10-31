@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { formatLevel } from '../src/game/ascii';
 import { parseChapter } from '../src/levels/format';
-import { iceUses, validateLevel } from '../src/levels/validate';
+import { iceUses, padUses, validateLevel } from '../src/levels/validate';
 
 describe('chapter files', () => {
   it('parse headers, fields and grids', () => {
@@ -24,12 +24,13 @@ describe('chapter files', () => {
 });
 
 describe('validation', () => {
-  const chapter = (signature: 'ice' | null) => ({ id: 'frost', title: 'Frost', signature, levels: [] });
+  const chapter = (signature: 'ice' | 'pads' | null) => ({ id: 'frost', title: 'Frost', signature, levels: [] });
   const level = (rows: string[], par: number | null) => ({
     id: 'frost-01',
     name: '',
     idea: '',
     par,
+    guard: true,
     level: parseChapter('frost', `=== frost-01\n${rows.join('\n')}`).levels[0].level,
   });
 
@@ -51,4 +52,33 @@ describe('validation', () => {
     const grip = parseChapter('frost', '=== frost-01\nS##~#').levels[0].level;
     expect(iceUses(grip, ['right', 'right']).uses).toEqual(['grip']);
   });
+
+  it('classifies pad uses along a solution', () => {
+    // A standing fling onto two pads that hop on, landing upright on the goal.
+    const l = parseChapter('wind', '=== wind-01\nS##R...RR.G').levels[0].level;
+    expect(padUses(l, ['right', 'right']).sort()).toEqual(['chain', 'flight→goal', 'fling', 'hop']);
+  });
+
+  it('enforces the pad guard unless a level opts out', () => {
+    // Hop over the gap, then roll to the goal: pads used one way only.
+    const hopOnly = level(['SRR.###G'], 3);
+    expect(validateLevel(hopOnly, chapter('pads')).errors[0]).toContain('one-trick');
+    expect(validateLevel({ ...hopOnly, guard: false }, chapter('pads')).errors).toEqual([]);
+    // Hopping straight onto the goal is two ways (hop, flight→goal).
+    expect(validateLevel(level(['SRR.G'], 1), chapter('pads')).errors).toEqual([]);
+  });
+
+  it('parses guard: off', () => {
+    const c = parseChapter('wind', '=== wind-01\nguard: off\nSRR.G');
+    expect(c.levels[0].guard).toBe(false);
+    expect(() => parseChapter('wind', '=== wind-01\nguard: maybe\nSRR.G')).toThrow(/guard/);
+  });
+
+  it('classifies belt and pad combos', () => {
+    const l = parseChapter('wind', '=== wind-01\nS##>R...>>#').levels[0].level;
+    expect(padUses(l, ['right', 'right']).sort()).toEqual(['belt→pad', 'fling']);
+    const land = parseChapter('wind', '=== wind-01\nS##R...>>#').levels[0].level;
+    expect(padUses(land, ['right', 'right']).sort()).toEqual(['flight→belt', 'fling']);
+  });
 });
+

@@ -14,10 +14,11 @@ const H = 90;
 const LAYOUT: Record<string, { x: number; y: number; theme: string }> = {
   tutorial: { x: 24, y: 38, theme: 'meadow' },
   frost: { x: 80, y: 56, theme: 'frost' },
-  lab: { x: 137, y: 30, theme: 'lab' },
+  lab: { x: 137, y: 26, theme: 'lab' },
+  windlab: { x: 136, y: 68, theme: 'peaks' },
 };
 
-const SIGNATURE_LABEL: Record<string, string> = { ice: 'Ice & belts' };
+const SIGNATURE_LABEL: Record<string, string> = { ice: 'Ice & belts', pads: 'Launch pads' };
 
 /** Map keys: Left/Right step through levels in play order, Up/Down hop between islands. */
 const STEP: Record<string, number> = { ArrowLeft: -1, KeyA: -1, ArrowRight: 1, KeyD: 1 };

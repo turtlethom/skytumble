@@ -419,6 +419,13 @@ kbd {
   --cliff-dark: #5f4f80;
 }
 
+.sm-island.peaks {
+  --top: linear-gradient(#eef2f6, #c9d3de);
+  --edge: #9aa8b8;
+  --cliff: #8d8f99;
+  --cliff-dark: #50535e;
+}
+
 .sm-island.extra {
   width: 230px;
 }

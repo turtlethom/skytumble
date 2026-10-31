@@ -55,6 +55,10 @@ The process that produced the Frost chapter:
 5. **Strip and judge.** Remove the `*` tiles and re-analyze: a high state count that collapses when
    stripped was maze clutter, not a puzzle. Then reframe by hand, keeping decoys only if they add
    real choices (states go up, par stays).
+   For pad levels the search helps little; design by hand from the flight geometry instead: a
+   standing block on pad `p` lands lying on `p+4, p+5`; lying along pads `p, p+1` lands
+   standing on `p+3`; lying across lands lying 2 past. Give the goal room for a two-tile
+   lying approach in line, or parity can make it unreachable standing.
 6. **Fix the ending.** Searches often leave 3–6 moves of shuffling around a cramped goal island.
    Put the goal in line with how the block arrives (and remove start-island busywork the same way).
 7. **Check the story against the trace.** Write the `name`/`idea` text from the actual solution and

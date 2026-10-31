@@ -1,0 +1,97 @@
+title: Wind Lab (prototypes)
+
+=== windlab-01
+par: 5
+name: Long Fling
+idea: Stand on a pad and it flings you four tiles; you land lying, tipped over in the flight's direction. Blue corners mark where flights land.
+####.........
+#S##R...###..
+####....###..
+........##G..
+........###..
+
+=== windlab-02
+par: 13
+name: Short Hop
+idea: Lie along two pads to hop just two tiles and land upright. Standing flings you too far; getting lined up is the puzzle.
+####........
+#S##RR.##...
+####...##...
+.......##...
+.......#G...
+
+=== windlab-03
+par: 8
+name: Conveyor Launch
+idea: A belt shoves you one tile after each move you end on it. Ride it in once and it drops you one short of the pad; back up so it delivers you upright onto the pad. Then let the far belts carry you down.
+####...........
+#S##>>R...vv#..
+####......vv#..
+..........vv#..
+..........###..
+.........##G#..
+.........####..
+
+=== windlab-04
+par: 14
+name: Near or Far
+idea: Four pads, three distances. Only the back pads, stood on, reach the far island and its switch. Work your way around the hole to hop home, then cross the bridge.
+switches: 0
+#####.....###
+#S###.....###
+#####RR##.#o#
+#####RR##.#.#
+.......##.###
+.......##.LL#
+........0....
+.......###...
+.......#G#...
+.......###...
+
+=== windlab-05
+par: 16
+name: Heavy Relay
+idea: Hop onto the lone heavy switch to raise the bridge where the relay lands. Then reach the launch pad without ever standing on the switch again.
+switches: 0
+........###..........
+.S.#RR.xf##R...RR.D..
+.f##...###...........
+.##f...###...........
+.....................
+..................0..
+..................0..
+..................G..
+
+=== windlab-06
+par: 23
+name: Stepping Stones
+idea: Four islands, three crossings. Each pad only works from the right pose and spot, so every island is a small maneuvering puzzle before the next jump.
+S##..........
+.f#..........
+.##R...###...
+........##...
+........##...
+........#....
+........##D..
+........f#D..
+.............
+..........###
+..........###
+..........###
+....##...L##.
+....##.......
+....##G......
+
+=== windlab-07
+par: 26
+name: Crosswind
+idea: The fling lands on belts that shove you onto a soft switch, and climb off the wrong way and they shove you back. It flips on every touch, so count before you leave. A belt delivers you upright onto the return pad; home again, stand on the lone bridge tile, then cross the fragile one lying down.
+switches: 0
+........###..
+.S##R...vv###
+###.....o####
+#####...#..##
+..###...L<<#.
+##0.....#####
+#f...........
+##G..........

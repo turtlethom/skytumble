@@ -2,14 +2,14 @@
 //   npx vite-node scripts/design/search.ts <template> <palette> <parLo> <parHi> [seed] [restarts] [want]
 // The template is a design block (see lib.ts) whose '?' cells are filled from <palette> (repeat a
 // character to weight it, e.g. "~~~#.f") and whose '%' cells become ice or empty. Hill-climbs to
-// reward: par in range, distinct ice uses (and each one listed in <want>, e.g. "slide→switch"),
+// reward: par in range, distinct ice and pad uses (and each one listed in <want>, e.g. "slide→switch", "chain"),
 // switches pressed, belt pushes, explored states; and penalizes tiles the solution never touches.
 // Env: CLUTTER (penalty per untouched filled cell, default 0.5), PRESSES (bonus per switch, default 10).
 // Prints the best layout as a design block, ready for analyze.ts.
 import { readFileSync } from 'node:fs';
 import { initialState, step } from '../../src/game/rules';
 import { solve } from '../../src/game/solver';
-import { iceUses } from '../../src/levels/validate';
+import { iceUses, padUses } from '../../src/levels/validate';
 import { build, parseBlock, touched } from './lib';
 
 const [file, palette, lo, hi, seedArg = '1', restartsArg = '4', wantArg = ''] = process.argv.slice(2);
@@ -47,7 +47,9 @@ function score(rows: string[]): number {
   const sol = solve(level);
   if (!sol) return -1e9;
   const par = sol.moves.length;
-  const { uses, pushes } = iceUses(level, sol.moves);
+  const ice = iceUses(level, sol.moves);
+  const uses: string[] = [...ice.uses, ...padUses(level, sol.moves)];
+  const pushes = ice.pushes;
   const seen = touched(level, sol.moves);
   const pressed = new Set<string>();
   let st = initialState(level);
@@ -58,7 +60,7 @@ function score(rows: string[]): number {
   }
   const untouched = slots.filter(([x, y]) => rows[y][x] !== '.' && !seen.has(`${x},${y}`)).length;
   let s = -Math.max(0, Number(lo) - par, par - Number(hi)) * 4;
-  s += want.filter((w) => (uses as string[]).includes(w)).length * 15;
+  s += want.filter((w) => uses.includes(w)).length * 15;
   s += uses.length * 8 + Math.min(pushes, 5) * 1.5 + pressed.size * pressBonus;
   s += Math.min(sol.explored, 600) * 0.05;
   return s - untouched * clutter;

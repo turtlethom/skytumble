@@ -10,6 +10,8 @@ export enum Tile {
   Ice = 7,
   /** Shifts a block that is fully on conveyors one tile along its arrow after each move. */
   Conveyor = 8,
+  /** Flings a block standing on it (or lying fully on two that agree) along its arrow. */
+  Pad = 9,
 }
 
 /** Standing upright, lying along the x axis, or lying along the y axis. */
@@ -29,7 +31,7 @@ export interface Level {
   tiles: Tile[];
   /**
    * Bridge group for Bridge tiles, switch target group for switch tiles,
-   * arrow direction (index into DIRS) for Conveyor tiles, -1 otherwise.
+   * arrow direction (index into DIRS) for Conveyor and Pad tiles, -1 otherwise.
    */
   groups: number[];
   start: { x: number; y: number };

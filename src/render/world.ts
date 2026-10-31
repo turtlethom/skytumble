@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Motion, blockCells } from '../game/rules';
+import { Motion, blockCells, flightLandings } from '../game/rules';
 import { Block, DIR_DELTA, DIRS, Dir, Level, State, Tile } from '../game/types';
 import { CONVEYOR_COLORS } from './palette';
 
@@ -18,6 +18,12 @@ const COLORS = {
   glint: 0xffffff,
   belt: 0x4a5266,
   rail: 0x8a93a8,
+  padStone: 0xdfe5ec,
+  padRim: 0xa9b4c2,
+  /** Pad arrows, gusts and landing marks share one colour so a mark reads as "a pad sends you here". */
+  wind: 0x5cc8ff,
+  /** Landing marks: a deeper blue of the same hue, so they hold up on grass. */
+  mark: 0x1f8fe0,
 };
 
 /** Each bridge group gets its own colour so you can see which switch drives which bridge. */
@@ -35,6 +41,13 @@ const SLIDE_MS_BASE = 90;
 const SLIDE_MS_PER_TILE = 75;
 /** Conveyor chevrons travel one tile length per this many ms. */
 const BELT_MS = 1100;
+/** Launch-pad flights: a base time plus a little per tile, and how high the arc rises. */
+const FLY_MS_BASE = 260;
+const FLY_MS_PER_TILE = 55;
+const FLY_ARC_BASE = 1.1;
+const FLY_ARC_PER_TILE = 0.3;
+/** Gust streaks drift across a pad once per this many ms. */
+const GUST_MS = 900;
 /** Hover height of the goal marker: its tip stays above a standing block's top (y = 2). */
 const MARKER_Y = 2.45;
 
@@ -78,6 +91,10 @@ export class World {
     /** 0–1 flare while the belt is shoving the block. */
     boost: number;
   }[] = [];
+  /** Launch-pad arrows by cell key (y * 10000 + x), so a launch can flash them. */
+  private padArrows = new Map<number, { mat: THREE.MeshStandardMaterial; boost: number }>();
+  /** Wind streaks drifting over each pad along its arrow. */
+  private gusts: { obj: THREE.Mesh; phase: number }[] = [];
   private tweens: Tween[] = [];
   private last = performance.now();
 
@@ -132,6 +149,8 @@ export class World {
     this.bridges = [];
     this.goalMarker = null;
     this.chevrons = [];
+    this.padArrows.clear();
+    this.gusts = [];
 
     for (let y = 0; y < level.height; y++) {
       for (let x = 0; x < level.width; x++) {
@@ -142,6 +161,11 @@ export class World {
         this.levelGroup.add(obj);
         this.tiles.set(i, { obj, baseY: 0 });
       }
+    }
+
+    // Landing marks ride on their tiles, so they rise in with the island and fall with a broken tile.
+    for (const { x, y } of flightLandings(level)) {
+      this.tiles.get(y * level.width + x)?.obj.add(makeLandingMark());
     }
 
     this.center.set((level.width - 1) / 2, 0, (level.height - 1) / 2);
@@ -251,6 +275,35 @@ export class World {
         this.chevrons.push({ obj: chevron, phase, cell: y * 10000 + x, mat: chevron.userData.mat, dir, boost: 0 });
       }
       g.add(top);
+      return g;
+    }
+
+    if (tile === Tile.Pad) {
+      const stone = box(0.98, 0.18, 0.98, COLORS.padRim, { roughness: 0.9 });
+      stone.position.y = -0.09;
+      const plate = box(0.82, 0.04, 0.82, COLORS.padStone, { roughness: 0.6 });
+      plate.position.y = 0.01;
+      g.add(stone, plate, earth(jitter));
+      const dir = DIRS[group];
+      const top = new THREE.Group();
+      top.rotation.y = BELT_ROTATION[dir];
+      const mat = new THREE.MeshStandardMaterial({ color: COLORS.wind, emissive: COLORS.wind, emissiveIntensity: 0.35 });
+      const arrow = new THREE.Mesh(arrowGeometry(), mat);
+      arrow.position.y = 0.03;
+      arrow.receiveShadow = true;
+      top.add(arrow);
+      // Two thin streaks drift over the pad along its arrow: wind you can see.
+      for (const [phase, z] of [[0, -0.22], [0.5, 0.2]]) {
+        const streak = new THREE.Mesh(
+          new THREE.BoxGeometry(0.34, 0.02, 0.035),
+          new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 }),
+        );
+        streak.position.set(0, 0.3, z);
+        top.add(streak);
+        this.gusts.push({ obj: streak, phase });
+      }
+      g.add(top);
+      this.padArrows.set(y * 10000 + x, { mat, boost: 0 });
       return g;
     }
 
@@ -371,6 +424,7 @@ export class World {
 
   /** Carry the block without turning it: a glide that eases to a stop on ice, a steady shove on a belt. */
   async move(m: Motion): Promise<void> {
+    if (m.kind === 'fly') return this.fly(m);
     if (m.kind === 'push') this.flareBelts(m.from, m.dir);
     const start = blockPosition(m.from);
     const end = blockPosition(m.to);
@@ -400,6 +454,34 @@ export class World {
           .sub(toPivot.clone().applyQuaternion(lean));
       });
     }
+    this.placeBlock(m.to);
+  }
+
+  /**
+   * A launch-pad flight: the pad flashes, the block arcs through the air and makes its one
+   * roll's worth of tumble on the way, landing exactly as a roll would leave it.
+   */
+  private async fly(m: Motion): Promise<void> {
+    const pads = blockCells(m.from)
+      .map(([x, y]) => this.padArrows.get(y * 10000 + x))
+      .filter((p) => p !== undefined);
+    void this.tween(500, (t) => pads.forEach((p) => (p.boost = Math.sin(t * Math.PI))));
+
+    const start = blockPosition(m.from);
+    const end = blockPosition(m.to);
+    const tiles = Math.hypot(end.x - start.x, end.z - start.z);
+    const arc = FLY_ARC_BASE + FLY_ARC_PER_TILE * tiles;
+    const { dx, dy } = DIR_DELTA[m.dir];
+    // The same tip as roll(): +y leans toward the flight direction.
+    const tumble = new THREE.Quaternion();
+    const axis = new THREE.Vector3(dy, 0, -dx);
+    const base = this.block.quaternion.clone();
+    await this.tween(FLY_MS_BASE + FLY_MS_PER_TILE * tiles, (t) => {
+      this.block.position.lerpVectors(start, end, t);
+      this.block.position.y += arc * 4 * t * (1 - t);
+      tumble.setFromAxisAngle(axis, (Math.PI / 2) * easeInOut(t));
+      this.block.quaternion.copy(base).premultiply(tumble);
+    });
     this.placeBlock(m.to);
   }
 
@@ -534,6 +616,13 @@ export class World {
       c.obj.scale.setScalar(Math.max(Math.sin(p * Math.PI), 0.001) * (1 + c.boost * 0.35));
       c.mat.emissiveIntensity = 0.5 + c.boost * 2.2;
     }
+    for (const p of this.padArrows.values()) p.mat.emissiveIntensity = 0.35 + p.boost * 1.6;
+    for (const g of this.gusts) {
+      // Each streak drifts along the arrow, fading in at the back and out at the front.
+      const p = (now / GUST_MS + g.phase) % 1;
+      g.obj.position.x = (p - 0.5) * 0.7;
+      (g.obj.material as THREE.MeshBasicMaterial).opacity = Math.sin(p * Math.PI) * 0.75;
+    }
     if (this.goalMarker) {
       this.goalMarker.rotation.y += dt * 0.8;
       this.goalMarker.position.y = MARKER_Y + Math.sin(now / 520) * 0.1;
@@ -593,6 +682,43 @@ function makeChevron(color: number): THREE.Object3D {
     arm.rotation.y = side * Math.PI / 4;
     arm.position.set(0, 0.018, side * 0.13);
     g.add(arm);
+  }
+  return g;
+}
+
+/** A flat arrow pointing +x for launch pads: a short shaft and a broad head. */
+function arrowGeometry(): THREE.BufferGeometry {
+  const s = new THREE.Shape();
+  s.moveTo(-0.3, -0.07);
+  s.lineTo(0.02, -0.07);
+  s.lineTo(0.02, -0.2);
+  s.lineTo(0.32, 0);
+  s.lineTo(0.02, 0.2);
+  s.lineTo(0.02, 0.07);
+  s.lineTo(-0.3, 0.07);
+  s.closePath();
+  const geom = new THREE.ExtrudeGeometry(s, { depth: 0.03, bevelEnabled: false });
+  // The shape is drawn in x/y; lay it flat on the tile with its point still toward +x.
+  geom.rotateX(-Math.PI / 2);
+  return geom;
+}
+
+/** Four corner brackets on a tile a flight can land on, in the pads' wind colour. */
+function makeLandingMark(): THREE.Object3D {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshBasicMaterial({ color: COLORS.mark });
+  const len = 0.26;
+  const w = 0.075;
+  const edge = 0.44 - w / 2;
+  for (const sx of [-1, 1]) {
+    for (const sz of [-1, 1]) {
+      for (const along of ['x', 'z'] as const) {
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(along === 'x' ? len : w, 0.014, along === 'x' ? w : len), mat);
+        const inset = (len - w) / 2;
+        arm.position.set(sx * (edge - (along === 'x' ? inset : 0)), 0.012, sz * (edge - (along === 'z' ? inset : 0)));
+        g.add(arm);
+      }
+    }
   }
   return g;
 }

@@ -13,6 +13,7 @@ import { Level } from '../game/types';
  *   par: 9                        recorded when designed; validation flags drift
  *   switches: 0 1                 optional: switch target groups in reading order
  *   bridges-on: 1                 optional: bridge groups that start extended
+ *   guard: off                    optional: a teaching level skips the signature's one-trick guard
  *   S~~~~#G                       grid rows, in the format of game/ascii.ts
  *
  * Grid rows never contain ':', so any "key: value" line is a field.
@@ -25,6 +26,8 @@ export interface HandmadeLevel {
   idea: string;
   /** Par recorded in the file; null until filled in. */
   par: number | null;
+  /** Whether the chapter's one-trick guard applies (teaching levels opt out). */
+  guard: boolean;
   level: Level;
 }
 
@@ -36,7 +39,7 @@ export interface Chapter {
   levels: HandmadeLevel[];
 }
 
-export const SIGNATURES = ['ice'] as const;
+export const SIGNATURES = ['ice', 'pads'] as const;
 export type Signature = (typeof SIGNATURES)[number];
 
 const FIELD = /^([a-z-]+):\s*(.*)$/;
@@ -88,7 +91,7 @@ export function parseChapter(id: string, text: string): Chapter {
 
   const levels = drafts.map((d): HandmadeLevel => {
     for (const key of d.fields.keys()) {
-      if (!['name', 'idea', 'par', 'switches', 'bridges-on'].includes(key)) fail(d.line, `unknown field '${key}'`);
+      if (!['name', 'idea', 'par', 'switches', 'bridges-on', 'guard'].includes(key)) fail(d.line, `unknown field '${key}'`);
     }
     if (d.rows.length === 0) fail(d.line, `${d.id} has no grid`);
     const numbers = (key: string) =>
@@ -105,7 +108,9 @@ export function parseChapter(id: string, text: string): Chapter {
     } catch (err) {
       return fail(d.line, `${d.id}: ${(err as Error).message}`);
     }
-    return { id: d.id, name: d.fields.get('name') ?? d.id, idea: d.fields.get('idea') ?? '', par, level };
+    const guard = d.fields.get('guard') ?? 'on';
+    if (guard !== 'on' && guard !== 'off') fail(d.line, `guard: expected 'on' or 'off', got '${guard}'`);
+    return { id: d.id, name: d.fields.get('name') ?? d.id, idea: d.fields.get('idea') ?? '', par, guard: guard === 'on', level };
   });
 
   return { id, title: header.get('title') ?? id, signature: signature as Signature | null, levels };

@@ -99,14 +99,17 @@ always ends half on ice, so that alone doesn't count as an anchor.
   lying across stays lying across.
 - *Landing:* checked like any resting spot: over empty space → fall; standing on fragile →
   break; switches press; standing on the goal wins. Landing on pads that fire chains another
-  flight; each pad fires at most once per move (no loops). Pads act after ice and belts, and
-  a landing doesn't start a slide or push (no mixing in Windy Peaks).
+  flight; each pad fires at most once per move (no loops).
+- *Belts* (added after the first lab playtest): after the roll and any ice slide, belts and
+  pads act wherever the block rests until neither does. One belt push per move, even after a
+  landing; a push onto pads fires them. A landing never slides on ice (ice stays in Frost).
 - *Readability:* subtle landing marks on every cell a flight can land on, computed from the
   rules. They show where, not in what pose.
 - *One-trick guard* (`signature: pads`): the optimal solution uses pads in at least two
   distinct ways: *fling*, *hop*, *chain* (2+ flights in one move), *flight→switch* (a
   landing presses a switch), *flight→goal* (a landing wins), *anchor* (rest lying half on a
-  pad). Teaching levels opt out with `guard: off`.
+  pad), *belt→pad* (a push delivers the block onto pads that fire), *flight→belt* (a landing
+  gets pushed). Teaching levels opt out with `guard: off`.
 
 ### Idea backlog
 
@@ -162,8 +165,8 @@ links; stars; stats; snapping camera; undo; reference levels.
 - *Why pads:* the fling was the most wanted finale moment, and pads plug into the move
   pipeline like a slide (no core change). Teleporters, lower layers, and the stretch block
   stay in the backlog; deep core changes were acceptable only if clearly best.
-- *Scope:* arrow pads only; base layer (fragile, switches, bridges) plus pads; no ice or
-  belts (ice stays in Frost; belts may travel to a later biome). Handmade only: no generator
+- *Scope:* arrow pads only; base layer (fragile, switches, bridges) plus pads, and **belts**
+  (changed after the lab playtest: pads alone needed spice). Ice stays in Frost. Handmade only: no generator
   support, no level editor, no sound. The camera gets a patch only if long flings leave frame.
 - *Audience:* assumes Tutorial and Frost are done.
 - *Depth* (the pre-mortem was "shallow levels: find the pad, use it, done"): pose setup
@@ -173,13 +176,20 @@ links; stars; stats; snapping camera; undo; reference levels.
   another lab round before abandoning pads.
 
 1. **Pad rules**: rules, solver, landing marks, fling animation, tests, pad-use report and
-   guard.
+   guard. — done: pads are `U D L R` in level text; `signature: pads`, `guard: off`. Flights
+   arc and tumble once on the way; the pad flashes and gust streaks drift over it.
 2. **Wind lab**: 6 throwaway levels, one playtest round: long fling, short hop, pose setup,
    chain (also the camera stress test), hard landing on a switch or fragile tile, one combo.
-   Rules freeze after sign-off.
+   Rules freeze after sign-off. — built: `windlab-01`…`06` in `src/levels/windlab.txt`
+   (an extras island on the map). First playtest 2026-10-31 (see log) → rebuilt as 7 levels
+   with belts: 01 Long Fling and 02 Short Hop kept; 03 Conveyor Launch (belt intro), 04 Near
+   or Far (the far island holds the switch), 05 Heavy Relay (the chain is the payoff after
+   setup), 06 Stepping Stones (island hopping, maneuver before each jump), 07 Crosswind
+   (finale: belts, soft-switch parity, belt-fed return pad). Par 5 → 26 (8 from 03 on, climbing);
+   awaiting the second playtest. Chains stay in frame, so no camera patch so far.
 3. **Windy Peaks chapter** (`wind-01`…`wind-08`): two teaching levels (fling, hop;
    `guard: off`), five guarded levels each pairing two depth sources, a finale combining
-   them. Theme: rocky spires, gusts, banners.
+   them. Belts join from the middle levels on; difficulty must climb toward the end. Theme: rocky spires, gusts, banners.
 4. **Map island** for Windy Peaks after Frost on the suggested path.
 
 **Later:** endless climb + daily seed, Frost in the generator, archipelago generation,
@@ -234,6 +244,19 @@ chapter climbs steadily. Notes:
 route. The belt flare was invisible because the block hides the belt it's on → a push now
 makes the block tip back on its trailing edge and swing upright (always visible), and the
 whole connected belt lights up, rippling away from the block.
+
+**2026-10-31 — wind lab.** Launch pads are fun ("I enjoy them a lot"). Pads alone need
+spice and a difficulty climb → belts join pads, in the lab and the chapter (from the middle
+levels on). Notes:
+- windlab-01: great introduction. windlab-02: awesome; shows both jump kinds with a simple,
+  solid puzzle. Keep both.
+- windlab-03: underwhelming; the far island never felt like a place you'd launch to.
+- windlab-04: too simple; the chain felt like an automatic completion. A chain must be a
+  tool you set up, not the solution.
+- windlab-05: the heavy switch landing was cool but too simple (same issue as 04).
+- windlab-06: does the right things at a simple level; a little boring.
+- Wanted: a level that jumps island to island where each crossing needs maneuvering on the
+  current island first.
 
 ## Architecture
 

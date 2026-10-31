@@ -1,6 +1,7 @@
 import { Chapter, HandmadeLevel, parseChapter } from './format';
 import frost from './frost.txt?raw';
 import lab from './lab.txt?raw';
+import windlab from './windlab.txt?raw';
 import tutorial from './tutorial.txt?raw';
 
 /** Campaign chapters in play order. Add a chapter by adding its .txt file here. */
@@ -9,10 +10,12 @@ export const CHAPTERS: Chapter[] = [
   parseChapter('frost', frost),
   // The rule prototypes from the ice lab playtest, kept as extras after the campaign.
   parseChapter('lab', lab),
+  // Launch-pad prototypes for the Windy Peaks lab playtest.
+  parseChapter('windlab', windlab),
 ];
 
 /** Chapters kept as extras: shown on the map off the suggested path. */
-const EXTRAS = new Set(['lab']);
+const EXTRAS = new Set(['lab', 'windlab']);
 
 export function isExtra(chapter: Chapter): boolean {
   return EXTRAS.has(chapter.id);

@@ -2,9 +2,12 @@ import { Block, DIR_DELTA, DIRS, Dir, Level, State, Tile } from './types';
 
 export type Outcome = 'ok' | 'fall' | 'win';
 
-/** A move after the roll that keeps the block's orientation: an ice slide or a conveyor push. */
+/**
+ * A move after the roll: an ice slide or a conveyor push (both keep the block's orientation), or
+ * a launch-pad flight (ends with one ordinary roll, so the orientation changes like a roll's).
+ */
 export interface Motion {
-  kind: 'slide' | 'push';
+  kind: 'slide' | 'push' | 'fly';
   dir: Dir;
   from: Block;
   to: Block;
@@ -15,7 +18,7 @@ export interface StepResult {
   outcome: Outcome;
   /** Where the roll itself landed, before any slides or pushes. */
   rolled: Block;
-  /** Slides and pushes after the roll, in order; the last one ends at state.block. */
+  /** Slides, pushes and flights after the roll, in order; the last one ends at state.block. */
   motions: Motion[];
   /** Bitmask of bridge groups flipped by this move. */
   toggled: number;
@@ -103,9 +106,50 @@ function conveyorPush(level: Level, b: Block): Dir | null {
   return dirs.size === 1 ? DIRS[[...dirs][0]] : null;
 }
 
+/** How far past its leading edge a flight lands: a standing fling, a lying hop. */
+export const FLING = 4;
+export const HOP = 2;
+
+/** The arrow of the pads that fire under this block: standing on one, or lying fully on two that agree. */
+function padLaunch(level: Level, b: Block): Dir | null {
+  if (!fullyOn(level, b, Tile.Pad)) return null;
+  const dirs = new Set(blockCells(b).map(([x, y]) => groupAt(level, x, y)));
+  return dirs.size === 1 ? DIRS[[...dirs][0]] : null;
+}
+
 /**
- * One player move: roll → slide while fully on ice → one conveyor push (then slide again if
- * that lands a lying block fully on ice). Support is checked after every motion; switches and
+ * Where a launch from `b` along `dir` lands: fly N−1 tiles, then tip once with an ordinary
+ * roll, so the nearest landing cell is N tiles past the block's leading edge.
+ */
+export function flight(b: Block, dir: Dir): Block {
+  const n = (b.o === 'S' ? FLING : HOP) - 1;
+  const { dx, dy } = DIR_DELTA[dir];
+  return roll({ x: b.x + dx * n, y: b.y + dy * n, o: b.o }, dir);
+}
+
+/** Every grid cell some flight in this level can land on, for the landing marks. */
+export function flightLandings(level: Level): { x: number; y: number }[] {
+  const cells = new Map<number, { x: number; y: number }>();
+  const launches: Block[] = [];
+  for (let y = 0; y < level.height; y++) {
+    for (let x = 0; x < level.width; x++) {
+      if (tileAt(level, x, y) !== Tile.Pad) continue;
+      launches.push({ x, y, o: 'S' }, { x, y, o: 'X' }, { x, y, o: 'Y' });
+    }
+  }
+  for (const b of launches) {
+    const dir = padLaunch(level, b);
+    if (!dir) continue;
+    for (const [x, y] of blockCells(flight(b, dir))) cells.set(y * level.width + x, { x, y });
+  }
+  return [...cells.values()];
+}
+
+/**
+ * One player move: roll → slide while fully on ice → then, wherever the block rests, belts and
+ * pads act until neither does: one conveyor push per move (then slide again if that lands a
+ * lying block fully on ice), and launch-pad flights (chaining, each pad at most once per move).
+ * A flight's landing doesn't slide on ice. Support is checked after every motion; switches and
  * fragile tiles act only where the block comes to rest.
  */
 export function step(level: Level, state: State, dir: Dir): StepResult {
@@ -129,10 +173,24 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
 
   const still = () => supported(level, block, state.bridges);
   if (still()) moveTo('slide', dir, slide(level, block, dir, state.bridges));
-  const push = still() ? conveyorPush(level, block) : null;
-  if (push) {
-    moveTo('push', push, shift(block, push));
-    if (still()) moveTo('slide', push, slide(level, block, push, state.bridges));
+  // Then belts and pads act wherever the block rests, until neither does. At most one belt push
+  // per move and each pad fires at most once, so every move ends.
+  let pushed = false;
+  const fired = new Set<number>();
+  while (still()) {
+    const push = pushed ? null : conveyorPush(level, block);
+    if (push) {
+      pushed = true;
+      moveTo('push', push, shift(block, push));
+      if (still()) moveTo('slide', push, slide(level, block, push, state.bridges));
+      continue;
+    }
+    const launch = padLaunch(level, block);
+    if (!launch) break;
+    const cells = blockCells(block).map(([x, y]) => y * level.width + x);
+    if (cells.some((c) => fired.has(c))) break;
+    cells.forEach((c) => fired.add(c));
+    moveTo('fly', launch, flight(block, launch));
   }
 
   if (!still()) return fell(state.bridges);

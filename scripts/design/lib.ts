@@ -19,7 +19,7 @@ export function build(rows: string[], switches: number[], on: number[]): Level {
   return parseLevel(rows, switches, on.reduce((mask, g) => mask | (1 << g), 0));
 }
 
-/** Cells the block covers anywhere along a solution, including tiles passed mid-slide. */
+/** Cells the block covers anywhere along a solution, including tiles passed mid-slide (not mid-flight). */
 export function touched(level: Level, moves: Dir[]): Set<string> {
   const seen = new Set<string>();
   const mark = (b: { x: number; y: number; o: 'S' | 'X' | 'Y' }) =>
@@ -30,6 +30,12 @@ export function touched(level: Level, moves: Dir[]): Set<string> {
     const r = step(level, s, d);
     mark(r.rolled);
     for (const m of r.motions) {
+      // Flights pass over everything: only take-off and landing touch tiles.
+      if (m.kind === 'fly') {
+        mark(m.from);
+        mark(m.to);
+        continue;
+      }
       const { dx, dy } = DIR_DELTA[m.dir];
       for (let b = m.from; ; b = { ...b, x: b.x + dx, y: b.y + dy }) {
         mark(b);

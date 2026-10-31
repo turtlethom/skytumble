@@ -22,8 +22,9 @@ for (const chapter of CHAPTERS) {
     }
     const ice = r.iceUses.length ? `  ice: ${r.iceUses.join(', ')}` : '';
     const belts = r.pushes ? `  pushes: ${r.pushes}` : '';
+    const pads = r.padUses.length ? `  pads: ${r.padUses.join(', ')}` : '';
     const status = r.errors.length ? `✗ ${r.errors.join('; ')}` : '✓';
-    console.log(`  ${h.id.padEnd(12)} par ${String(r.par ?? '–').padStart(3)}  states ${String(r.explored).padStart(5)}${ice}${belts}  ${status}`);
+    console.log(`  ${h.id.padEnd(12)} par ${String(r.par ?? '–').padStart(3)}  states ${String(r.explored).padStart(5)}${ice}${belts}${pads}  ${status}`);
     if (r.errors.length) failed++;
   }
   if (fillPar) writeFileSync(file, text);

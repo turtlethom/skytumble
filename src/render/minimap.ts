@@ -12,7 +12,9 @@ const FILL: Partial<Record<Tile, string>> = {
   [Tile.HeavySwitch]: '#86d07a',
   [Tile.Ice]: '#bfe6ff',
   [Tile.Conveyor]: '#4a5266',
+  [Tile.Pad]: '#dfe5ec',
 };
+export const PAD_ARROW = '#2fa8e8';
 /** Arrow glyph rotation per DIRS entry (up, down, left, right), for a "→" drawn pointing right. */
 export const ARROW_DEG = [-90, 90, 180, 0];
 
@@ -47,6 +49,11 @@ export function miniMap(level: Level): string {
         );
       } else if (t === Tile.Fragile) {
         parts.push(`<path d="M${px + 5} ${py + 1}V${py + CELL - 1}M${px + 9} ${py + 1}V${py + CELL - 1}" stroke="#b98545" stroke-width="1"/>`);
+      } else if (t === Tile.Pad) {
+        parts.push(
+          `<path d="M${cx - 4} ${cy - 1.2}H${cx}V${cy - 4}L${cx + 4.5} ${cy}L${cx} ${cy + 4}V${cy + 1.2}H${cx - 4}Z" fill="${PAD_ARROW}"` +
+            ` transform="rotate(${ARROW_DEG[g]} ${cx} ${cy})"/>`,
+        );
       } else if (t === Tile.Conveyor) {
         parts.push(
           `<path d="M${cx - 4} ${cy}H${cx + 3}M${cx} ${cy - 3}L${cx + 3.5} ${cy}L${cx} ${cy + 3}" stroke="${cssColor(CONVEYOR_COLORS[DIRS[g]])}" stroke-width="1.8" fill="none"` +
