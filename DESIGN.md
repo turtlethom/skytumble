@@ -120,7 +120,9 @@ links; stars; stats; snapping camera; undo; reference levels.
    freeze after sign-off. — done: `lab-01`…`lab-05` playtested 2026-10-31; **rules frozen**
    (see Playtest log).
 5. **Campaign chapters**: Tutorial (the 5 reference levels, reordered as needed) and
-   ~8 Frost levels.
+   ~8 Frost levels. — built: `frost-01`…`frost-08` in `src/levels/frost.txt`, all
+   passing the one-trick guard; awaiting playtest. Play order is Tutorial → Frost → Ice Lab
+   (kept as extras). Chained motions now pause briefly between steps so chains read.
 6. **Campaign map** with soft order.
 
 **Later:** endless climb + daily seed, Frost in the generator, archipelago generation,

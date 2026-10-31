@@ -13,6 +13,8 @@ type Status = 'loading' | 'playing' | 'busy' | 'fallen' | 'won';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
+const CHAIN_BEAT_MS = 110;
+
 /** Clockwise grid directions; screen directions index into this after camera rotation. */
 const CLOCKWISE: Dir[] = ['up', 'right', 'down', 'left'];
 const KEY_DIRS: Record<string, number> = {
@@ -121,7 +123,11 @@ class Game {
     this.renderChrome();
 
     await this.world.roll(from.block, result.rolled, dir);
-    for (const motion of result.motions) await this.world.move(motion);
+    for (const [i, motion] of result.motions.entries()) {
+      // A short beat between chained motions so slide → push → slide reads as three events.
+      if (i > 0) await new Promise((r) => window.setTimeout(r, CHAIN_BEAT_MS));
+      await this.world.move(motion);
+    }
     this.world.pressSwitches(result.pressed);
     if (result.toggled) await this.world.setBridges(result.state.bridges);
     this.state = result.state;

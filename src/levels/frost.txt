@@ -1,0 +1,93 @@
+title: Frost Isle
+signature: ice
+
+=== frost-01
+par: 8
+name: Black Ice
+idea: Lie down on ice and you glide; stand up and you grip. Posts stop a slide.
+###..........
+#S#~~#~~~....
+###~#~~~#....
+...~~~#~~####
+......~~~##G#
+.........####
+
+=== frost-02
+par: 9
+name: Skating Lines
+idea: Pick your lane: each slide decides where you can line up for the goal.
+####............
+#S##~~~~#~~~....
+####~#~~~~.~....
+....~~~#~~~~....
+....#~~~~#~~####
+....~~#~~~~~####
+............#G##
+
+=== frost-03
+par: 15
+name: Thin and Slippery
+idea: Fragile tiles make good brakes for a slide, as long as you never stand on them.
+###...........
+#S#~~~~~~~....
+###~~~~~~f....
+.......#~~~~###
+.......f~~~~#G#
+............###
+
+=== frost-04
+par: 11
+name: Ratchet
+idea: Every slide into the belt shifts you one step right. Ratchet your way across.
+###............
+#S##...........
+####~vv........
+.....~~..>>>~##
+.....~~..~~~#G#
+.....###~~##.##
+
+=== frost-05
+par: 14
+name: Switchback
+idea: Slide onto the switch to raise the bridge, then double back across the ice.
+###.................
+#S#~#...............
+###.#~~#............
+....#~~#~~##000###G#
+.......#~~~~o...####
+................####
+
+=== frost-06
+par: 19
+name: Heavy Footing
+idea: The heavy switch only counts if you stand on it, so you have to arrive upright, not sliding.
+###.................
+#S#~................
+#####...............
+...#~~~x..#~000###G#
+...#~#~#~~~#....####
+....##~#........####
+
+=== frost-07
+par: 15
+name: Relay
+idea: Line up at the top of the chute: one move rides the ice, the booster, and the ice again.
+###..............
+#S#~#~~##........
+###.###~~........
+.....~#vv........
+.......~~...#####
+.......~~#~#~##G#
+.......#~########
+
+=== frost-08
+par: 16
+name: Whiteout
+idea: Everything at once: a fragile brake, a belt, a switch, and plenty of ice that leads nowhere.
+###.................
+#S#~~##f~~~#........
+#####.~~~###........
+...~#~#>>~~#f000#G##
+...#~.~f~##~~o..####
+...~#~#vv###........
+...###~#~~~#........

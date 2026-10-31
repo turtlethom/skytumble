@@ -1,4 +1,4 @@
-title: Ice Lab
+title: Ice Lab (prototypes)
 
 === lab-01
 par: 9
