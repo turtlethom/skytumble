@@ -258,6 +258,17 @@ levels on). Notes:
 - Wanted: a level that jumps island to island where each crossing needs maneuvering on the
   current island first.
 
+**2026-10-31 — wind lab, second round.** Mechanic and level design are good; a few problems
+remain before it's done. Notes:
+- windlab-01, 02: solid beginner levels. 03: belts with pads are cool. 06: solid, not amazing.
+- windlab-04 (Near or Far): a favorite; the tricky maneuvering to set up the right launch.
+- windlab-07 (Crosswind): solid and tricky; belts synergize with getting into different
+  positions for different launches.
+- windlab-05: decent level, but the camera was very far and everything looked tiny. Cause:
+  the camera sized itself to the grid's longest side, as if every level were square, and
+  this one is 21×8 → the camera now fits the tiles' actual footprint to the screen at each
+  90° rotation (with a minimum distance so small islands keep some sky around them).
+
 ## Architecture
 
 ```
@@ -304,7 +315,8 @@ On the map: ←/→ level · ↑/↓ island · Enter play · Esc/L back to the l
   level is done. Guarded by the two-uses rule and the three depth sources.
 - **Landing pose unreadable:** marks show where a flight lands, not how. Watch for it in the
   lab playtest.
-- **Long flights leave the frame** or read as random; lab level 4 is the stress test.
+- **Long flights leave the frame** or read as random; chains stayed in frame in both lab rounds.
+  Very long levels still shrink when rotated so their long side runs into the screen.
 - Seed links break when the generator changes. Full-level links fix this.
 
 ## Running

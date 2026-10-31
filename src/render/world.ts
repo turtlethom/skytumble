@@ -48,6 +48,12 @@ const FLY_ARC_BASE = 1.1;
 const FLY_ARC_PER_TILE = 0.3;
 /** Gust streaks drift across a pad once per this many ms. */
 const GUST_MS = 900;
+/** Camera framing: elevation (rise per unit of ground distance), the closest it comes, and how much
+ * of the screen the island may fill (vertically less, to keep clear of the HUD bars). */
+const CAM_RISE = 1.12;
+const CAM_MIN_DIST = 18;
+const FIT_X = 0.86;
+const FIT_Y = 0.72;
 /** Hover height of the goal marker: its tip stays above a standing block's top (y = 2). */
 const MARKER_Y = 2.45;
 
@@ -102,6 +108,11 @@ export class World {
   private viewSize = 10;
   private camIndex = 0;
   private camAngle = 0;
+  /** Corners of the island's bounding box, which the camera keeps on screen. */
+  private bounds: THREE.Vector3[] = [];
+  /** Camera distance that fits the island, per 90° camera position; and the eased current one. */
+  private fitDist = [20, 20, 20, 20];
+  private camDist = 20;
 
   constructor(container: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -168,8 +179,21 @@ export class World {
       this.tiles.get(y * level.width + x)?.obj.add(makeLandingMark());
     }
 
-    this.center.set((level.width - 1) / 2, 0, (level.height - 1) / 2);
-    this.viewSize = Math.max(level.width, level.height, 6);
+    // Frame the tiles themselves, not the grid: a wide, shallow level shouldn't be framed as a square.
+    const xs: number[] = [];
+    const zs: number[] = [];
+    level.tiles.forEach((t, i) => {
+      if (t === Tile.Empty) return;
+      xs.push(i % level.width);
+      zs.push(Math.floor(i / level.width));
+    });
+    const [minX, maxX, minZ, maxZ] = [Math.min(...xs) - 0.5, Math.max(...xs) + 0.5, Math.min(...zs) - 0.5, Math.max(...zs) + 0.5];
+    this.center.set((minX + maxX) / 2, 0, (minZ + maxZ) / 2);
+    this.viewSize = Math.max(maxX - minX, maxZ - minZ, 6);
+    this.bounds = [];
+    for (const x of [minX, maxX]) for (const z of [minZ, maxZ]) for (const y of [-0.6, 2]) this.bounds.push(new THREE.Vector3(x, y, z));
+    this.fitCamera();
+    this.camDist = this.fitDist[this.camIndex];
     // Spread clouds below and around the islands, scaled to the level.
     for (const c of this.clouds) {
       const r = c.userData.radius + this.viewSize * 0.4;
@@ -633,14 +657,8 @@ export class World {
     let diff = target - this.camAngle;
     diff = Math.atan2(Math.sin(diff), Math.cos(diff));
     this.camAngle += diff * Math.min(1, dt * 10);
-    const dist = this.viewSize * 0.95 + 4;
-    const height = this.viewSize * 1.05 + 5;
-    this.camera.position.set(
-      this.center.x + Math.sin(this.camAngle) * dist,
-      height,
-      this.center.z + Math.cos(this.camAngle) * dist,
-    );
-    this.camera.lookAt(this.center.x, -0.5, this.center.z);
+    this.camDist += (this.fitDist[this.camIndex] - this.camDist) * Math.min(1, dt * 6);
+    this.placeCamera(this.camAngle, this.camDist);
 
     this.renderer.render(this.scene, this.camera);
   }
@@ -650,6 +668,38 @@ export class World {
     this.renderer.setSize(el.clientWidth, el.clientHeight);
     this.camera.aspect = el.clientWidth / el.clientHeight;
     this.camera.updateProjectionMatrix();
+    if (this.bounds.length) this.fitCamera();
+  }
+
+  /** Look down at the island's centre from `angle` around it, `dist` away along the view line. */
+  private placeCamera(angle: number, dist: number): void {
+    const dir = new THREE.Vector3(Math.sin(angle), CAM_RISE, Math.cos(angle)).normalize();
+    const look = new THREE.Vector3(this.center.x, -0.5, this.center.z);
+    this.camera.position.copy(look).addScaledVector(dir, dist);
+    this.camera.lookAt(look);
+    this.camera.updateMatrixWorld();
+  }
+
+  /** For each 90° camera position, the closest distance that keeps the whole island on screen. */
+  private fitCamera(): void {
+    const p = new THREE.Vector3();
+    const fits = (angle: number, dist: number) => {
+      this.placeCamera(angle, dist);
+      return this.bounds.every((b) => {
+        p.copy(b).project(this.camera);
+        return Math.abs(p.x) <= FIT_X && Math.abs(p.y) <= FIT_Y;
+      });
+    };
+    this.fitDist = [0, 1, 2, 3].map((i) => {
+      let [lo, hi] = [CAM_MIN_DIST, 400];
+      for (let k = 0; k < 24; k++) {
+        const mid = (lo + hi) / 2;
+        if (fits((i * Math.PI) / 2, mid)) hi = mid;
+        else lo = mid;
+      }
+      return hi;
+    });
+    this.placeCamera(this.camAngle, this.camDist);
   }
 }
 
