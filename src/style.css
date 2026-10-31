@@ -296,3 +296,68 @@ kbd {
   letter-spacing: 1px;
   color: var(--ink-soft);
 }
+
+/* ---- Level picker ----------------------------------------------------- */
+
+.levels-dialog {
+  width: min(760px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  text-align: left;
+}
+
+.levels-dialog h2 {
+  text-align: center;
+}
+
+.levels-dialog h3 {
+  margin: 14px 0 8px;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+}
+
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.level-grid button {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 8px;
+  text-align: left;
+  padding: 8px 12px;
+  box-shadow: none;
+}
+
+.level-grid button.current {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.lv-id {
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-family: ui-monospace, monospace;
+}
+
+.lv-name {
+  grid-column: 1;
+  font-weight: 800;
+}
+
+.lv-stars {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  align-self: center;
+  color: var(--star);
+}
+
+.button-link {
+  align-self: center;
+  color: var(--ink-soft);
+  font-size: 14px;
+}

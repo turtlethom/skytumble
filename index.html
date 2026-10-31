@@ -105,6 +105,7 @@
         <button id="btn-restart">Restart <kbd>R</kbd></button>
         <button id="btn-undo">Undo <kbd>Z</kbd></button>
         <button id="btn-link">Copy link</button>
+        <button id="btn-levels">Levels <kbd>L</kbd></button>
         <button id="btn-stats">Stats</button>
       </div>
       <p class="help"><kbd>←↑↓→</kbd>/<kbd>WASD</kbd> roll · <kbd>Q</kbd>/<kbd>E</kbd> rotate view</p>
@@ -133,6 +134,17 @@
           <button id="fell-undo">Undo <kbd>Z</kbd></button>
           <button id="fell-retry" class="primary">Start over <kbd>R</kbd></button>
           <button id="fell-next">Next level <kbd>N</kbd></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="levels" class="modal hidden">
+      <div class="card dialog levels-dialog">
+        <h2>Levels</h2>
+        <div id="levels-list"></div>
+        <div class="dialog-actions">
+          <a class="button-link" href="./levels.html">Level index (maps &amp; checks)</a>
+          <button id="levels-close" class="primary">Close <kbd>Esc</kbd></button>
         </div>
       </div>
     </div>

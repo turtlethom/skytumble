@@ -123,7 +123,8 @@ links; stars; stats; snapping camera; undo; reference levels.
    ~8 Frost levels. — built: `frost-01`…`frost-08` in `src/levels/frost.txt`, all
    passing the one-trick guard; awaiting playtest. Play order is Tutorial → Frost → Ice Lab
    (kept as extras). Chained motions now pause briefly between steps so chains read.
-6. **Campaign map** with soft order.
+6. **Campaign map** with soft order. Until then, the in-game level picker (L, or the Handmade tab) lists
+   every chapter so playtests can jump straight to any level.
 
 **Later:** endless climb + daily seed, Frost in the generator, archipelago generation,
 more biomes from the backlog, visual level editor, full-level links (needed for handmade
@@ -176,7 +177,7 @@ tests/         rules, solver, generator determinism, chapter format, handmade le
 
 ## Controls
 
-Arrows/WASD move · Q/E rotate camera · Z undo · R restart · N new level
+Arrows/WASD move · Q/E rotate camera · Z undo · R restart · N next level · L level picker
 
 ## Open risks
 
