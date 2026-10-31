@@ -97,6 +97,8 @@ Wanted, not yet scheduled. Each becomes a biome's signature mechanic or a crossi
 - **Vertical:** drop-down to lower islands, 1-tile ledges (standing block tips up),
   elevators, goal on a lower layer
 - **World rules:** tilting islands that tip under the block's weight
+- **Switch-driven conveyors:** a switch reverses (or turns) a set of belts — from the ice
+  lab playtest
 
 ## Roadmap
 
@@ -115,7 +117,8 @@ links; stars; stats; snapping camera; undo; reference levels.
    A visual editor comes later. — done: chapter `.txt` files, `npm run levels:check`,
    `levels.html`, and `?level=<id>` in the game.
 4. **Ice lab**: ~4 throwaway levels exercising the rules, for one playtest week. Rules
-   freeze after sign-off. — built: `lab-01`…`lab-05` in `src/levels/lab.txt`; awaiting playtest.
+   freeze after sign-off. — done: `lab-01`…`lab-05` playtested 2026-10-31; **rules frozen**
+   (see Playtest log).
 5. **Campaign chapters**: Tutorial (the 5 reference levels, reordered as needed) and
    ~8 Frost levels.
 6. **Campaign map** with soft order.
@@ -131,6 +134,19 @@ levels anyway), cosmetic rank & skins, swapping code-made terrain for a CC0 asse
 Weekly. I play, then send level IDs (or seeds for generated levels) with notes on what
 works and what doesn't. Claude writes the code and designs handmade levels from that
 feedback; batches of ~8–10 levels per round.
+
+## Playtest log
+
+**2026-10-31 — tutorial + ice lab.** Tutorial 01–05: all good as teaching levels; keep as
+is. Ice rules raised no complaints → frozen. Notes:
+- lab-01, lab-02: tricky but fair; using ice to line the block up for the goal was the
+  highlight. lab-04: solid, simple combination.
+- lab-03: belt direction was hard to read → belts now color-coded by direction with bigger
+  chevrons.
+- lab-05 played "like lab-04": the one-move slide→push→slide chain didn't stand out. Frost
+  levels that rely on chains should make the moment visible (setup, framing, or pacing).
+- Browser extensions (Vimium) swallowed N, D, R → the game keeps a hidden read-only field
+  focused so vim-style extensions and find-as-you-type pass keys through.
 
 ## Architecture
 

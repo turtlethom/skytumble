@@ -287,6 +287,7 @@ class Game {
     click('fell-retry', () => this.restart());
     click('fell-next', () => this.nextLevel());
     click('stats-close', () => $('stats').classList.add('hidden'));
+    focusKeys();
 
     window.addEventListener('keydown', (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -355,6 +356,22 @@ function hasWebGL(): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Keep a hidden read-only text field focused. Vim-style browser extensions (Vimium, Vimium C,
+ * Surfingkeys, Tridactyl) and Firefox's find-as-you-type pass keys through while a text field
+ * has focus, so N, R, D and friends reach the game instead of the extension.
+ */
+function focusKeys(): void {
+  const sink = $<HTMLInputElement>('keys');
+  const refocus = () => {
+    if (document.activeElement !== sink) sink.focus({ preventScroll: true });
+  };
+  // Clicking a button or pressing Esc (Vimium blurs on Esc) moves focus away; take it back.
+  sink.addEventListener('blur', () => window.setTimeout(refocus, 0));
+  window.addEventListener('focus', refocus);
+  refocus();
 }
 
 let revealed: Promise<void> | null = null;

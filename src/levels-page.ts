@@ -1,10 +1,11 @@
 // Level index (levels.html): every handmade level with a mini-map, validation status, and a
 // link to play it. Playtest notes quote the ids shown here.
 import './levels-page.css';
-import { Level, Tile } from './game/types';
+import { DIRS, Level, Tile } from './game/types';
 import { CHAPTERS } from './levels';
 import { HandmadeLevel } from './levels/format';
 import { LevelReport, validateChapters } from './levels/validate';
+import { CONVEYOR_COLORS, cssColor } from './render/palette';
 
 const CELL = 14;
 const GROUP_COLORS = ['#f4a940', '#b57edc', '#4fc3f7', '#ef6f6c'];
@@ -59,7 +60,7 @@ function miniMap(level: Level): string {
         parts.push(`<path d="M${px + 5} ${py + 1}V${py + CELL - 1}M${px + 9} ${py + 1}V${py + CELL - 1}" stroke="#b98545" stroke-width="1"/>`);
       } else if (t === Tile.Conveyor) {
         parts.push(
-          `<path d="M${cx - 4} ${cy}H${cx + 3}M${cx} ${cy - 3}L${cx + 3.5} ${cy}L${cx} ${cy + 3}" stroke="#f4a940" stroke-width="1.6" fill="none"` +
+          `<path d="M${cx - 4} ${cy}H${cx + 3}M${cx} ${cy - 3}L${cx + 3.5} ${cy}L${cx} ${cy + 3}" stroke="${cssColor(CONVEYOR_COLORS[DIRS[g]])}" stroke-width="1.8" fill="none"` +
             ` transform="rotate(${ARROW_DEG[g]} ${cx} ${cy})"/>`,
         );
       }
@@ -102,7 +103,13 @@ function legend(): string {
     swatch('#86d07a', 'Floor'),
     swatch('#e2b26f', 'Fragile'),
     swatch('#bfe6ff', 'Ice'),
-    swatch('#4a5266', 'Conveyor', '<path d="M3 7H10M7 4L10.5 7L7 10" stroke="#f4a940" stroke-width="1.6" fill="none"/>'),
+    ...DIRS.map((d, i) =>
+      swatch(
+        '#4a5266',
+        `Belt ${d}`,
+        `<path d="M3 7H10M7 4L10.5 7L7 10" stroke="${cssColor(CONVEYOR_COLORS[d])}" stroke-width="1.8" fill="none" transform="rotate(${ARROW_DEG[i]} 7 7)"/>`,
+      ),
+    ),
     swatch('#86d07a', 'Switch', '<circle cx="7" cy="7" r="4" fill="#f4a940"/>'),
     swatch('#f4a940', 'Bridge'),
     swatch('#1d1a2b', 'Goal', '<rect x="1.5" y="1.5" width="11" height="11" fill="none" stroke="#ffd36b" stroke-width="2"/>'),

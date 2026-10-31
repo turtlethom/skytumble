@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Motion, blockCells } from '../game/rules';
 import { Block, DIRS, Dir, Level, State, Tile } from '../game/types';
+import { CONVEYOR_COLORS } from './palette';
 
 const COLORS = {
   grass: 0x86d07a,
@@ -17,7 +18,6 @@ const COLORS = {
   glint: 0xffffff,
   belt: 0x4a5266,
   rail: 0x8a93a8,
-  arrow: 0xf4a940,
 };
 
 /** Each bridge group gets its own colour so you can see which switch drives which bridge. */
@@ -224,15 +224,16 @@ export class World {
       belt.position.y = -0.09;
       g.add(belt, earth(jitter));
       // Chevrons are built pointing +x (right), then the whole belt top turns to face its arrow.
+      const dir = DIRS[group];
       const top = new THREE.Group();
-      top.rotation.y = BELT_ROTATION[DIRS[group]];
+      top.rotation.y = BELT_ROTATION[dir];
       for (const side of [-1, 1]) {
         const rail = box(0.98, 0.05, 0.08, COLORS.rail);
         rail.position.set(0, 0.02, side * 0.44);
         top.add(rail);
       }
       for (const phase of [0, 0.5]) {
-        const chevron = makeChevron();
+        const chevron = makeChevron(CONVEYOR_COLORS[dir]);
         top.add(chevron);
         this.chevrons.push({ obj: chevron, phase });
       }
@@ -466,7 +467,7 @@ export class World {
     for (const c of this.chevrons) {
       // Each chevron travels across the tile, growing in at the back and shrinking out at the front.
       const p = (now / BELT_MS + c.phase) % 1;
-      c.obj.position.x = (p - 0.5) * 0.7;
+      c.obj.position.x = (p - 0.5) * 0.56;
       c.obj.scale.setScalar(Math.max(Math.sin(p * Math.PI), 0.001));
     }
     if (this.goalMarker) {
@@ -518,14 +519,14 @@ function box(
 /** Turns a +x-pointing belt top to face each grid direction ("up" is -z). */
 const BELT_ROTATION: Record<Dir, number> = { right: 0, up: Math.PI / 2, left: Math.PI, down: -Math.PI / 2 };
 
-/** A flat ">" pointing +x, sitting on the belt surface. */
-function makeChevron(): THREE.Object3D {
+/** A bold flat ">" pointing +x, sitting on the belt surface. */
+function makeChevron(color: number): THREE.Object3D {
   const g = new THREE.Group();
-  const mat = new THREE.MeshStandardMaterial({ color: COLORS.arrow, emissive: COLORS.arrow, emissiveIntensity: 0.35 });
+  const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.5 });
   for (const side of [-1, 1]) {
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.03, 0.07), mat);
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.035, 0.11), mat);
     arm.rotation.y = side * Math.PI / 4;
-    arm.position.set(0, 0.015, side * 0.1);
+    arm.position.set(0, 0.018, side * 0.13);
     g.add(arm);
   }
   return g;
