@@ -174,6 +174,11 @@ chapter climbs steadily. Notes:
 - The belt flare wasn't clearly noticed; it's explained now, and size is open for the
   next playtest.
 
+**2026-10-31 — frost-08 finale.** Felt like a finale: very tricky, fair once you read the
+route. The belt flare was invisible because the block hides the belt it's on → a push now
+makes the block tip back on its trailing edge and swing upright (always visible), and the
+whole connected belt lights up, rippling away from the block.
+
 ## Architecture
 
 ```

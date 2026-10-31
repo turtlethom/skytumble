@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Motion, blockCells } from '../game/rules';
-import { Block, DIRS, Dir, Level, State, Tile } from '../game/types';
+import { Block, DIR_DELTA, DIRS, Dir, Level, State, Tile } from '../game/types';
 import { CONVEYOR_COLORS } from './palette';
 
 const COLORS = {
@@ -24,7 +24,12 @@ const COLORS = {
 const GROUP_COLORS = [0xf4a940, 0xb57edc, 0x4fc3f7, 0xef6f6c];
 
 const ROLL_MS = 170;
-const PUSH_MS = 190;
+const PUSH_MS = 230;
+/** How far (radians) the block's top lags behind during a belt push. */
+const PUSH_LEAN = 0.32;
+/** Belt flare: each chevron's glow, and the delay per tile as it ripples along the belt. */
+const FLARE_MS = 380;
+const FLARE_STEP_MS = 70;
 /** Ice slides start fast and glide to a stop: a base time plus a little per tile. */
 const SLIDE_MS_BASE = 90;
 const SLIDE_MS_PER_TILE = 75;
@@ -69,6 +74,7 @@ export class World {
     phase: number;
     cell: number;
     mat: THREE.MeshStandardMaterial;
+    dir: Dir;
     /** 0–1 flare while the belt is shoving the block. */
     boost: number;
   }[] = [];
@@ -242,7 +248,7 @@ export class World {
       for (const phase of [0, 0.5]) {
         const chevron = makeChevron(CONVEYOR_COLORS[dir]);
         top.add(chevron);
-        this.chevrons.push({ obj: chevron, phase, cell: y * 10000 + x, mat: chevron.userData.mat, boost: 0 });
+        this.chevrons.push({ obj: chevron, phase, cell: y * 10000 + x, mat: chevron.userData.mat, dir, boost: 0 });
       }
       g.add(top);
       return g;
@@ -365,21 +371,61 @@ export class World {
 
   /** Carry the block without turning it: a glide that eases to a stop on ice, a steady shove on a belt. */
   async move(m: Motion): Promise<void> {
-    if (m.kind === 'push') this.flareBelts(m.from);
+    if (m.kind === 'push') this.flareBelts(m.from, m.dir);
     const start = blockPosition(m.from);
     const end = blockPosition(m.to);
     const tiles = Math.abs(m.to.x - m.from.x) + Math.abs(m.to.y - m.from.y);
-    const [ms, ease] = m.kind === 'slide' ? [SLIDE_MS_BASE + SLIDE_MS_PER_TILE * tiles, easeOut] : [PUSH_MS, easeInOut];
-    await this.tween(ms, (t) => this.block.position.lerpVectors(start, end, ease(t)));
+    if (m.kind === 'slide') {
+      await this.tween(SLIDE_MS_BASE + SLIDE_MS_PER_TILE * tiles, (t) =>
+        this.block.position.lerpVectors(start, end, easeOut(t)),
+      );
+    } else {
+      // Dragged from below, the block's top lags behind and then swings upright: a push you can see
+      // even though the block hides the belt it's on.
+      // It tips on its trailing bottom edge, so the leading edge lifts instead of sinking into the belt.
+      const { dx, dy } = DIR_DELTA[m.dir];
+      const axis = new THREE.Vector3(-dy, 0, dx).normalize();
+      const lying = m.from.o !== 'S';
+      const alongLength = (m.from.o === 'X' && dx !== 0) || (m.from.o === 'Y' && dy !== 0);
+      const halfAlong = alongLength ? 0.98 : 0.49;
+      const toPivot = new THREE.Vector3(-dx * halfAlong, lying ? -0.49 : -0.98, -dy * halfAlong);
+      const base = this.block.quaternion.clone();
+      const lean = new THREE.Quaternion();
+      await this.tween(PUSH_MS, (t) => {
+        lean.setFromAxisAngle(axis, PUSH_LEAN * Math.sin(t * Math.PI));
+        this.block.quaternion.copy(base).premultiply(lean);
+        this.block.position
+          .lerpVectors(start, end, easeInOut(t))
+          .add(toPivot)
+          .sub(toPivot.clone().applyQuaternion(lean));
+      });
+    }
     this.placeBlock(m.to);
   }
 
-  /** Make the belts under a block flare as they shove it, so a push reads as the belt acting. */
-  private flareBelts(b: Block): void {
-    const cells = new Set(blockCells(b).map(([x, y]) => y * 10000 + x));
-    const lit = this.chevrons.filter((c) => cells.has(c.cell));
-    void this.tween(420, (t) => {
-      for (const c of lit) c.boost = Math.sin(t * Math.PI);
+  /** Light up the whole belt run the block is on, rippling away from it in the push direction. */
+  private flareBelts(b: Block, dir: Dir): void {
+    const byCell = new Map(this.chevrons.filter((c) => c.dir === dir).map((c) => [c.cell, c] as const));
+    const depth = new Map<number, number>();
+    const queue = blockCells(b).map(([x, y]) => y * 10000 + x).filter((k) => byCell.has(k));
+    queue.forEach((k) => depth.set(k, 0));
+    for (let i = 0; i < queue.length; i++) {
+      const k = queue[i];
+      for (const n of [k + 1, k - 1, k + 10000, k - 10000]) {
+        if (byCell.has(n) && !depth.has(n)) {
+          depth.set(n, depth.get(k)! + 1);
+          queue.push(n);
+        }
+      }
+    }
+    const lit = this.chevrons.filter((c) => depth.has(c.cell));
+    const span = Math.max(0, ...depth.values()) * FLARE_STEP_MS + FLARE_MS;
+    void this.tween(span, (t) => {
+      const now = t * span;
+      for (const c of lit) {
+        const local = (now - depth.get(c.cell)! * FLARE_STEP_MS) / FLARE_MS;
+        c.boost = local > 0 && local < 1 ? Math.sin(local * Math.PI) : 0;
+      }
     });
   }
 
