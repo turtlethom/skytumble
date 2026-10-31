@@ -2,13 +2,12 @@ import { it } from 'vitest';
 import { formatLevel } from '../src/game/ascii';
 import { generate } from '../src/game/generator';
 import { TIERS } from '../src/game/types';
-import { REFERENCE_LEVELS } from '../src/levels/reference';
-import { solve } from '../src/game/solver';
+import { HANDMADE } from '../src/levels';
 
 // Not an assertion test: prints levels for eyeballing generator quality (`npm run levels`).
 it('prints sample levels', () => {
-  for (const ref of REFERENCE_LEVELS) {
-    console.log(`REF ${ref.name}  par ${solve(ref.level)!.moves.length}\n${formatLevel(ref.level)}\n`);
+  for (const h of HANDMADE) {
+    console.log(`${h.id} ${h.name}  par ${h.par}\n${formatLevel(h.level)}\n`);
   }
   for (const tier of TIERS) {
     for (const seed of ['a', 'b', 'c', 'd']) {

@@ -3,12 +3,15 @@ import { formatLevel } from '../src/game/ascii';
 import { generate } from '../src/game/generator';
 import { solve } from '../src/game/solver';
 import { TIERS } from '../src/game/types';
-import { REFERENCE_LEVELS } from '../src/levels/reference';
+import { CHAPTERS } from '../src/levels';
+import { validateChapters } from '../src/levels/validate';
 
-describe('reference levels', () => {
-  for (const ref of REFERENCE_LEVELS) {
-    it(`${ref.name} is solvable`, () => {
-      expect(solve(ref.level)).not.toBeNull();
+describe('handmade levels', () => {
+  const reports = validateChapters(CHAPTERS);
+  for (const [id, report] of reports) {
+    // Fails when a rule change alters a level's par or makes it unsolvable: see `npm run levels:check`.
+    it(`${id} passes validation`, () => {
+      expect(report.errors).toEqual([]);
     });
   }
 });

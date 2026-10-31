@@ -1,0 +1,57 @@
+title: Tutorial
+
+=== tutorial-01
+par: 12
+name: First Steps
+idea: Rolling basics: stand, lie down, stand again on the goal.
+S###......
+#####.....
+.#########
+.....##G##
+......###.
+
+=== tutorial-02
+par: 11
+name: The Ledge
+idea: Precise orientation: one-wide ledges only work if you reach each corner standing.
+######...
+######...
+##S###...
+######...
+.....#...
+.....#...
+.....#...
+.....####
+........#
+........#
+........G
+
+=== tutorial-03
+par: 18
+name: Thin Ice
+idea: Fragile tiles: cross sideways so your weight is spread over two tiles.
+######..........
+#S####ffffff####
+######ffffff##G#
+............####
+
+=== tutorial-04
+par: 7
+name: Drawbridge
+idea: Soft switches: any touch extends the bridge.
+####........
+#S#o0000####
+####....##G#
+........####
+
+=== tutorial-05
+par: 27
+name: Long Way Round
+idea: Deception + heavy switch: the goal is right there, but the switch is behind you.
+x##...........
+###...........
+.##...........
+.######.......
+.#S####000###.
+.######..##G#.
+.........####.

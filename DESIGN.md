@@ -81,8 +81,11 @@ every step. Only resting spots trigger fragile tiles and switches; tiles passed 
 don't. One conveyor push per move means no infinite loops.
 
 **One-trick guard:** every Frost level's optimal solution must use ice in at least two
-distinct ways (e.g. standing to grip *and* lying to slide, or a slide that ends on a switch
-or conveyor). Checked with the solver before a level reaches playtest.
+distinct ways. Checked with the solver before a level reaches playtest. The ways:
+*slide*; *grip* (rest standing on ice); *anchor* (a roll that stops lying half on ice);
+*slide→belt* (a slide ends fully on conveyors, which push); *belt→slide* (a push onto ice
+that slides on); *slide→switch* (a slide comes to rest on a switch). A lengthwise slide
+always ends half on ice, so that alone doesn't count as an anchor.
 
 ### Idea backlog
 
@@ -102,14 +105,15 @@ links; stars; stats; snapping camera; undo; reference levels.
 
 **Next release — Frost**, built in this order:
 
-1. **Polish** (from the v1 playtest)
+1. **Polish** (from the v1 playtest) — done
    - Goal marker: replace the cylinder with a geometric indicator that fits the look.
    - End of level: a short fade toward black, then a panel offering Start over / Next level.
    - Loading screen: cover the page until styles, fonts, and the 3D scene are ready.
-2. **Ice and conveyor**: rules, solver, visuals, tests.
+2. **Ice and conveyor**: rules, solver, visuals, tests. — done
 3. **Level tooling**: a text level format with IDs (`frost-03`), solver validation
    (solvable, par, one-trick guard), and a preview page that renders any level by ID.
-   A visual editor comes later.
+   A visual editor comes later. — done: chapter `.txt` files, `npm run levels:check`,
+   `levels.html`, and `?level=<id>` in the game.
 4. **Ice lab**: ~4 throwaway levels exercising the rules, for one playtest week. Rules
    freeze after sign-off.
 5. **Campaign chapters**: Tutorial (the 5 reference levels, reordered as needed) and
@@ -132,11 +136,14 @@ feedback; batches of ~8–10 levels per round.
 
 ```
 src/game/      pure logic (no Three.js): types, rules, solver, generator, RNG
-src/levels/    handmade levels (ASCII)
+src/levels/    handmade levels: one <chapter>.txt per chapter (format in format.ts),
+               index.ts lists chapters in play order, validate.ts checks them
+src/levels-page.ts  levels.html: level index with mini-maps, validation, play links
+scripts/       check-levels.ts (npm run levels:check)
 src/render/    Three.js scene: tiles, block roll animation, camera
 src/ui/        HUD, panels, persistence (localStorage)
 src/worker.ts  runs the generator off the main thread
-tests/         rules, solver, generator determinism, handmade levels solvable
+tests/         rules, solver, generator determinism, chapter format, handmade levels valid
 ```
 
 - **State:** block `(x, y, orientation)` + bridge bitmask. Orientation: standing,
@@ -174,5 +181,7 @@ npm install
 npm run dev      # play at the printed localhost URL
 npm test         # rules, solver, generator, reference levels
 npm run levels   # print sample generated levels as text
+npm run levels:check   # validate handmade levels (add -- --fill-par to record new pars)
+                 # level index: /levels.html on the dev server; play one: /?level=<id>
 npm run build    # static site in dist/ for GitHub Pages / itch.io
 ```

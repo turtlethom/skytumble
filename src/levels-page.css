@@ -1,0 +1,168 @@
+:root {
+  --ink: #23304a;
+  --ink-soft: #5b6884;
+  --glass: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(255, 255, 255, 0.95);
+  --accent: #f4a940;
+  --accent-ink: #5a3600;
+  --bad: #c2413b;
+  --good: #2f8a4a;
+  --shadow: 0 6px 24px rgba(35, 60, 110, 0.16);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding: 24px 16px 48px;
+  font-family: 'Nunito', system-ui, sans-serif;
+  font-weight: 600;
+  color: var(--ink);
+  background: linear-gradient(180deg, #6fb6ff 0%, #a9d7ff 30%, #e6f4ff 70%, #fff1dc 100%) fixed;
+}
+
+.page-head,
+.legend,
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 2px 0 #4a8fd8, 0 6px 18px rgba(30, 80, 160, 0.35);
+}
+
+#summary {
+  margin: 4px 0 0;
+}
+
+.button,
+.play {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-radius: 12px;
+  padding: 8px 14px;
+  text-decoration: none;
+  font-weight: 800;
+  box-shadow: var(--shadow);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 16px;
+  padding: 10px 14px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  font-size: 14px;
+}
+
+.key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chapter h2 {
+  margin: 28px 0 12px;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.file {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 14px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+
+.card.bad {
+  border-color: var(--bad);
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.id {
+  font-size: 15px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: rgba(35, 48, 74, 0.08);
+}
+
+.play {
+  padding: 4px 12px;
+  font-size: 14px;
+}
+
+.card h3 {
+  margin: 4px 0 0;
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.idea,
+.meta {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.map-wrap {
+  overflow-x: auto;
+  padding: 8px 0;
+}
+
+.map {
+  display: block;
+}
+
+.ok {
+  margin: 0;
+  color: var(--good);
+  font-weight: 800;
+}
+
+.errors {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--bad);
+  font-size: 14px;
+}

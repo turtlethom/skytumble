@@ -3,12 +3,12 @@ import { randomSeed } from './game/rng';
 import { initialState, step } from './game/rules';
 import { solve } from './game/solver';
 import { Dir, Level, State, TIERS, Tier } from './game/types';
-import { REFERENCE_LEVELS } from './levels/reference';
+import { HANDMADE, findLevel } from './levels';
 import { World } from './render/world';
 import { loadProgress, saveProgress, starsFor } from './ui/progress';
 import type { GenerateRequest, GenerateResponse } from './worker';
 
-type Mode = { kind: 'gen'; tier: Tier; seed: string } | { kind: 'ref'; index: number };
+type Mode = { kind: 'gen'; tier: Tier; seed: string } | { kind: 'hand'; id: string };
 type Status = 'loading' | 'playing' | 'busy' | 'fallen' | 'won';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -57,8 +57,8 @@ class Game {
     this.renderChrome();
     history.replaceState(null, '', modeToQuery(mode));
 
-    if (mode.kind === 'ref') {
-      const level = REFERENCE_LEVELS[mode.index].level;
+    if (mode.kind === 'hand') {
+      const level = findLevel(mode.id)!.level;
       void this.start(level, solve(level)!.moves.length);
       return;
     }
@@ -92,8 +92,10 @@ class Game {
       this.progress.streak = 0;
       saveProgress(this.progress);
     }
-    if (this.mode.kind === 'ref') {
-      this.load({ kind: 'ref', index: (this.mode.index + 1) % REFERENCE_LEVELS.length });
+    if (this.mode.kind === 'hand') {
+      const id = this.mode.id;
+      const next = HANDMADE[(HANDMADE.findIndex((h) => h.id === id) + 1) % HANDMADE.length];
+      this.load({ kind: 'hand', id: next.id });
     } else {
       this.load({ kind: 'gen', tier: this.mode.tier, seed: randomSeed() });
     }
@@ -197,11 +199,11 @@ class Game {
   // UI.
 
   private levelKey(): string {
-    return this.mode.kind === 'ref' ? `ref:${this.mode.index}` : `${this.mode.tier}:${this.mode.seed}`;
+    return this.mode.kind === 'hand' ? `level:${this.mode.id}` : `${this.mode.tier}:${this.mode.seed}`;
   }
 
   private renderChrome(): void {
-    const tabKey = this.mode.kind === 'ref' ? 'ref' : this.mode.tier;
+    const tabKey = this.mode.kind === 'hand' ? 'hand' : this.mode.tier;
     document.querySelectorAll<HTMLButtonElement>('#tabs button').forEach((b) => {
       b.classList.toggle('active', b.dataset.mode === tabKey);
     });
@@ -209,9 +211,10 @@ class Game {
     $('par').textContent = this.level && this.status !== 'loading' ? String(this.par) : '–';
     const best = this.progress.best[this.levelKey()];
     $('best').textContent = best ? '★'.repeat(best) : '–';
-    if (this.mode.kind === 'ref') {
-      const ref = REFERENCE_LEVELS[this.mode.index];
-      $('level-info').textContent = `${this.mode.index + 1}/${REFERENCE_LEVELS.length} · ${ref.name}: ${ref.idea}`;
+    if (this.mode.kind === 'hand') {
+      // The id leads so playtest notes can quote it.
+      const h = findLevel(this.mode.id)!;
+      $('level-info').textContent = `${h.id} · ${h.name}: ${h.idea}`;
     } else {
       $('level-info').textContent = `${capitalize(this.mode.tier)} · seed ${this.mode.seed}`;
     }
@@ -269,7 +272,7 @@ class Game {
       b.addEventListener('click', () => {
         b.blur();
         const m = b.dataset.mode!;
-        if (m === 'ref') this.load({ kind: 'ref', index: 0 });
+        if (m === 'hand') this.load({ kind: 'hand', id: HANDMADE[0].id });
         else this.load({ kind: 'gen', tier: m as Tier, seed: randomSeed() });
       });
     });
@@ -324,8 +327,11 @@ class Game {
 
 function modeFromUrl(): Mode {
   const params = new URLSearchParams(location.search);
-  const ref = Number(params.get('ref'));
-  if (ref >= 1 && ref <= REFERENCE_LEVELS.length) return { kind: 'ref', index: ref - 1 };
+  const id = params.get('level');
+  if (id && findLevel(id)) return { kind: 'hand', id };
+  // Links from v1 numbered the reference levels, which are now the tutorial chapter.
+  const ref = params.get('ref');
+  if (ref && findLevel(`tutorial-0${ref}`)) return { kind: 'hand', id: `tutorial-0${ref}` };
   const tier = params.get('tier') as Tier | null;
   return {
     kind: 'gen',
@@ -335,7 +341,7 @@ function modeFromUrl(): Mode {
 }
 
 function modeToQuery(mode: Mode): string {
-  return mode.kind === 'ref' ? `?ref=${mode.index + 1}` : `?tier=${mode.tier}&seed=${encodeURIComponent(mode.seed)}`;
+  return mode.kind === 'hand' ? `?level=${mode.id}` : `?tier=${mode.tier}&seed=${encodeURIComponent(mode.seed)}`;
 }
 
 function capitalize(s: string): string {

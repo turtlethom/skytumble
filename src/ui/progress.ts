@@ -10,7 +10,7 @@ export interface Progress {
   tiers: Record<Tier, TierStats>;
   streak: number;
   bestStreak: number;
-  /** Best stars per level, keyed "tier:seed" or "ref:n". */
+  /** Best stars per level, keyed "tier:seed" or "level:<id>". */
   best: Record<string, number>;
 }
 
