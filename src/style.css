@@ -1,0 +1,276 @@
+:root {
+  --ink: #23304a;
+  --ink-soft: #5b6884;
+  --glass: rgba(255, 255, 255, 0.78);
+  --glass-border: rgba(255, 255, 255, 0.9);
+  --accent: #f4a940;
+  --accent-ink: #5a3600;
+  --star: #f4b400;
+  --star-off: rgba(35, 48, 74, 0.18);
+  --shadow: 0 6px 24px rgba(35, 60, 110, 0.18);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Nunito', system-ui, sans-serif;
+  font-weight: 600;
+  color: var(--ink);
+  background: linear-gradient(180deg, #6fb6ff 0%, #a9d7ff 45%, #e6f4ff 75%, #fff1dc 100%);
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+}
+
+.card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+}
+
+button {
+  font: inherit;
+  color: var(--ink);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 8px 14px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform 0.1s, background 0.15s;
+}
+
+button:hover {
+  background: #fff;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button.primary,
+.tabs button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+kbd {
+  font: inherit;
+  font-size: 0.75em;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(35, 48, 74, 0.08);
+  margin-left: 4px;
+}
+
+/* ---- HUD -------------------------------------------------------------- */
+
+.top,
+.bottom {
+  position: fixed;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  pointer-events: none;
+}
+
+.top > *,
+.bottom > * {
+  pointer-events: auto;
+}
+
+.top {
+  top: 0;
+}
+
+.bottom {
+  bottom: 0;
+  align-items: flex-end;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  color: #fff;
+  text-shadow: 0 2px 0 #4a8fd8, 0 6px 18px rgba(30, 80, 160, 0.35);
+}
+
+.brand p {
+  margin: 4px 0 0;
+  max-width: 340px;
+  color: var(--ink);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.score {
+  display: flex;
+  gap: 18px;
+  padding: 10px 18px;
+}
+
+.score div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 48px;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+}
+
+.stars {
+  color: var(--star);
+  letter-spacing: 1px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.help {
+  margin: 0;
+  padding: 8px 12px;
+  color: var(--ink-soft);
+}
+
+/* ---- Overlays --------------------------------------------------------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  top: 110px;
+  transform: translate(-50%, -10px);
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.loading {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(30, 80, 160, 0.4);
+  display: none;
+}
+
+.loading.show {
+  display: block;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(35, 60, 110, 0.18);
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.dialog {
+  min-width: 320px;
+  padding: 24px 28px;
+  text-align: center;
+}
+
+.dialog h2 {
+  margin: 0 0 8px;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.big-stars {
+  font-size: 44px;
+  letter-spacing: 6px;
+}
+
+.big-stars .on {
+  color: var(--star);
+}
+
+.big-stars .off {
+  color: var(--star-off);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+#stats-table {
+  margin: 8px auto 0;
+  border-collapse: collapse;
+}
+
+#stats-table td,
+#stats-table th {
+  padding: 6px 14px;
+  text-align: left;
+}
+
+#stats-table th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+}
+
+.boot {
+  max-width: 520px;
+  text-align: left;
+  line-height: 1.5;
+}
+
+.boot code {
+  font-size: 0.9em;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: rgba(35, 48, 74, 0.08);
+}
