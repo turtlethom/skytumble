@@ -297,67 +297,363 @@ kbd {
   color: var(--ink-soft);
 }
 
-/* ---- Level picker ----------------------------------------------------- */
+/* ---- Sky map (ui/map.ts) ---------------------------------------------- */
 
-.levels-dialog {
-  width: min(760px, calc(100vw - 32px));
-  max-height: calc(100vh - 48px);
-  overflow-y: auto;
-  text-align: left;
+.sky-map {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 24px 12px;
+  background: linear-gradient(
+    180deg,
+    rgba(111, 182, 255, 0.95) 0%,
+    rgba(169, 215, 255, 0.94) 45%,
+    rgba(230, 244, 255, 0.94) 78%,
+    rgba(255, 241, 220, 0.95) 100%
+  );
+  backdrop-filter: blur(6px);
+  animation: map-in 0.25s ease both;
 }
 
-.levels-dialog h2 {
+.sky-map.hidden {
+  display: none;
+}
+
+@keyframes map-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.sm-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sm-head h2 {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  color: #fff;
+  text-shadow: 0 2px 0 #4a8fd8, 0 6px 18px rgba(30, 80, 160, 0.35);
+}
+
+/* The map keeps a 16:9 box (matching ui/map.ts's 160×90 layout) as large as the space allows. */
+.sm-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  container-type: size;
+}
+
+.sm-canvas {
+  position: relative;
+  width: min(100cqw, 100cqh * 16 / 9, 1400px);
+  aspect-ratio: 16 / 9;
+}
+
+.sm-paths {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.sm-trail {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-dasharray: 2 14;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.9;
+  animation: trail-march 1.6s linear infinite;
+}
+
+.sm-trail.extra {
+  stroke-width: 3;
+  stroke-dasharray: 1 10;
+  opacity: 0.6;
+  animation: none;
+}
+
+@keyframes trail-march {
+  to {
+    stroke-dashoffset: -16;
+  }
+}
+
+/* Islands: a grassy (or snowy) top with a rocky underside, bobbing gently in the sky. */
+.sm-island {
+  --top: linear-gradient(#a6e090, #7cc56b);
+  --edge: #5fa552;
+  --cliff: #b98352;
+  --cliff-dark: #6f4a2d;
+  position: absolute;
+  width: 250px;
+  transform: translate(-50%, -50%) scale(var(--s, 1));
+  animation: bob 7s ease-in-out var(--delay, 0s) infinite;
+}
+
+.sm-island.frost {
+  --top: linear-gradient(#f6fcff, #cbe8ff);
+  --edge: #9cc8e8;
+  --cliff: #93abc6;
+  --cliff-dark: #566c88;
+}
+
+.sm-island.lab {
+  --top: linear-gradient(#ece4fa, #cfc0f0);
+  --edge: #a690d6;
+  --cliff: #9b88ba;
+  --cliff-dark: #5f4f80;
+}
+
+.sm-island.extra {
+  width: 230px;
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(var(--s, 1));
+  }
+  50% {
+    transform: translate(-50%, calc(-50% - 6px)) scale(var(--s, 1));
+  }
+}
+
+.sm-island::after {
+  content: '';
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  top: calc(100% - 14px);
+  height: 64px;
+  background: linear-gradient(var(--cliff), var(--cliff-dark));
+  clip-path: polygon(0 0, 100% 0, 84% 42%, 66% 68%, 52% 100%, 40% 70%, 18% 48%);
+  filter: drop-shadow(0 12px 10px rgba(35, 60, 110, 0.2));
+}
+
+.sm-top {
+  position: relative;
+  z-index: 1;
+  padding: 14px 18px 22px;
+  border-radius: 46px 60px 52px 64px / 38px 44px 56px 50px;
+  background: var(--top);
+  box-shadow: inset 0 -7px 0 var(--edge), 0 10px 26px rgba(35, 60, 110, 0.2);
   text-align: center;
 }
 
-.levels-dialog h3 {
-  margin: 14px 0 8px;
-  font-size: 15px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--ink-soft);
-}
-
-.level-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+.sm-top header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
 }
 
-.level-grid button {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 2px 8px;
-  text-align: left;
-  padding: 8px 12px;
-  box-shadow: none;
+.sm-top h3 {
+  margin: 0;
+  white-space: nowrap;
+  font-size: 20px;
+  font-weight: 900;
 }
 
-.level-grid button.current {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent);
-}
-
-.lv-id {
-  font-size: 12px;
-  color: var(--ink-soft);
-  font-family: ui-monospace, monospace;
-}
-
-.lv-name {
-  grid-column: 1;
+.sm-badge {
+  white-space: nowrap;
+  font-size: 11px;
   font-weight: 800;
-}
-
-.lv-stars {
-  grid-row: 1 / span 2;
-  grid-column: 2;
-  align-self: center;
-  color: var(--star);
-}
-
-.button-link {
-  align-self: center;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
   color: var(--ink-soft);
+}
+
+.sm-progress {
+  /* Room above the first row for the "you are here" block. */
+  margin: 2px 0 20px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* Level stones, staggered like stepping stones. */
+.sm-nodes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 14px 10px;
+  /* Four stones per row. */
+  max-width: 190px;
+  margin: 0 auto;
+}
+
+.sm-node {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  font-weight: 900;
+  background: #fff;
+  border: 2px solid rgba(35, 48, 74, 0.14);
+  box-shadow: 0 3px 0 rgba(35, 48, 74, 0.18);
+  transition: transform 0.12s, border-color 0.12s, background 0.12s;
+}
+
+.sm-node:nth-child(even) {
+  margin-top: 10px;
+}
+
+.sm-node.solved {
+  background: #fff1c4;
+  border-color: #f2c35a;
+}
+
+.sm-node.selected {
+  border-color: var(--ink);
+  transform: scale(1.14);
+}
+
+.sm-node:hover {
+  background: #fff;
+}
+
+.sm-node.solved:hover {
+  background: #fff7dc;
+}
+
+/* Up next: a pulsing ring around the suggested level. */
+.sm-node.next::before {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border-radius: 50%;
+  border: 3px solid var(--accent);
+  animation: next-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes next-pulse {
+  50% {
+    opacity: 0.35;
+    transform: scale(1.12);
+  }
+}
+
+/* You are here: the block itself, standing on the stone. */
+.sm-node.current::after {
+  content: '';
+  position: absolute;
+  top: -16px;
+  left: calc(50% - 5px);
+  width: 10px;
+  height: 18px;
+  border-radius: 2px;
+  background: #f0c987;
+  border: 2px solid #8a6436;
+}
+
+.sm-pips {
+  position: absolute;
+  bottom: -13px;
+  font-size: 10px;
+  letter-spacing: -1px;
+  color: var(--star);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* The selected level: preview, story, and a play button. */
+.sm-caption {
+  flex: none;
+  width: min(880px, 100%);
+  min-height: 132px;
+  display: grid;
+  grid-template-columns: 180px 1fr auto;
+  align-items: center;
+  gap: 18px;
+  padding: 12px 18px;
+}
+
+.sm-preview {
+  height: 108px;
+  display: grid;
+  place-items: center;
+}
+
+.sm-preview svg {
+  width: 100%;
+  height: 100%;
+}
+
+.sm-text h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.sm-text code {
+  margin-right: 6px;
   font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.sm-kicker {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #c27a12;
+}
+
+.sm-idea {
+  margin: 4px 0;
+  line-height: 1.35;
+}
+
+.sm-meta {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.sm-off {
+  color: var(--star-off);
+}
+
+.sm-foot {
+  flex: none;
+  display: flex;
+  gap: 22px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.sm-foot a {
+  color: var(--ink-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sm-island,
+  .sm-trail,
+  .sm-node.next::before {
+    animation: none;
+  }
 }

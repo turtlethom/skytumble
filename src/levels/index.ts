@@ -11,6 +11,13 @@ export const CHAPTERS: Chapter[] = [
   parseChapter('lab', lab),
 ];
 
+/** Chapters kept as extras: shown on the map off the suggested path. */
+const EXTRAS = new Set(['lab']);
+
+export function isExtra(chapter: Chapter): boolean {
+  return EXTRAS.has(chapter.id);
+}
+
 /** Every handmade level in play order, across chapters. */
 export const HANDMADE: HandmadeLevel[] = CHAPTERS.flatMap((c) => c.levels);
 

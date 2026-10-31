@@ -3,9 +3,10 @@ import { randomSeed } from './game/rng';
 import { initialState, step } from './game/rules';
 import { solve } from './game/solver';
 import { Dir, Level, State, TIERS, Tier } from './game/types';
-import { CHAPTERS, HANDMADE, findLevel } from './levels';
+import { HANDMADE, findLevel } from './levels';
 import { World } from './render/world';
-import { loadProgress, saveProgress, starsFor } from './ui/progress';
+import { SkyMap, suggestedLevel } from './ui/map';
+import { Progress, loadProgress, saveProgress, starsFor } from './ui/progress';
 import type { GenerateRequest, GenerateResponse } from './worker';
 
 type Mode = { kind: 'gen'; tier: Tier; seed: string } | { kind: 'hand'; id: string };
@@ -28,6 +29,7 @@ class Game {
   private world = new World($('stage'));
   private worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
   private progress = loadProgress();
+  private map = new SkyMap($('map'), (id) => this.load({ kind: 'hand', id }));
   private mode: Mode;
   private level: Level | null = null;
   private par = 0;
@@ -40,12 +42,15 @@ class Game {
   private toastTimer = 0;
 
   constructor() {
-    this.mode = modeFromUrl();
+    // A bare URL lands on the map, with the suggested level waiting behind it.
+    const landing = !location.search;
+    this.mode = modeFromUrl(this.progress);
     this.worker.onmessage = (e: MessageEvent<GenerateResponse>) => {
       if (e.data.id === this.requestId) void this.start(e.data.level, e.data.par);
     };
     this.bindUi();
     this.load(this.mode);
+    if (landing) this.showMap();
   }
 
   // -------------------------------------------------------------------------
@@ -242,27 +247,12 @@ class Game {
     $('win').classList.add('hidden');
     $('fell').classList.add('hidden');
     $('stats').classList.add('hidden');
-    $('levels').classList.add('hidden');
+    this.map.hide();
     this.hideToast();
   }
 
-  /** Every handmade level by chapter, so any of them is one click away. */
-  private showLevels(): void {
-    const current = this.mode.kind === 'hand' ? this.mode.id : null;
-    $('levels-list').innerHTML = CHAPTERS.map((c) => {
-      const items = c.levels
-        .map((h) => {
-          const stars = this.progress.best[`level:${h.id}`];
-          return (
-            `<button data-level="${h.id}" class="${h.id === current ? 'current' : ''}">` +
-            `<span class="lv-id">${h.id}</span><span class="lv-name">${h.name}</span>` +
-            `<span class="lv-stars">${stars ? '★'.repeat(stars) : ''}</span></button>`
-          );
-        })
-        .join('');
-      return `<section><h3>${c.title}</h3><div class="level-grid">${items}</div></section>`;
-    }).join('');
-    $('levels').classList.remove('hidden');
+  private showMap(): void {
+    this.map.show(this.progress, this.mode.kind === 'hand' ? this.mode.id : null);
   }
 
   private showStats(): void {
@@ -298,7 +288,7 @@ class Game {
       b.addEventListener('click', () => {
         b.blur();
         const m = b.dataset.mode!;
-        if (m === 'hand') this.showLevels();
+        if (m === 'hand') this.showMap();
         else this.load({ kind: 'gen', tier: m as Tier, seed: randomSeed() });
       });
     });
@@ -313,19 +303,17 @@ class Game {
     click('fell-retry', () => this.restart());
     click('fell-next', () => this.nextLevel());
     click('stats-close', () => $('stats').classList.add('hidden'));
-    click('btn-levels', () => this.showLevels());
-    click('levels-close', () => $('levels').classList.add('hidden'));
-    $('levels-list').addEventListener('click', (e) => {
-      const pick = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-level]');
-      if (pick) this.load({ kind: 'hand', id: pick.dataset.level! });
-    });
+    click('btn-map', () => this.showMap());
     focusKeys();
 
     window.addEventListener('keydown', (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (this.map.isOpen) {
+        if (this.map.key(e)) e.preventDefault();
+        return;
+      }
       if (e.code in KEY_DIRS) {
         e.preventDefault();
-        if (!$('levels').classList.contains('hidden')) return;
         if (e.repeat) return;
         const screen = KEY_DIRS[e.code];
         void this.move(CLOCKWISE[(screen - this.world.cameraIndex + 4) % 4]);
@@ -352,20 +340,19 @@ class Game {
           else if (this.status === 'fallen') this.restart();
           break;
         case 'KeyL':
-          if ($('levels').classList.contains('hidden')) this.showLevels();
-          else $('levels').classList.add('hidden');
+          this.showMap();
           break;
         case 'Escape':
           $('stats').classList.add('hidden');
-          $('levels').classList.add('hidden');
           break;
       }
     });
   }
 }
 
-function modeFromUrl(): Mode {
+function modeFromUrl(progress: Progress): Mode {
   const params = new URLSearchParams(location.search);
+  if (!location.search) return { kind: 'hand', id: (suggestedLevel(progress) ?? HANDMADE[0]).id };
   const id = params.get('level');
   if (id && findLevel(id)) return { kind: 'hand', id };
   // Links from v1 numbered the reference levels, which are now the tutorial chapter.

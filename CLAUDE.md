@@ -21,7 +21,7 @@ as decisions are made or levels change.
 ## Commands
 
 ```
-npm run dev            # play at the printed URL; press L in-game for the level picker
+npm run dev            # play at the printed URL; press L in-game for the sky map
 npm test               # rules, solver, generator, chapter format, every handmade level valid
 npm run levels:check   # validation report; `-- --fill-par` records par for new levels
 npm run build          # static site in dist/ (game + levels.html)
@@ -35,7 +35,8 @@ one level.
 
 Levels live in `src/levels/<chapter>.txt` (format documented in `src/levels/format.ts`; grid
 characters in `src/game/ascii.ts`). Chapters are registered in play order in
-`src/levels/index.ts`. A chapter with `signature: ice` enforces the one-trick guard: the optimal
+`src/levels/index.ts` (which also marks extras), and a new chapter needs an island position and
+theme in `LAYOUT` in `src/ui/map.ts`. A chapter with `signature: ice` enforces the one-trick guard: the optimal
 solution must use ice in at least two distinct ways (`src/levels/validate.ts`).
 
 The process that produced the Frost chapter:
@@ -94,8 +95,8 @@ and end screenshots to read. Gotchas:
 src/game/      pure rules: types, rules (step: roll → slide → push → slide), solver (BFS), generator
 src/levels/    chapter .txt files, format.ts (parser), validate.ts (checks + one-trick guard), index.ts
 src/render/    Three.js world (tiles, animations, push cue), palette.ts (belt colors by direction)
-src/ui/        progress (localStorage)
-src/main.ts    game controller: modes, HUD, level picker, splash, key focus sink (for Vimium)
+src/ui/        progress (localStorage), map (campaign sky map; island layout per chapter)
+src/main.ts    game controller: modes, HUD, splash, key focus sink (for Vimium)
 scripts/       check-levels.ts; design/ (search, analyze, solutions, play)
 ```
 

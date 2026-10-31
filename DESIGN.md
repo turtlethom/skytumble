@@ -121,10 +121,16 @@ links; stars; stats; snapping camera; undo; reference levels.
    (see Playtest log).
 5. **Campaign chapters**: Tutorial (the 5 reference levels, reordered as needed) and
    ~8 Frost levels. — built: `frost-01`…`frost-08` in `src/levels/frost.txt`, all
-   passing the one-trick guard; awaiting playtest. Play order is Tutorial → Frost → Ice Lab
+   passing the one-trick guard; approved in playtest 2026-10-31. Play order is Tutorial → Frost → Ice Lab
    (kept as extras). Chained motions now pause briefly between steps so chains read.
-6. **Campaign map** with soft order. Until then, the in-game level picker (L, or the Handmade tab) lists
-   every chapter so playtests can jump straight to any level.
+6. **Campaign map** with soft order. — built, awaiting playtest: a DOM overlay (`src/ui/map.ts`),
+   no new art. One floating island per chapter, joined by a dashed suggested path; extras (Ice
+   Lab) branch off its end on a dotted line. Each island shows its level stones (stars earned,
+   a pulsing ring on *up next* = the first unsolved level on the path, the block on the level
+   you're playing) and its solved/star totals. Hover or arrow keys preview a level (mini-map,
+   id, name, idea, par, best); click or Enter plays it. A bare URL lands on the map with the
+   suggested level loaded behind it; L, the Map button and the Campaign tab open it. It
+   replaces the level picker; `levels.html` stays as the dev index.
 
 **Later:** endless climb + daily seed, Frost in the generator, archipelago generation,
 more biomes from the backlog, visual level editor, full-level links (needed for handmade
@@ -205,7 +211,9 @@ tests/         rules, solver, generator determinism, chapter format, handmade le
 
 ## Controls
 
-Arrows/WASD move · Q/E rotate camera · Z undo · R restart · N next level · L level picker
+Arrows/WASD move · Q/E rotate camera · Z undo · R restart · N next level · L sky map
+
+On the map: ←/→ level · ↑/↓ island · Enter play · Esc/L back to the level
 
 ## Open risks
 
