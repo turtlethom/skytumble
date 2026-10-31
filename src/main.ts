@@ -251,6 +251,12 @@ class Game {
     this.hideToast();
   }
 
+  /** Esc: close the map or the stats panel. */
+  private escape(): void {
+    if (this.map.isOpen) this.map.hide();
+    else $('stats').classList.add('hidden');
+  }
+
   private showMap(): void {
     this.map.show(this.progress, this.mode.kind === 'hand' ? this.mode.id : null);
   }
@@ -304,7 +310,7 @@ class Game {
     click('fell-next', () => this.nextLevel());
     click('stats-close', () => $('stats').classList.add('hidden'));
     click('btn-map', () => this.showMap());
-    focusKeys();
+    focusKeys(() => this.escape());
 
     window.addEventListener('keydown', (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -343,7 +349,7 @@ class Game {
           this.showMap();
           break;
         case 'Escape':
-          $('stats').classList.add('hidden');
+          this.escape();
           break;
       }
     });
@@ -387,14 +393,24 @@ function hasWebGL(): boolean {
  * Keep a hidden read-only text field focused. Vim-style browser extensions (Vimium, Vimium C,
  * Surfingkeys, Tridactyl) and Firefox's find-as-you-type pass keys through while a text field
  * has focus, so N, R, D and friends reach the game instead of the extension.
+ *
+ * Esc is the exception: those extensions swallow it and just blur the field. So a blur that no
+ * click or Tab explains, while the page keeps focus, counts as Esc (`onEscape`).
  */
-function focusKeys(): void {
+function focusKeys(onEscape: () => void): void {
   const sink = $<HTMLInputElement>('keys');
+  let explained = 0;
+  const explain = () => (explained = performance.now());
+  window.addEventListener('pointerdown', explain, true);
+  window.addEventListener('keydown', (e) => e.code === 'Tab' && explain(), true);
   const refocus = () => {
     if (document.activeElement !== sink) sink.focus({ preventScroll: true });
   };
-  // Clicking a button or pressing Esc (Vimium blurs on Esc) moves focus away; take it back.
-  sink.addEventListener('blur', () => window.setTimeout(refocus, 0));
+  sink.addEventListener('blur', () => {
+    if (document.hasFocus() && performance.now() - explained > 300) onEscape();
+    // Clicking a button or an extension's Esc moves focus away; take it back.
+    window.setTimeout(refocus, 0);
+  });
   window.addEventListener('focus', refocus);
   refocus();
 }

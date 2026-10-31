@@ -88,7 +88,7 @@ distinct ways. Checked with the solver before a level reaches playtest. The ways
 that slides on); *slide→switch* (a slide comes to rest on a switch). A lengthwise slide
 always ends half on ice, so that alone doesn't count as an anchor.
 
-**Launch pads** (Windy Peaks, planned 2026-10-31; in the lab, not frozen):
+**Launch pads** (Windy Peaks; **rules frozen** 2026-10-31 after the second lab playtest):
 - *Trigger:* a pad fires when the block comes to rest standing on it, or lying fully on two
   pads with the same arrow (mixed arrows don't fire, like belts). Lying half on a pad is safe:
   an *anchor*. Pads are solid floor otherwise.
@@ -186,7 +186,7 @@ links; stars; stats; snapping camera; undo; reference levels.
    or Far (the far island holds the switch), 05 Heavy Relay (the chain is the payoff after
    setup), 06 Stepping Stones (island hopping, maneuver before each jump), 07 Crosswind
    (finale: belts, soft-switch parity, belt-fed return pad). Par 5 → 26 (8 from 03 on, climbing);
-   awaiting the second playtest. Chains stay in frame, so no camera patch so far.
+   Second playtest signed off 2026-10-31: **pad and belt rules frozen**.
 3. **Windy Peaks chapter** (`wind-01`…`wind-08`): two teaching levels (fling, hop;
    `guard: off`), five guarded levels each pairing two depth sources, a finale combining
    them. Belts join from the middle levels on; difficulty must climb toward the end. Theme: rocky spires, gusts, banners.
@@ -268,6 +268,11 @@ remain before it's done. Notes:
   the camera sized itself to the grid's longest side, as if every level were square, and
   this one is 21×8 → the camera now fits the tiles' actual footprint to the screen at each
   90° rotation (with a minimum distance so small islands keep some sky around them).
+- Esc didn't close the sky map: Vimium swallows Esc while a text field has focus and only
+  blurs it (the game keeps a hidden field focused so Vimium passes other keys) → a blur that
+  no click or Tab explains now counts as Esc. Also fixed: hovering a stone resized the
+  preview panel, which reflowed the map so clicks missed the stones.
+- Sign-off: "no other problems" → rules frozen.
 
 ## Architecture
 

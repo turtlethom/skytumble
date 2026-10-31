@@ -182,7 +182,7 @@ export class SkyMap {
       <div class="sm-text">
         <p class="sm-kicker">${kicker}</p>
         <h3><code>${esc(h.id)}</code> ${esc(h.name)}</h3>
-        <p class="sm-idea">${esc(h.idea)}</p>
+        <p class="sm-idea" title="${esc(h.idea)}">${esc(h.idea)}</p>
         <p class="sm-meta">Par ${h.par ?? '–'} · Best ${record}</p>
       </div>
       <button class="primary" data-play>Play <kbd>Enter</kbd></button>`;
