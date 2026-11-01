@@ -114,8 +114,7 @@ SHOTS=<scratch dir> npm run verify -- frost-
 It plays every optimal solution with real key events, reports WON/NOT WON at par, and saves start
 and end screenshots to read. Controls follow the screen, so the driver asks the game which arrow
 rolls which way (`window.skytumbleKeyFor`). Options for `verify`/`play.mjs`: `STEPS=1` (a shot
-after every move), `VIEW=turn,hidden` (two-layer camera and visibility), `PEEK_AT=n` (hold Space
-after move n), `ROTATE=n` (quarter turns before playing). For the sky map (a DOM overlay), a plain headless screenshot of `/`
+after every move), `PEEK_AT=n` (hold Space after move n), `ROTATE=n` (quarter turns before playing). For the sky map (a DOM overlay), a plain headless screenshot of `/`
 with `--virtual-time-budget=20000` is enough. Gotchas:
 
 - `--virtual-time-budget` screenshots freeze CSS transitions mid-way; use the driver instead.

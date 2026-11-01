@@ -243,14 +243,18 @@ links; stars; stats; snapping camera; undo; reference levels.
 1. **Camera prototype**: one throwaway two-layer level with live toggles for camera mode
    (turning camera vs fixed camera with the block seen hanging under a see-through ceiling)
    and for how much of the other layer shows (hidden + peek, landing markers, always ghost).
-   The user plays it and picks; the choice is locked in before the lab. — built 2026-11-01,
-   awaiting playtest: `gravlab-01` (Camera Prototype, par 11: flip up, press a ceiling switch
-   that raises a ground bridge, flip down, flip up onto a goal on the ceiling), on a Gravity Lab
-   extras island. Keys: **C** camera (turns over / stays above with a see-through ceiling), **V**
-   other layer (hidden / flip tiles marked safe or unsafe / ghost), hold **Space** to peek.
-   Defaults are the grilling picks (turn, hidden); the choice is remembered. Flip rules,
-   two-layer levels (`---` then the ceiling grid; `+` is a flip tile), solver, and tools are in
-   place; the night look is a first pass.
+   The user plays it and picks; the choice is locked in before the lab. — first build
+   2026-11-01 (toggles: turning vs fixed camera; hidden / markers / ghost). Playtest: both views
+   showed the other floor in a way the user liked, but the floating ghost blocks were clutter, hid
+   the floor plan, and looked like missing tiles and switched-off bridges; the landing spot was
+   hard to see. Rebuilt as the blueprint view (an outline of the other floor on yours, green/red
+   beams over flip tiles), then, after the next playtest, as the **shadow view** (awaiting
+   playtest): one camera, which turns over with you; the other floor is hidden and casts a **soft
+   shadow onto your own tiles** wherever it's directly over (or under) them, none over open sky,
+   plus a **very faint outline** of the whole other floor (open sky included);
+   **violet landing marks** (like the pads' blue ones) sit on each tile a flip lands on, so you see
+   them on your own floor and, holding **Space** to swing over, on the other floor. Flip tiles show
+   nothing about safety. Night lightened. `gravlab-01` has a trap flip tile with nothing above it.
 2. **Gravity lab** (~6 levels, one per rule question): flip up/down, falling into the sky,
    lying flip, cross-layer switch, belt or pad onto a flip tile, a round-trip combo. One
    playtest round, then the rules freeze.
@@ -342,6 +346,26 @@ remain before it's done. Notes:
 use of existing features." No level-specific notes; chapter approved as built. Next: grill the
 gravity-flip biome (two layers, ceiling above) as the next signature mechanic; shape-changing
 blocks follow as the biome after.
+
+**2026-11-01 — gravity camera prototype (gravlab-01).** Hard to see exactly where a flip lands
+on the other layer; hard to follow overall. The ghost layer's see-through tiles clash with missing
+tiles (and look like switched-off bridges, which are also drawn see-through). The night is a little
+too dark. Tried both cameras and the ghost: liked seeing the other floor in both (the
+stay-above camera shows the ceiling up there; the ghost shows it while the camera turns over), but
+the ghost blocks are clutter and hide the floor plan. Asked whether the mechanic is worth keeping.
+Decision: keep it; the rule is simple, the presentation was the problem → blueprint view (one
+camera, the other floor as an outline on yours, green/red beams over flip tiles, brighter night).
+If the blueprint still reads as clutter, put gravity on hold and do shape-changing first.
+
+**2026-11-01 — blueprint view.** Likes the idea. The outline should be more like a shadow that
+doesn't conflict with fragile tiles or bridges. Holding Space to check the other floor "feels
+great". Wants marks for where a flip lands, and no safe/unsafe beams on flip tiles in play.
+→ The other floor now casts a soft shadow onto your own tiles only (none over open sky); flip tiles
+get violet landing marks (like the pads' blue ones) on the other floor, seen when you peek; beams
+removed.
+
+**2026-11-01 — shadow view.** "Almost perfect": wants an outline too, very faint, keeping the
+shadow → added a thin, faint outline of the whole other floor over the shadow.
 
 ## Architecture
 

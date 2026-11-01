@@ -2,8 +2,8 @@
 //   npm run build && npx vite preview --port 4179 &
 //   npx vite-node scripts/design/solutions.ts frost- > /tmp/solutions.json
 //   node scripts/design/play.mjs http://localhost:4179 /tmp/solutions.json <screenshot dir>
-// Env: STEPS=1 also saves a screenshot after every move (<id>-NN.png); VIEW=turn,hidden (camera mode,
-// visibility) sets the two-layer view before loading; PEEK_AT=n holds Space after move n and saves <id>-peek;
+// Env: STEPS=1 also saves a screenshot after every move (<id>-NN.png); PEEK_AT=n holds Space after
+// move n and saves <id>-peek;
 // ROTATE=n turns the view n quarter turns (E) before playing, to check controls follow the screen.
 // Uses CHROME (path to a Chrome/Chromium binary) or Playwright's cached Chromium. Talks to Chrome over
 // the DevTools protocol with a tiny built-in WebSocket client, so it needs no npm dependencies.
@@ -99,16 +99,11 @@ const keyFor = async (dir) => {
   const k = await evalJs(`window.skytumbleKeyFor ? window.skytumbleKeyFor('${dir}') : -1`);
   return k >= 0 ? screenCodes[k] : codes[dir];
 };
-const view = process.env.VIEW?.split(',');
 const peekAt = process.env.PEEK_AT ? Number(process.env.PEEK_AT) : -1;
 await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
 let failed = 0;
 for (const [id, moves] of Object.entries(solutions)) {
   await send('Page.navigate', { url: `${base}/?level=${id}` });
-  if (view) {
-    await evalJs(`localStorage.setItem('skytumble.gravityView', JSON.stringify({ camera: '${view[0]}', visibility: '${view[1]}' }))`);
-    await send('Page.reload');
-  }
   await sleep(2500);
   for (let r = 0; r < Number(process.env.ROTATE ?? 0); r++) await key('KeyE');
   if (process.env.ROTATE) await sleep(800);

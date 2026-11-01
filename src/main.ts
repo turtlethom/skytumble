@@ -4,7 +4,7 @@ import { initialState, step } from './game/rules';
 import { solve } from './game/solver';
 import { Dir, Level, State, TIERS, Tier } from './game/types';
 import { HANDMADE, findLevel } from './levels';
-import { CameraMode, Visibility, World } from './render/world';
+import { World } from './render/world';
 import { SkyMap, suggestedLevel } from './ui/map';
 import { Progress, loadProgress, saveProgress, starsFor } from './ui/progress';
 import type { GenerateRequest, GenerateResponse } from './worker';
@@ -39,7 +39,6 @@ class Game {
   private queued: Dir | null = null;
   private requestId = 0;
   private toastTimer = 0;
-  private view = loadView();
 
   constructor() {
     // A bare URL lands on the map, with the suggested level waiting behind it.
@@ -49,7 +48,6 @@ class Game {
       if (e.data.id === this.requestId) void this.start(e.data.level, e.data.par);
     };
     this.bindUi();
-    this.applyView();
     // For the headless play driver (scripts/design/play.mjs): which arrow key (0 up, 1 right, 2 down,
     // 3 left) rolls the block in a grid direction from the current view.
     (window as unknown as { skytumbleKeyFor: (d: Dir) => number }).skytumbleKeyFor = (d) =>
@@ -236,26 +234,6 @@ class Game {
     }
   }
 
-  /** Gravity prototype: C switches the camera mode, V how much of the other layer shows. */
-  private cycleView(what: 'camera' | 'visibility'): void {
-    const v = this.view;
-    if (what === 'camera') v.camera = v.camera === 'turn' ? 'fixed' : 'turn';
-    else v.visibility = VISIBILITIES[(VISIBILITIES.indexOf(v.visibility) + 1) % VISIBILITIES.length];
-    this.applyView();
-    try {
-      localStorage.setItem(VIEW_KEY, JSON.stringify(v));
-    } catch {
-      // Private mode: the choice just isn't remembered.
-    }
-    const label = what === 'camera' ? CAMERA_LABEL[v.camera] : VISIBILITY_LABEL[v.visibility];
-    this.toast(label, 2600);
-  }
-
-  private applyView(): void {
-    this.world.setCameraMode(this.view.camera);
-    this.world.setVisibility(this.view.visibility);
-  }
-
   private toast(message: string, ms = 1800): void {
     const el = $('toast');
     el.textContent = message;
@@ -381,41 +359,12 @@ class Game {
         case 'KeyL':
           this.showMap();
           break;
-        case 'KeyC':
-          if (this.world.twoLayers) this.cycleView('camera');
-          break;
-        case 'KeyV':
-          if (this.world.twoLayers) this.cycleView('visibility');
-          break;
         case 'Escape':
           this.escape();
           break;
       }
     });
   }
-}
-
-const VIEW_KEY = 'skytumble.gravityView';
-const VISIBILITIES: Visibility[] = ['hidden', 'markers', 'ghost'];
-const CAMERA_LABEL: Record<CameraMode, string> = {
-  turn: 'Camera: turns over with you (C to switch)',
-  fixed: 'Camera: stays above; see through the ceiling (C to switch)',
-};
-const VISIBILITY_LABEL: Record<Visibility, string> = {
-  hidden: 'Other layer: hidden; hold Space to peek (V to switch)',
-  markers: 'Other layer: hidden, flip tiles marked safe/unsafe (V to switch)',
-  ghost: 'Other layer: faint ghost (V to switch)',
-};
-
-function loadView(): { camera: CameraMode; visibility: Visibility } {
-  const fallback = { camera: 'turn' as CameraMode, visibility: 'hidden' as Visibility };
-  try {
-    const v = JSON.parse(localStorage.getItem(VIEW_KEY) ?? 'null');
-    if (v && v.camera in CAMERA_LABEL && v.visibility in VISIBILITY_LABEL) return v;
-  } catch {
-    // Unavailable or corrupt storage: use the defaults.
-  }
-  return fallback;
 }
 
 function modeFromUrl(progress: Progress): Mode {

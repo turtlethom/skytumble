@@ -27,7 +27,7 @@ body {
 
 /* Starfall: two-layer levels play under a night sky. */
 body.night {
-  background: linear-gradient(180deg, #0b1030 0%, #1b2058 50%, #2c2a6e 80%, #3e2f6e 100%);
+  background: linear-gradient(180deg, #1f2a66 0%, #34418f 45%, #5560ad 78%, #7a6cb4 100%);
 }
 
 body.night .brand p,

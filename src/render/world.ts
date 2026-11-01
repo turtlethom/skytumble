@@ -27,23 +27,24 @@ const COLORS = {
   /** Gravity: flip tiles glow violet; markers say whether the other side holds you. */
   flipStone: 0x3a3160,
   flip: 0xb48cff,
-  safe: 0x7cf0c8,
-  unsafe: 0xff6b7a,
+  /** Flip landing marks: the flip tiles' violet, deep enough to hold up on grass. */
+  flipMark: 0x8a5cf0,
+  /** The faint outline of the other floor, over the shadow. */
+  outline: 0xe4dcff,
 };
 
 /** Height of the ceiling layer's walking surface above the ground's. */
 const CEIL_H = 4;
 /** How long the camera takes to turn over (or swing for a peek), roughly. */
 const TURN_RATE = 9;
-/** Opacity of a layer seen through from its back (fixed camera, hanging under the ceiling). */
-const SEE_THROUGH = 0.3;
-/** Opacity of the other layer in ghost mode. */
-const GHOST = 0.2;
-
-/** How the camera treats the ceiling: turn over with the block, or stay above and see through. */
-export type CameraMode = 'turn' | 'fixed';
-/** How much of the layer you're not on shows when it's in the way. */
-export type Visibility = 'hidden' | 'markers' | 'ghost';
+/** The other floor's shadow: how far above your floor it lies, its darkness, and its softness. */
+const SHADOW_LIFT = 0.02;
+const SHADOW_OPACITY = 0.38;
+const SHADOW_PX = 32;
+const SHADOW_BLUR = 5;
+/** The other floor's outline: thin and faint, so it reads as a hint, not as tiles. */
+const OUTLINE_WIDTH = 0.04;
+const OUTLINE_OPACITY = 0.28;
 
 /** Each bridge group gets its own colour so you can see which switch drives which bridge. */
 const GROUP_COLORS = [0xf4a940, 0xb57edc, 0x4fc3f7, 0xef6f6c];
@@ -112,7 +113,14 @@ export class World {
   /** Materials per layer with their own opacity, so a layer can fade to a ghost or vanish. */
   private layerMats: { mat: THREE.Material; opacity: number; transparent: boolean }[][] = [[], []];
   private layerAlpha = [1, 1];
-  private flipMarkers: THREE.Object3D[] = [];
+  /**
+   * Per layer, the shadow the *other* floor casts on this one: a soft dark patch on this floor's
+   * tiles wherever the other floor has a tile directly over (or under) them. Same transform as the layer.
+   */
+  private blueprints = [new THREE.Group(), new THREE.Group()];
+  private bpAlpha = 0;
+  private bpMats: THREE.MeshBasicMaterial[] = [];
+  private level: Level | null = null;
   /** Dirt and hanging rock per layer: hidden when you see a layer from behind, where it's only clutter. */
   private earths: THREE.Object3D[][] = [[], []];
   private flipGlows: THREE.MeshStandardMaterial[] = [];
@@ -120,8 +128,6 @@ export class World {
   /** The layer the block is on, and the one being looked at (differs while peeking). */
   private layer = 0;
   private peeking = false;
-  private camMode: CameraMode = 'turn';
-  private visibility: Visibility = 'hidden';
   /** 0 = camera above looking down, 1 = below looking up; eased toward its target. */
   private side = 0;
   private moonlight = new THREE.DirectionalLight(0xbcc8ff, 0);
@@ -178,6 +184,9 @@ export class World {
     this.layerGroups[1].scale.y = -1;
     this.frames[1].position.y = CEIL_H;
     this.frames[1].scale.y = -1;
+    this.blueprints[1].position.y = CEIL_H;
+    this.blueprints[1].scale.y = -1;
+    this.scene.add(...this.blueprints);
     this.levelGroup.add(...this.layerGroups);
     this.scene.add(...this.frames);
     this.sun.castShadow = true;
@@ -206,15 +215,6 @@ export class World {
 
   rotateCamera(delta: number): void {
     this.camIndex = (((this.camIndex + delta) % 4) + 4) % 4;
-  }
-
-  /** Gravity prototype toggles. */
-  setCameraMode(mode: CameraMode): void {
-    this.camMode = mode;
-  }
-
-  setVisibility(v: Visibility): void {
-    this.visibility = v;
   }
 
   /** Hold to look at the layer you're not on. */
@@ -260,7 +260,7 @@ export class World {
     this.tiles.clear();
     this.layerMats = [[], []];
     this.earths = [[], []];
-    this.flipMarkers = [];
+    this.level = level;
     this.flipGlows = [];
     this.hasCeiling = !!level.ceiling;
     this.setNight(this.hasCeiling);
@@ -274,27 +274,28 @@ export class World {
     const layers = this.hasCeiling ? [0, 1] : [0];
     for (const layer of layers) {
       const view = layerView(level, layer);
-      const other = layerView(level, 1 - layer);
       for (let y = 0; y < level.height; y++) {
         for (let x = 0; x < level.width; x++) {
           const i = y * level.width + x;
           const obj = this.buildTile(view.tiles[i], view.groups[i], x, y, layer);
           if (!obj) continue;
           obj.position.set(x, 0, y);
-          if (view.tiles[i] === Tile.Flip) {
-            // Does the other side hold you? Shown in "markers" mode.
-            const marker = makeFlipMarker(other.tiles[i] !== Tile.Empty);
-            this.flipMarkers.push(marker);
-            obj.add(marker);
-          }
           this.layerGroups[layer].add(obj);
           this.tiles.set(this.cellKey(layer, x, y, level.width, level.height), { obj, baseY: 0 });
         }
       }
-      // Landing marks ride on their tiles, so they rise in with the island and fall with a broken tile.
-      for (const { x, y } of flightLandings(view)) {
-        this.tiles.get(this.cellKey(layer, x, y, level.width, level.height))?.obj.add(makeLandingMark());
-      }
+    }
+    // Landing marks ride on their tiles, so they rise in with the island and fall with a broken tile:
+    // blue where a pad flight can land, violet where a flip lands (on the other floor, over the flip tile).
+    const tileAt = (layer: number, x: number, y: number) => this.tiles.get(this.cellKey(layer, x, y, level.width, level.height));
+    for (const layer of layers) {
+      const view = layerView(level, layer);
+      for (const { x, y } of flightLandings(view)) tileAt(layer, x, y)?.obj.add(makeLandingMark());
+      view.tiles.forEach((t, i) => {
+        if (t === Tile.Flip) tileAt(1 - layer, i % level.width, Math.floor(i / level.width))?.obj.add(makeLandingMark(COLORS.flipMark));
+      });
+    }
+    for (const layer of layers) {
       this.layerGroups[layer].traverse((o) => {
         if (o.userData.earth) this.earths[layer].push(o);
         const mat = (o as THREE.Mesh).material as THREE.Material | undefined;
@@ -302,6 +303,8 @@ export class World {
       });
     }
     this.layer = state.layer ?? 0;
+    this.buildBlueprints(state.bridges);
+    this.bpAlpha = this.bpTarget();
     this.side = this.sideTarget();
     this.layerAlpha = [0, 1].map((l) => this.alphaTarget(l));
     this.applyLayerAlpha();
@@ -553,6 +556,7 @@ export class World {
   /** Snap everything to a state with no animation (load, undo, restart). */
   syncState(state: State): void {
     this.layer = state.layer ?? 0;
+    this.buildBlueprints(state.bridges);
     this.frames[this.layer].add(this.block);
     this.placeBlock(state.block);
     this.block.visible = true;
@@ -728,6 +732,7 @@ export class World {
   }
 
   setBridges(mask: number): Promise<void> {
+    this.buildBlueprints(mask);
     const changes = this.bridges.filter((b) => b.slab.visible !== (((mask >> b.group) & 1) === 1));
     if (changes.length === 0) return Promise.resolve();
     for (const b of changes) b.slab.visible = true;
@@ -844,7 +849,9 @@ export class World {
     this.layerAlpha = this.layerAlpha.map((a, l) => a + (this.alphaTarget(l) - a) * k);
     this.applyLayerAlpha();
     for (const g of this.flipGlows) g.emissiveIntensity += (0.8 + Math.sin(now / 400) * 0.25 - g.emissiveIntensity) * 0.1;
-    for (const m of this.flipMarkers) m.visible = this.visibility === 'markers';
+    this.bpAlpha += (this.bpTarget() - this.bpAlpha) * k;
+    for (const m of this.bpMats) m.opacity = m.userData.opacity * this.bpAlpha;
+    this.blueprints.forEach((g, l) => (g.visible = l === this.layer && this.bpAlpha > 0.01));
 
     // Ease the camera toward its 90° snap, taking the short way round.
     const target = this.camIndex * (Math.PI / 2);
@@ -883,25 +890,105 @@ export class World {
   /** Which side the camera should be on: it follows the layer being looked at in turn mode. */
   private sideTarget(): number {
     if (!this.hasCeiling) return 0;
-    const focus = this.peeking ? 1 - this.layer : this.layer;
-    if (this.camMode === 'turn') return focus;
-    return this.peeking && focus === 1 ? 1 : 0;
+    return this.peeking ? 1 - this.layer : this.layer;
+  }
+
+  /** The blueprint shows on your own floor, and gives way to the real thing while you peek. */
+  private bpTarget(): number {
+    return this.hasCeiling && !this.peeking ? 1 : 0;
   }
 
   /**
-   * How opaque each layer should be. The layer being looked at is solid when its walking side
-   * faces the camera, see-through when you look at it from its back (hanging under the ceiling
-   * with the camera above). The other layer is solid when it's behind, and hidden or a ghost when
-   * it's in the way.
+   * The camera always looks at one floor's walking side (yours, or the other while peeking); the
+   * other floor would be in the way, so it vanishes and its blueprint stands in for it.
    */
   private alphaTarget(layer: number): number {
     if (!this.hasCeiling) return 1;
-    const focus = this.peeking ? 1 - this.layer : this.layer;
-    const side = this.sideTarget();
-    const facing = layer === side;
-    if (layer === focus) return facing ? 1 : SEE_THROUGH;
-    const inTheWay = facing ? false : side === 0 ? layer === 1 : layer === 0;
-    return inTheWay ? (this.visibility === 'ghost' ? GHOST : 0) : 1;
+    return layer === this.sideTarget() ? 1 : 0;
+  }
+
+  /**
+   * Each floor's shadow of the other: the other floor's tiles (bridges as they stand now) painted
+   * into a canvas, blurred soft, then clipped to this floor's own tiles, so it lands only where
+   * there's ground to fall on, like a real shadow, and tints whatever tile is there without hiding it.
+   * Over it, a faint outline of the whole other floor, open sky included.
+   */
+  private buildBlueprints(bridges: number): void {
+    this.blueprints.forEach((g) => g.clear());
+    this.bpMats.forEach((m) => {
+      m.map?.dispose();
+      m.dispose();
+    });
+    this.bpMats = [];
+    const level = this.level;
+    if (!level?.ceiling) return;
+    const [w, h] = [level.width, level.height];
+    for (const layer of [0, 1]) {
+      const here = layerView(level, layer);
+      const there = layerView(level, 1 - layer);
+      const solid = (view: Level, i: number) =>
+        view.tiles[i] !== Tile.Empty &&
+        (view.tiles[i] !== Tile.Bridge || ((bridges >> view.groups[i]) & 1) === 1);
+      const pad = SHADOW_BLUR * 2;
+      const canvas = document.createElement('canvas');
+      canvas.width = w * SHADOW_PX + pad * 2;
+      canvas.height = h * SHADOW_PX + pad * 2;
+      const ctx = canvas.getContext('2d')!;
+      ctx.filter = `blur(${SHADOW_BLUR}px)`;
+      ctx.fillStyle = '#0a0a28';
+      for (let i = 0; i < w * h; i++) {
+        if (!solid(there, i)) continue;
+        // Whole cells, so a stretch of floor above casts one continuous shadow.
+        ctx.fillRect(pad + (i % w) * SHADOW_PX, pad + Math.floor(i / w) * SHADOW_PX, SHADOW_PX, SHADOW_PX);
+      }
+      ctx.filter = 'none';
+      // Keep it only on this floor's tiles: a shadow needs something to fall on.
+      // One path for the whole mask: each separate fill in this mode would wipe all the others.
+      ctx.globalCompositeOperation = 'destination-in';
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      for (let i = 0; i < w * h; i++) {
+        if (here.tiles[i] === Tile.Empty) continue;
+        ctx.rect(pad + (i % w) * SHADOW_PX, pad + Math.floor(i / w) * SHADOW_PX, SHADOW_PX, SHADOW_PX);
+      }
+      ctx.fill();
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: SHADOW_OPACITY, depthWrite: false, side: THREE.DoubleSide });
+      mat.userData.opacity = SHADOW_OPACITY;
+      this.bpMats.push(mat);
+      const sx = canvas.width / SHADOW_PX;
+      const sz = canvas.height / SHADOW_PX;
+      const plane = new THREE.Mesh(new THREE.PlaneGeometry(sx, sz), mat);
+      plane.rotation.x = -Math.PI / 2;
+      // Canvas row 0 is grid row 0 (the plane's top edge faces -z after the turn).
+      plane.position.set((w - 1) / 2, SHADOW_LIFT, (h - 1) / 2);
+      this.blueprints[layer].add(plane);
+
+      // A faint outline of the whole other floor, including where it hangs over open sky.
+      const edgeMat = new THREE.MeshBasicMaterial({
+        color: COLORS.outline,
+        transparent: true,
+        opacity: OUTLINE_OPACITY,
+        depthWrite: false,
+      });
+      edgeMat.userData.opacity = OUTLINE_OPACITY;
+      this.bpMats.push(edgeMat);
+      const inside = (x: number, y: number) => x >= 0 && y >= 0 && x < w && y < h && solid(there, y * w + x);
+      for (let i = 0; i < w * h; i++) {
+        const [x, y] = [i % w, Math.floor(i / w)];
+        if (!inside(x, y)) continue;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          if (inside(x + dx, y + dy)) continue;
+          const bar = new THREE.Mesh(
+            new THREE.BoxGeometry(dx ? OUTLINE_WIDTH : 1, 0.005, dy ? OUTLINE_WIDTH : 1),
+            edgeMat,
+          );
+          bar.position.set(x + dx * 0.5, SHADOW_LIFT + 0.005, y + dy * 0.5);
+          this.blueprints[layer].add(bar);
+        }
+      }
+    }
   }
 
   private applyLayerAlpha(): void {
@@ -924,14 +1011,14 @@ export class World {
   /** The Starfall look for two-layer levels: night sky, stars, a moon lighting the ceiling from below. */
   private setNight(on: boolean): void {
     document.body.classList.toggle('night', on);
-    this.hemi.color.set(on ? 0x8d9cff : 0xcfe8ff);
-    this.hemi.groundColor.set(on ? 0x6a5a9a : 0x8a7a66);
-    this.hemi.intensity = on ? 1.1 : 1.4;
-    this.sun.color.set(on ? 0xd6dcff : 0xfff4e0);
-    this.sun.intensity = on ? 1.4 : 2.2;
+    this.hemi.color.set(on ? 0xc2ccff : 0xcfe8ff);
+    this.hemi.groundColor.set(on ? 0x9a8cd0 : 0x8a7a66);
+    this.hemi.intensity = on ? 1.7 : 1.4;
+    this.sun.color.set(on ? 0xeef0ff : 0xfff4e0);
+    this.sun.intensity = on ? 2 : 2.2;
     // The ceiling would shade the whole ground; at night the light is soft anyway.
     this.sun.castShadow = !on;
-    this.moonlight.intensity = on ? 1.6 : 0;
+    this.moonlight.intensity = on ? 2.2 : 0;
     this.stars.visible = on;
     for (const c of this.clouds) c.visible = !on;
   }
@@ -1009,10 +1096,10 @@ function arrowGeometry(): THREE.BufferGeometry {
   return geom;
 }
 
-/** Four corner brackets on a tile a flight can land on, in the pads' wind colour. */
-function makeLandingMark(): THREE.Object3D {
+/** Four corner brackets on a tile a flight (or a flip) can land on, in the pads' wind colour by default. */
+function makeLandingMark(color: number = COLORS.mark): THREE.Object3D {
   const g = new THREE.Group();
-  const mat = new THREE.MeshBasicMaterial({ color: COLORS.mark });
+  const mat = new THREE.MeshBasicMaterial({ color });
   const len = 0.26;
   const w = 0.075;
   const edge = 0.44 - w / 2;
@@ -1087,25 +1174,3 @@ function makeStars(): THREE.Points {
   return new THREE.Points(geom, new THREE.PointsMaterial({ size: 0.9, vertexColors: true, sizeAttenuation: true }));
 }
 
-/** On a flip tile: a bright diamond if the other side holds you, a red cross if it's open sky. */
-function makeFlipMarker(safe: boolean): THREE.Object3D {
-  const g = new THREE.Group();
-  if (safe) {
-    const gem = new THREE.Mesh(
-      new THREE.OctahedronGeometry(0.16),
-      new THREE.MeshStandardMaterial({ color: COLORS.safe, emissive: COLORS.safe, emissiveIntensity: 0.8 }),
-    );
-    gem.position.y = 0.55;
-    g.add(gem);
-  } else {
-    const mat = new THREE.MeshBasicMaterial({ color: COLORS.unsafe });
-    for (const a of [Math.PI / 4, -Math.PI / 4]) {
-      const bar = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.03, 0.1), mat);
-      bar.rotation.y = a;
-      bar.position.y = 0.04;
-      g.add(bar);
-    }
-  }
-  g.visible = false;
-  return g;
-}
