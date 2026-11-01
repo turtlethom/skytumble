@@ -11,41 +11,43 @@ S##t#.###.#T
 ###.#.###.#.
 
 === toy-02
-par: 12
+par: 17
 name: Tiny Steps
-idea: The switch with the little nub turns you into a cube: one tile per roll, always standing, and light enough that planks never break under you. Roll across to the goal marked for a cube.
-guard: off
-#####..........
-#S##c#.........
-#####ffffff....
-....#ffffff....
-....#ffffffC...
+idea: The switch with the little nub turns you into a cube: one tile per roll, always standing, and light enough that planks never break under you. Thread the plank maze to the goal marked for a cube.
+#####.........
+#S##c#........
+#####fff.fff..
+....#..f.f.f..
+....#fffff.fC.
+....#f.f...ff.
 
 === toy-03
-par: 14
+par: 21
 name: Long Reach
-idea: You start tall and stay tall. Find where your three-tile tips line up: tip across the gap, lie down over the planks (lying never breaks them), and stand on the tall goal.
+idea: You start tall and stay tall. Line up your three-tile tips to land standing on the extra-heavy switch: it raises the bridge your last tip rests on, across the gap to the tall goal.
 shape: tall
-............
-.S##.#......
-.#####......
-.######.....
-.######.....
-..#####.....
-......#ff#T.
+switches: 0
+..#######f#...
+.S#f##.####...
+....######....
+....#########.
+........#X###.
+.........#....
+.........#0.#T
 
 === toy-04
-par: 19
+par: 26
 name: Light and Heavy
-idea: Become a cube to cross the plank, then turn back to normal: a cube is too light to press the heavy switch that raises the bridge to the goal.
-switches: 0 1
-..............
+idea: Become a cube to get down the plank corridor (a normal block would have to stand on a plank), then turn normal again: the heavy switch sits among planks and a cube is too light for it. Lie across the planks to stand on the switch, lie across again to get off, and cross the bridge it raised.
+switches: 0
+.....##.......
 .S##c###......
-.....###..###.
-.....###..###.
-.....fn###x##.
-..........##..
-......1...0##G
+...ff#ffff....
+...f.#ffff....
+...f##ffxf....
+...f##ffff###.
+..n##########.
+.....###...0#G
 
 === toy-05
 par: 20
@@ -61,27 +63,28 @@ shape: cube
 ......##^##><#T.
 
 === toy-06
-par: 20
+par: 26
 name: Shape Shifter
-idea: Normal, then cube, then tall. Lie across the first long-bar switch rather than standing on it, take the nub switch to cross the planks as a cube, and become tall at the far end for the last tip onto the goal.
-.###..............
-.S#t###...........
-.######...........
-......###c........
-........ffffff....
-........ffffff....
-............t#.#T.
+idea: Normal, then cube, then tall. Take the nub switch to cross the plank as a cube, then the long-bar switch makes you tall for a long run of tips over gappy ground to the tall goal. The long-bar switch near the start leads nowhere.
+..............
+.S.t#.##......
+.##########...
+.##.########..
+..#######c.##.
+..##.#.######.
+..######f#####
+......t#..T###
 
 === toy-07
-par: 28
+par: 32
 name: Heavy Lifting
-idea: The extra-heavy switch needs a standing tall block, and it's out past the gaps. Tip and roll as a tall block to land on it, then work back to the two-bar switch and finish as a normal block across the bridge it raised.
+idea: The extra-heavy switch needs a standing tall block, and it's out past the gaps. Tip and roll there as a tall block, then all the way back to the two-bar switch, and finish as a normal block across the bridge it raised.
 switches: 0
-....#######.
+...########.
 .S##t####.#.
-..#########.
+..##.##.###.
 ..########X.
-..#########.
+..####.####.
 ..#n######..
 ...#####0##G
 

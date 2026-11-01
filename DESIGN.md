@@ -332,21 +332,25 @@ links; stars; stats; snapping camera; undo; reference levels.
    block rolls along two rails over a gap; 16), `05` Shape Belts (a cube is pushed back every move;
    a tall block straddles the belt; 10), `06` Heavyweight (tall lands on the extra-heavy switch
    across a gap, then back to normal for the bridge; 18).
-3. **Toybox chapter** (`toy-01`…`toy-08`) and its map island. — built 2026-11-01, awaiting
-   playtest: `src/levels/toy.txt`, all solved at par in headless Chrome, guarded levels using
+3. **Toybox chapter** (`toy-01`…`toy-08`) and its map island. — built 2026-11-01, **approved
+   in playtest 2026-11-01** after two rework rounds: `src/levels/toy.txt`, all solved at par in headless Chrome, guarded levels using
    shapes in at least two ways. The map path now zigzags Tutorial → Frost → Windy Peaks →
    Starfall → Toybox, with the four labs as a column of smaller extras islands.
 
    | Level | Name | Par | States | The idea |
    |---|---|---|---|---|
    | 01 | Building Blocks | 6 | 25 | Teaching: become tall, tip across gaps onto a tall goal |
-   | 02 | Tiny Steps | 12 | 96 | Teaching: become a cube, roll over planks to a cube goal |
-   | 03 | Long Reach | 14 | 60 | Start tall and stay tall: line up three-tile tips, lie over planks |
-   | 04 | Light and Heavy | 19 | 160 | Cube across a plank, normal for the heavy switch and its bridge |
+   | 02 | Tiny Steps | 17 | 84 | Teaching: become a cube and thread a plank maze to a cube goal |
+   | 03 | Long Reach | 21 | 165 | Start tall and stay tall: land on the extra-heavy switch, tip across its bridge |
+   | 04 | Light and Heavy | 26 | 320 | Cube down a plank corridor; normal lies across planks to stand on a heavy switch among them |
    | 05 | Conveyor Toys | 20 | 114 | Start as a cube riding belt pushes, then tall to the tall goal |
-   | 06 | Shape Shifter | 20 | 69 | Normal → cube → tall (lie across a decoy switch) |
-   | 07 | Heavy Lifting | 28 | 593 | Tall reaches the extra-heavy switch past the gaps, back to normal for the bridge |
+   | 06 | Shape Shifter | 26 | 336 | Cube over the plank, then a long tall run over gappy ground; a decoy switch at the start |
+   | 07 | Heavy Lifting | 32 | 528 | Tall reaches the extra-heavy switch past the gaps, back to normal for the bridge |
    | 08 | Toybox | 39 | 585 | Finale: tall, extra-heavy, cube over planks, normal, bridge to the goal |
+
+**Next (not yet planned in detail):** the split + paint biome. Decisions already made in the
+Toybox grilling are listed under *Kept for the split/paint biome* above; start with a short
+grilling session to fill the gaps (where split cubes appear, how many colors, the look).
 
 **Later:** endless climb + daily seed, Frost in the generator, archipelago generation,
 more biomes from the backlog, visual level editor, full-level links (needed for handmade
@@ -488,6 +492,30 @@ a small raised bar whose length shows the shape (nub = cube, two = normal, three
 colors; the extra-heavy switch is the heavy switch's cross, chunkier, with a third bar.
 
 **2026-11-01 — shape lab.** No rule notes; went straight on to the chapter → shape rules frozen.
+
+**2026-11-01 — Toybox, first round.** toy-01: simple and solid. toy-02: simple, could be a bit
+more complex. toy-03: solid, could have a bit more going on. toy-04: solid, enjoyed it a lot.
+toy-05: fantastic, belts with the new mechanic. toy-06: cool, but should be harder, traversing more
+terrain with gaps. toy-07: should be a bit harder. toy-08: a perfect demonstration of every part
+of the mechanic. Also: shaped goals look strange (the floating shape marker) and need a better
+mark; and a block entering the goal shouldn't vanish: the goal should end up filled with the
+block, its top showing.
+→ Rework 02, 03, 06, 07; keep 01, 04, 05, 08. Goals: every goal keeps the usual pyramid; a shaped
+goal is marked with the shape switches' bars on its rim. Winning: the block sinks until the hole
+is filled with it, top flush with the floor, and stays there.
+Done: 02 became a plank maze (12 → 17), 03 gained the extra-heavy switch and its bridge (14 → 21),
+06 a long tall run over gappy ground after the cube (20 → 26, 69 → 336 states), 07 a longer route
+(28 → 32). Goals and the win animation as described, for every shape.
+
+**2026-11-01 — Toybox, second round.** toy-02 good, definitely improved. toy-03 very, very good.
+toy-04 now feels too simple. toy-06 the right amount of complexity. toy-07 greatly improved, loves
+the complexity. toy-08 solid. Likes all the levels now; toy-04 could be improved.
+→ Rework toy-04 around a heavy switch inside a plank field: the cube reaches it but can't press
+it; the normal block presses it but must lie across the planks to get there and back. Done:
+a plank corridor only the cube can walk, then the heavy switch among planks (19 → 26 moves).
+
+**2026-11-01 — Toybox, third round.** Likes the reworked toy-04 → Toybox approved. Paused here;
+the next release (split + paint) will be discussed another time.
 
 ## Architecture
 

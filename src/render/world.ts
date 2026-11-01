@@ -38,12 +38,6 @@ const COLORS = {
   shapeBar: 0xd9a95f,
 };
 
-/** Shape goal markers: width and height of the floating shape, by block length. */
-const SHAPE_MODEL: Record<number, { w: number; h: number }> = {
-  1: { w: 0.3, h: 0.3 },
-  2: { w: 0.24, h: 0.48 },
-  3: { w: 0.2, h: 0.6 },
-};
 
 /** Height of the ceiling layer's walking surface above the ground's. */
 const CEIL_H = 4;
@@ -92,6 +86,9 @@ const FIT_X = 0.86;
 const FIT_Y = 0.72;
 /** Hover height of the goal marker: its tip stays above a standing block's top (y = 2). */
 const MARKER_Y = 2.45;
+/** A won block fills the goal's hole: its top rests this far above the floor, its bottom at the hole's depth. */
+const GOAL_FILL_TOP = 0.03;
+const GOAL_DEPTH = 0.55;
 
 interface Tween {
   start: number;
@@ -431,11 +428,19 @@ export class World {
         edge.receiveShadow = true;
         g.add(edge);
       }
+      // A goal marked for a cube or a tall block carries the shape switches' sign on its rim: the
+      // same bar (a nub for the cube, three long for tall) inlaid on two opposite edges.
+      if (group === 1 || group === 3) {
+        const len = group === 1 ? 0.16 : 0.5;
+        for (const side of [-1, 1]) {
+          const bar = box(len, 0.06, 0.12, COLORS.shapeBar, { roughness: 0.5 });
+          bar.position.set(0, 0.03, side * 0.44);
+          g.add(bar);
+        }
+      }
       // A square pyramid hovering point-down over the hole: "drop in here", in the tiles' own shape.
-      // A goal marked for a cube or a tall block hovers that shape instead.
-      const shaped = group === 1 || group === 3;
       const marker = new THREE.Mesh(
-        shaped ? new THREE.BoxGeometry(SHAPE_MODEL[group].w * 1.3, SHAPE_MODEL[group].h * 1.3, SHAPE_MODEL[group].w * 1.3) : new THREE.ConeGeometry(0.34, 0.56, 4),
+        new THREE.ConeGeometry(0.34, 0.56, 4),
         new THREE.MeshStandardMaterial({
           color: COLORS.goal,
           emissive: COLORS.goal,
@@ -445,7 +450,7 @@ export class World {
           flatShading: true,
         }),
       );
-      if (!shaped) marker.rotation.x = Math.PI;
+      marker.rotation.x = Math.PI;
       const spinner = new THREE.Group();
       spinner.add(marker);
       spinner.position.y = MARKER_Y;
@@ -867,15 +872,31 @@ export class World {
     this.block.visible = false;
   }
 
+  /**
+   * The block sinks into the goal until it fills the hole: its top settles just above the floor
+   * and it stays there, like a peg pushed into its socket. (The part below the floor is squashed
+   * into the hole's depth, so nothing pokes out under the island.)
+   */
   async win(): Promise<void> {
-    const start = this.block.position.y;
+    const height = 1.96 * this.block.scale.y;
+    const [top0, bottom0] = [height, 0];
+    const [top1, bottom1] = [GOAL_FILL_TOP, -GOAL_DEPTH];
     const marker = this.goalMarker;
     await this.tween(650, (t) => {
-      this.block.position.y = start - (0.4 + this.block.scale.y * 2) * easeIn(t);
+      const e = easeIn(t);
+      const top = top0 + (top1 - top0) * e;
+      const bottom = bottom0 + (bottom1 - bottom0) * e;
+      this.block.position.y = (top + bottom) / 2;
+      this.block.scale.y = (top - bottom) / 1.96;
+      // Slim down a touch to slot inside the glowing rim.
+      const fit = 1 - 0.12 * e;
+      this.block.scale.x = fit;
+      this.block.scale.z = fit;
       // The marker swells briefly, then shrinks away as the block sinks.
       if (marker) marker.scale.setScalar(Math.max((1 - t) * (1 + Math.sin(t * Math.PI) * 0.5), 0.001));
     });
-    this.block.visible = false;
+    // A little settle, so it reads as filling the hole rather than stopping.
+    await this.tween(160, (t) => (this.block.position.y = (top1 + bottom1) / 2 - 0.03 * Math.sin(t * Math.PI)));
   }
 
   /** Islands rise into place and the block drops in from above. */
