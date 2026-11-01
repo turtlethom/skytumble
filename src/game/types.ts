@@ -12,6 +12,8 @@ export enum Tile {
   Conveyor = 8,
   /** Flings a block standing on it (or lying fully on two that agree) along its arrow. */
   Pad = 9,
+  /** Flips gravity for a block standing on it (or lying fully on two): it moves to the other layer. */
+  Flip = 10,
 }
 
 /** Standing upright, lying along the x axis, or lying along the y axis. */
@@ -37,11 +39,18 @@ export interface Level {
   start: { x: number; y: number };
   /** Bitmask of bridge groups that start switched on. */
   bridgesOn: number;
+  /**
+   * Optional second layer directly above the ground, same size and coordinates, walked upside
+   * down. Bridge groups are shared between layers; the start is always on the ground.
+   */
+  ceiling?: { tiles: Tile[]; groups: number[] };
 }
 
 export interface State {
   block: Block;
   bridges: number;
+  /** 0 on the ground, 1 on the ceiling (gravity flipped). Absent means 0. */
+  layer?: number;
 }
 
 export type Dir = 'up' | 'down' | 'left' | 'right';

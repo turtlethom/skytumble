@@ -4,7 +4,7 @@ import { initialState, step } from './game/rules';
 import { solve } from './game/solver';
 import { Dir, Level, State, TIERS, Tier } from './game/types';
 import { HANDMADE, findLevel } from './levels';
-import { World } from './render/world';
+import { CameraMode, Visibility, World } from './render/world';
 import { SkyMap, suggestedLevel } from './ui/map';
 import { Progress, loadProgress, saveProgress, starsFor } from './ui/progress';
 import type { GenerateRequest, GenerateResponse } from './worker';
@@ -16,8 +16,7 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 
 const CHAIN_BEAT_MS = 110;
 
-/** Clockwise grid directions; screen directions index into this after camera rotation. */
-const CLOCKWISE: Dir[] = ['up', 'right', 'down', 'left'];
+/** Screen directions: 0 up, 1 right, 2 down, 3 left; the world maps them to grid directions. */
 const KEY_DIRS: Record<string, number> = {
   ArrowUp: 0, KeyW: 0,
   ArrowRight: 1, KeyD: 1,
@@ -40,6 +39,7 @@ class Game {
   private queued: Dir | null = null;
   private requestId = 0;
   private toastTimer = 0;
+  private view = loadView();
 
   constructor() {
     // A bare URL lands on the map, with the suggested level waiting behind it.
@@ -49,6 +49,11 @@ class Game {
       if (e.data.id === this.requestId) void this.start(e.data.level, e.data.par);
     };
     this.bindUi();
+    this.applyView();
+    // For the headless play driver (scripts/design/play.mjs): which arrow key (0 up, 1 right, 2 down,
+    // 3 left) rolls the block in a grid direction from the current view.
+    (window as unknown as { skytumbleKeyFor: (d: Dir) => number }).skytumbleKeyFor = (d) =>
+      [0, 1, 2, 3].find((k) => this.world.gridDirForScreen(k) === d) ?? -1;
     this.load(this.mode);
     if (landing) this.showMap();
   }
@@ -231,6 +236,26 @@ class Game {
     }
   }
 
+  /** Gravity prototype: C switches the camera mode, V how much of the other layer shows. */
+  private cycleView(what: 'camera' | 'visibility'): void {
+    const v = this.view;
+    if (what === 'camera') v.camera = v.camera === 'turn' ? 'fixed' : 'turn';
+    else v.visibility = VISIBILITIES[(VISIBILITIES.indexOf(v.visibility) + 1) % VISIBILITIES.length];
+    this.applyView();
+    try {
+      localStorage.setItem(VIEW_KEY, JSON.stringify(v));
+    } catch {
+      // Private mode: the choice just isn't remembered.
+    }
+    const label = what === 'camera' ? CAMERA_LABEL[v.camera] : VISIBILITY_LABEL[v.visibility];
+    this.toast(label, 2600);
+  }
+
+  private applyView(): void {
+    this.world.setCameraMode(this.view.camera);
+    this.world.setVisibility(this.view.visibility);
+  }
+
   private toast(message: string, ms = 1800): void {
     const el = $('toast');
     el.textContent = message;
@@ -312,6 +337,10 @@ class Game {
     click('btn-map', () => this.showMap());
     focusKeys(() => this.escape());
 
+    // Peeking lasts while Space is held; losing focus ends it too.
+    window.addEventListener('keyup', (e) => e.code === 'Space' && this.world.setPeek(false));
+    window.addEventListener('blur', () => this.world.setPeek(false));
+
     window.addEventListener('keydown', (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (this.map.isOpen) {
@@ -321,8 +350,12 @@ class Game {
       if (e.code in KEY_DIRS) {
         e.preventDefault();
         if (e.repeat) return;
-        const screen = KEY_DIRS[e.code];
-        void this.move(CLOCKWISE[(screen - this.world.cameraIndex + 4) % 4]);
+        void this.move(this.world.gridDirForScreen(KEY_DIRS[e.code]));
+        return;
+      }
+      if (e.code === 'Space' && this.world.twoLayers) {
+        e.preventDefault();
+        if (!e.repeat) this.world.setPeek(true);
         return;
       }
       switch (e.code) {
@@ -348,12 +381,41 @@ class Game {
         case 'KeyL':
           this.showMap();
           break;
+        case 'KeyC':
+          if (this.world.twoLayers) this.cycleView('camera');
+          break;
+        case 'KeyV':
+          if (this.world.twoLayers) this.cycleView('visibility');
+          break;
         case 'Escape':
           this.escape();
           break;
       }
     });
   }
+}
+
+const VIEW_KEY = 'skytumble.gravityView';
+const VISIBILITIES: Visibility[] = ['hidden', 'markers', 'ghost'];
+const CAMERA_LABEL: Record<CameraMode, string> = {
+  turn: 'Camera: turns over with you (C to switch)',
+  fixed: 'Camera: stays above; see through the ceiling (C to switch)',
+};
+const VISIBILITY_LABEL: Record<Visibility, string> = {
+  hidden: 'Other layer: hidden; hold Space to peek (V to switch)',
+  markers: 'Other layer: hidden, flip tiles marked safe/unsafe (V to switch)',
+  ghost: 'Other layer: faint ghost (V to switch)',
+};
+
+function loadView(): { camera: CameraMode; visibility: Visibility } {
+  const fallback = { camera: 'turn' as CameraMode, visibility: 'hidden' as Visibility };
+  try {
+    const v = JSON.parse(localStorage.getItem(VIEW_KEY) ?? 'null');
+    if (v && v.camera in CAMERA_LABEL && v.visibility in VISIBILITY_LABEL) return v;
+  } catch {
+    // Unavailable or corrupt storage: use the defaults.
+  }
+  return fallback;
 }
 
 function modeFromUrl(progress: Progress): Mode {

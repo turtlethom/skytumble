@@ -56,7 +56,10 @@ one level.
 ## Designing handmade levels
 
 Levels live in `src/levels/<chapter>.txt` (format documented in `src/levels/format.ts`; grid
-characters in `src/game/ascii.ts`). Chapters are registered in play order in
+characters in `src/game/ascii.ts`). A two-layer (gravity) level writes the ground, a `---` line,
+then the ceiling grid in the same coordinates; `+` is a flip tile. The rules run on one layer at a
+time through `layerView`; the renderer mirrors the ceiling group (scale y −1), so tiles and
+animations are shared. Chapters are registered in play order in
 `src/levels/index.ts` (which also marks extras), and a new chapter needs an island position and
 theme in `LAYOUT` in `src/ui/map.ts`. A chapter with `signature: ice` enforces the one-trick guard: the optimal
 solution must use ice in at least two distinct ways (`src/levels/validate.ts`).
@@ -109,7 +112,10 @@ SHOTS=<scratch dir> npm run verify -- frost-
 ```
 
 It plays every optimal solution with real key events, reports WON/NOT WON at par, and saves start
-and end screenshots to read. For the sky map (a DOM overlay), a plain headless screenshot of `/`
+and end screenshots to read. Controls follow the screen, so the driver asks the game which arrow
+rolls which way (`window.skytumbleKeyFor`). Options for `verify`/`play.mjs`: `STEPS=1` (a shot
+after every move), `VIEW=turn,hidden` (two-layer camera and visibility), `PEEK_AT=n` (hold Space
+after move n), `ROTATE=n` (quarter turns before playing). For the sky map (a DOM overlay), a plain headless screenshot of `/`
 with `--virtual-time-budget=20000` is enough. Gotchas:
 
 - `--virtual-time-budget` screenshots freeze CSS transitions mid-way; use the driver instead.

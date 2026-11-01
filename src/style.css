@@ -25,6 +25,21 @@ body {
   background: linear-gradient(180deg, #6fb6ff 0%, #a9d7ff 45%, #e6f4ff 75%, #fff1dc 100%);
 }
 
+/* Starfall: two-layer levels play under a night sky. */
+body.night {
+  background: linear-gradient(180deg, #0b1030 0%, #1b2058 50%, #2c2a6e 80%, #3e2f6e 100%);
+}
+
+body.night .brand p,
+body.night .help {
+  color: #e8ecff;
+  text-shadow: 0 1px 2px rgba(0, 0, 20, 0.8);
+}
+
+body.night .brand h1 {
+  text-shadow: 0 2px 0 #6a55d8, 0 6px 18px rgba(120, 90, 255, 0.4);
+}
+
 #stage {
   position: fixed;
   inset: 0;
@@ -424,6 +439,14 @@ kbd {
   --edge: #9aa8b8;
   --cliff: #8d8f99;
   --cliff-dark: #50535e;
+}
+
+.sm-island.night {
+  --top: linear-gradient(#5a4f9a, #3a3270);
+  --edge: #8f7ce0;
+  --cliff: #3d3a66;
+  --cliff-dark: #1e1c3a;
+  color: #eef0ff;
 }
 
 .sm-island.extra {

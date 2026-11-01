@@ -20,20 +20,28 @@ export function build(rows: string[], switches: number[], on: number[]): Level {
   return parseLevel(rows, switches, on.reduce((mask, g) => mask | (1 << g), 0));
 }
 
-/** Cells the block covers anywhere along a solution, including tiles passed mid-slide (not mid-flight). */
+/** Where a layer's row sits in the level text: the ceiling follows the ground and a `---` line. */
+export const textRow = (level: Level, layer: number, y: number) => (layer ? level.height + 1 + y : y);
+
+/**
+ * Cells the block covers anywhere along a solution, including tiles passed mid-slide (not mid-flight),
+ * as `x,row` keys in the level text's coordinates (see textRow).
+ */
 export function touched(level: Level, moves: Dir[]): Set<string> {
   const seen = new Set<string>();
+  let layer = 0;
   const mark = (b: { x: number; y: number; o: 'S' | 'X' | 'Y' }) =>
-    blockCells(b).forEach(([x, y]) => seen.add(`${x},${y}`));
+    blockCells(b).forEach(([x, y]) => seen.add(`${x},${textRow(level, layer, y)}`));
   let s = initialState(level);
   mark(s.block);
   for (const d of moves) {
     const r = step(level, s, d);
     mark(r.rolled);
     for (const m of r.motions) {
-      // Flights pass over everything: only take-off and landing touch tiles.
-      if (m.kind === 'fly') {
+      // Flights pass over everything: only take-off and landing touch tiles. A flip changes layer.
+      if (m.kind === 'fly' || m.kind === 'flip') {
         mark(m.from);
+        if (m.kind === 'flip') layer = 1 - layer;
         mark(m.to);
         continue;
       }

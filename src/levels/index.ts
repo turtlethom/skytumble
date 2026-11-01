@@ -1,5 +1,6 @@
 import { Chapter, HandmadeLevel, parseChapter } from './format';
 import frost from './frost.txt?raw';
+import gravlab from './gravlab.txt?raw';
 import lab from './lab.txt?raw';
 import wind from './wind.txt?raw';
 import windlab from './windlab.txt?raw';
@@ -14,10 +15,12 @@ export const CHAPTERS: Chapter[] = [
   parseChapter('lab', lab),
   // Launch-pad prototypes for the Windy Peaks lab playtest.
   parseChapter('windlab', windlab),
+  // Gravity-flip prototypes for the Starfall camera and lab playtests.
+  parseChapter('gravlab', gravlab),
 ];
 
 /** Chapters kept as extras: shown on the map off the suggested path. */
-const EXTRAS = new Set(['lab', 'windlab']);
+const EXTRAS = new Set(['lab', 'windlab', 'gravlab']);
 
 export function isExtra(chapter: Chapter): boolean {
   return EXTRAS.has(chapter.id);

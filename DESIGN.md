@@ -190,7 +190,7 @@ links; stars; stats; snapping camera; undo; reference levels.
 3. **Windy Peaks chapter** (`wind-01`…`wind-08`): two teaching levels (fling, hop;
    `guard: off`), five guarded levels each pairing two depth sources, a finale combining
    them. Belts join from the middle levels on; difficulty must climb toward the end. Theme: rocky spires, gusts, banners.
-   — built 2026-11-01, awaiting playtest: `src/levels/wind.txt`, all solved at par in
+   — built 2026-11-01, **approved in playtest 2026-11-01**: `src/levels/wind.txt`, all solved at par in
    headless Chrome. Belts come in from 03 (Frost already taught them).
 
    | Level | Name | Par | States | The idea |
@@ -208,6 +208,53 @@ links; stars; stats; snapping camera; undo; reference levels.
    fixed by hand; the routes and endings were then trimmed by hand.
 4. **Map island** for Windy Peaks after Frost on the suggested path. — built: Windy Peaks
    takes the rocky `peaks` look; Wind Lab moves to the lab colors beside Ice Lab as extras.
+
+**Next release — Starfall** (gravity flip), planned in a grilling session 2026-11-01:
+
+- *Goal:* "two worlds": holding two maps in your head, where a hole below is floor above.
+  Success = it beats Windy Peaks as my favorite chapter, through spectacle; the spectacle
+  comes from the look (a starfall night), not from long animations.
+- *Why gravity:* the user's own vision for the next biome. Shape-changing blocks (grow/shrink,
+  split) wait for the biome after; a later chapter may cross the two.
+- *Scope:* same as Windy Peaks: camera prototype, a ~6-level lab, ~8 handmade levels, a map
+  island. Mix: base layer, pads, belts. Not in scope: generator, editor, sound, ice, shape
+  change. No time pressure; the user is the only player. Deep core changes are fine.
+- *Rules (open until the lab sign-off):*
+  - Every level may have a **ceiling layer** directly above the ground, same coordinates.
+  - **Flip tiles** fire like pads: resting standing on one, or lying fully on two; lying half
+    on one is safe. A flip moves the block to the other layer **directly above (or below), in
+    the same pose**. Each layer has its own flip tiles. A flip never re-fires in the same move.
+  - Nothing on the other side → the block **falls into the sky**. Rolling off a ceiling edge
+    or breaking a ceiling fragile tile does the same.
+  - Flips join the belt/pad chain: a push or a flight that rests the block on flip tiles flips it.
+  - Pads fling within the current layer. Switch groups are shared: a switch on one layer can
+    drive bridges on the other.
+  - The goal can be on either layer.
+  - *One-trick guard* (`signature: gravity`): two distinct flip uses among flip up, flip down,
+    lying flip, belt→flip, flight→flip, cross-layer press.
+- *Depth:* round trips (go up, change something, come back down), hole alignment, cross-layer
+  switches, pose setup for the flip.
+- *Feel:* snappy flips (~0.5s). Controls stay screen-relative (as with Q/E rotation). A
+  **hold-to-peek** key swings the camera over to look at the other layer.
+- *Pre-mortem:* "disorienting and unreadable". The turning camera mirrors the ceiling relative
+  to the ground, which works against two-worlds mapping. Hence the prototype first.
+- *Theme:* starfall night: dark blue sky, stars, glowing flip tiles. Name: **Starfall**.
+
+1. **Camera prototype**: one throwaway two-layer level with live toggles for camera mode
+   (turning camera vs fixed camera with the block seen hanging under a see-through ceiling)
+   and for how much of the other layer shows (hidden + peek, landing markers, always ghost).
+   The user plays it and picks; the choice is locked in before the lab. — built 2026-11-01,
+   awaiting playtest: `gravlab-01` (Camera Prototype, par 11: flip up, press a ceiling switch
+   that raises a ground bridge, flip down, flip up onto a goal on the ceiling), on a Gravity Lab
+   extras island. Keys: **C** camera (turns over / stays above with a see-through ceiling), **V**
+   other layer (hidden / flip tiles marked safe or unsafe / ghost), hold **Space** to peek.
+   Defaults are the grilling picks (turn, hidden); the choice is remembered. Flip rules,
+   two-layer levels (`---` then the ceiling grid; `+` is a flip tile), solver, and tools are in
+   place; the night look is a first pass.
+2. **Gravity lab** (~6 levels, one per rule question): flip up/down, falling into the sky,
+   lying flip, cross-layer switch, belt or pad onto a flip tile, a round-trip combo. One
+   playtest round, then the rules freeze.
+3. **Starfall chapter** (`star-01`…`star-08`) and its map island.
 
 **Later:** endless climb + daily seed, Frost in the generator, archipelago generation,
 more biomes from the backlog, visual level editor, full-level links (needed for handmade
@@ -290,6 +337,11 @@ remain before it's done. Notes:
   no click or Tab explains now counts as Esc. Also fixed: hovering a stone resized the
   preview panel, which reflowed the map so clicks missed the stones.
 - Sign-off: "no other problems" → rules frozen.
+
+**2026-11-01 — Windy Peaks.** "Every level ramped up appropriately in difficulty and made good
+use of existing features." No level-specific notes; chapter approved as built. Next: grill the
+gravity-flip biome (two layers, ceiling above) as the next signature mechanic; shape-changing
+blocks follow as the biome after.
 
 ## Architecture
 

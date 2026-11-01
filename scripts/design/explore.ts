@@ -1,11 +1,11 @@
 // Whole-level exploration for the design tools: every reachable state, which of them can still
 // win, where each pad sends the block, and a map of where the block can get to. diagnose() turns
 // it into a report that says *why* a draft is unsolvable instead of just "UNSOLVABLE".
-import { blockCells, findGoal, flight, initialState, isSolid, step, tileAt } from '../../src/game/rules';
+import { blockCells, findGoal, flight, initialState, isSolid, layerView, step, tileAt } from '../../src/game/rules';
 import { Block, DIRS, Dir, Level, State, Tile } from '../../src/game/types';
 
-const keyOf = (s: State) => `${s.block.x},${s.block.y},${s.block.o},${s.bridges}`;
-const blockKey = (b: Block) => `${b.x},${b.y},${b.o}`;
+const keyOf = (s: State) => `${s.block.x},${s.block.y},${s.block.o},${s.bridges},${s.layer ?? 0}`;
+const blockKey = (b: Block, layer = 0) => `${b.x},${b.y},${b.o},${layer}`;
 
 interface Node {
   state: State;
@@ -37,7 +37,11 @@ export function explore(level: Level, limit = 300_000): Exploration {
     const node = nodes.get(k)!;
     for (const dir of DIRS) {
       const r = step(level, node.state, dir);
-      r.motions.filter((m) => m.kind === 'fly').forEach((m) => launched.add(blockKey(m.from)));
+      let layer = node.state.layer ?? 0;
+      for (const m of r.motions) {
+        if (m.kind === 'fly') launched.add(blockKey(m.from, layer));
+        if (m.kind === 'flip') layer = 1 - layer;
+      }
       if (r.outcome === 'fall') continue;
       if (r.outcome === 'win') {
         winners.push(k);
@@ -100,8 +104,11 @@ function tileName(level: Level, x: number, y: number, bridges: number): string {
 }
 
 /** One line per launch pose in the level: where it lands, on what, and whether play ever fires it. */
-export function padReport(level: Level, ex: Exploration): string[] {
+export function padReport(full: Level, ex: Exploration): string[] {
   const lines: string[] = [];
+  for (const layer of full.ceiling ? [0, 1] : [0]) {
+  const level = layerView(full, layer);
+  const where = full.ceiling ? (layer ? 'ceiling ' : 'ground  ') : '';
   for (let y = 0; y < level.height; y++) {
     for (let x = 0; x < level.width; x++) {
       if (tileAt(level, x, y) !== Tile.Pad) continue;
@@ -118,11 +125,31 @@ export function padReport(level: Level, ex: Exploration): string[] {
         if (land.o === 'S' && tileAt(level, land.x, land.y) === Tile.Fragile) notes.push('✗ BREAKS the fragile tile');
         if (land.o === 'S' && tileAt(level, land.x, land.y) === Tile.Goal) notes.push('wins');
         if (padArrow(level, land)) notes.push('chains');
-        notes.push(ex.launched.has(blockKey(b)) ? 'fired in play' : 'never fired in play');
+        notes.push(ex.launched.has(blockKey(b, layer)) ? 'fired in play' : 'never fired in play');
         lines.push(
-          `${dir.padEnd(5)} ${POSE[o].padEnd(13)} from ${cellsText(b).padEnd(11)} → ${POSE[land.o]} on ` +
+          `${where}${dir.padEnd(5)} ${POSE[o].padEnd(13)} from ${cellsText(b).padEnd(11)} → ${POSE[land.o]} on ` +
             `${cellsText(land)} [${under.join(', ')}]  ${notes.join(' · ')}`,
         );
+      }
+    }
+  }
+  }
+  return lines;
+}
+
+/** One line per flip tile: whether the tile on the other side can hold the block. */
+export function flipReport(full: Level): string[] {
+  if (!full.ceiling) return [];
+  const lines: string[] = [];
+  for (const layer of [0, 1]) {
+    const here = layerView(full, layer);
+    const there = layerView(full, 1 - layer);
+    for (let y = 0; y < full.height; y++) {
+      for (let x = 0; x < full.width; x++) {
+        if (tileAt(here, x, y) !== Tile.Flip) continue;
+        const other = tileName(there, x, y, full.bridgesOn);
+        const verdict = tileAt(there, x, y) === Tile.Empty ? '✗ FALLS into the sky' : 'lands';
+        lines.push(`${layer ? 'ceiling' : 'ground '} flip at ${x},${y} → ${layer ? 'ground' : 'ceiling'}: ${other}  ${verdict}`);
       }
     }
   }
@@ -133,35 +160,43 @@ export function padReport(level: Level, ex: Exploration): string[] {
  * The level beside a reach map: S = the block rests standing here, l = only ever lies across it,
  * - = a tile the block never rests on, . = empty. Both grids keep the level's coordinates.
  */
-export function reachMap(rows: string[], level: Level, ex: Exploration): string[] {
+export function reachMap(rows: string[], full: Level, ex: Exploration): string[] {
   const standing = new Set<string>();
   const covered = new Set<string>();
   for (const { state } of ex.nodes.values()) {
-    for (const [x, y] of blockCells(state.block)) covered.add(`${x},${y}`);
-    if (state.block.o === 'S') standing.add(`${state.block.x},${state.block.y}`);
+    const l = state.layer ?? 0;
+    for (const [x, y] of blockCells(state.block)) covered.add(`${l},${x},${y}`);
+    if (state.block.o === 'S') standing.add(`${l},${state.block.x},${state.block.y}`);
   }
-  const ruler = (pad: string) => pad + [...Array(level.width).keys()].map((x) => x % 10).join('');
+  const ruler = (pad: string) => pad + [...Array(full.width).keys()].map((x) => x % 10).join('');
   const out = [`${ruler('    ')}   ${ruler('')}`];
-  for (let y = 0; y < level.height; y++) {
-    let reach = '';
-    for (let x = 0; x < level.width; x++) {
-      const k = `${x},${y}`;
-      reach += tileAt(level, x, y) === Tile.Empty ? '.' : standing.has(k) ? 'S' : covered.has(k) ? 'l' : '-';
+  for (const layer of full.ceiling ? [0, 1] : [0]) {
+    const level = layerView(full, layer);
+    if (layer) out.push('    --- ceiling');
+    for (let y = 0; y < level.height; y++) {
+      let reach = '';
+      for (let x = 0; x < level.width; x++) {
+        const k = `${layer},${x},${y}`;
+        reach += tileAt(level, x, y) === Tile.Empty ? '.' : standing.has(k) ? 'S' : covered.has(k) ? 'l' : '-';
+      }
+      const text = rows[layer ? full.height + 1 + y : y] ?? '';
+      out.push(`${String(y).padStart(3)} ${text.padEnd(full.width)}   ${reach}`);
     }
-    out.push(`${String(y).padStart(3)} ${(rows[y] ?? '').padEnd(level.width)}   ${reach}`);
   }
   return out;
 }
 
 /** The reached state nearest the goal (standing preferred, then fewest moves). */
-export function closest(level: Level, ex: Exploration): { key: string; dist: number; block: Block } | null {
+export function closest(level: Level, ex: Exploration): { key: string; dist: number; block: Block; layer: number } | null {
   const goal = findGoal(level);
   if (!goal) return null;
-  let best: { key: string; dist: number; block: Block; score: number } | null = null;
+  let best: { key: string; dist: number; block: Block; layer: number; score: number } | null = null;
   for (const [key, n] of ex.nodes) {
-    const dist = Math.min(...blockCells(n.state.block).map(([x, y]) => Math.abs(x - goal.x) + Math.abs(y - goal.y)));
+    // Being on the wrong layer counts as two tiles' extra distance.
+    const off = (n.state.layer ?? 0) === goal.layer ? 0 : 2;
+    const dist = off + Math.min(...blockCells(n.state.block).map(([x, y]) => Math.abs(x - goal.x) + Math.abs(y - goal.y)));
     const score = dist * 2 + (n.state.block.o === 'S' ? 0 : 1) + n.depth / 1000;
-    if (!best || score < best.score) best = { key, dist, block: n.state.block, score };
+    if (!best || score < best.score) best = { key, dist, block: n.state.block, layer: n.state.layer ?? 0, score };
   }
   return best;
 }
@@ -180,12 +215,14 @@ export function diagnose(rows: string[], level: Level, ex = explore(level)): str
   if (near && goal) {
     const where = near.dist === 0 ? 'on the goal but not standing' : `${near.dist} tile${near.dist > 1 ? 's' : ''} from the goal`;
     out.push(
-      `closest approach: ${POSE[near.block.o]} on ${cellsText(near.block)}, ${where}, ` +
+      `closest approach: ${POSE[near.block.o]} on ${cellsText(near.block)}${level.ceiling ? (near.layer ? ' (ceiling)' : ' (ground)') : ''}, ${where}, ` +
         `after ${movesText(pathTo(ex, near.key)) || '(start)'}`,
     );
   }
   const pads = padReport(level, ex);
   if (pads.length) out.push('pads:', ...pads.map((l) => `  ${l}`));
+  const flips = flipReport(level);
+  if (flips.length) out.push('flips:', ...flips.map((l) => `  ${l}`));
   out.push('reach (S stand · l lie · - never · . empty):', ...reachMap(rows, level, ex));
   return out;
 }

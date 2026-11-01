@@ -1,4 +1,4 @@
-import { blockCells, initialState, step, tileAt } from '../game/rules';
+import { blockCells, findGoal, initialState, step, tileAt } from '../game/rules';
 import { solve } from '../game/solver';
 import { Dir, Level, Tile } from '../game/types';
 import { Chapter, HandmadeLevel } from './format';
@@ -89,7 +89,7 @@ export function padUses(level: Level, moves: Dir[]): PadUse[] {
 export function validateLevel(h: HandmadeLevel, chapter: Chapter): LevelReport {
   const errors: string[] = [];
   if (!h.id.startsWith(`${chapter.id}-`)) errors.push(`id should start with '${chapter.id}-'`);
-  if (!h.level.tiles.includes(Tile.Goal)) errors.push('no goal (G)');
+  if (!findGoal(h.level)) errors.push('no goal (G)');
 
   const solution = solve(h.level);
   const par = solution ? solution.moves.length : null;

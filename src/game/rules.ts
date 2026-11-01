@@ -7,7 +7,8 @@ export type Outcome = 'ok' | 'fall' | 'win';
  * a launch-pad flight (ends with one ordinary roll, so the orientation changes like a roll's).
  */
 export interface Motion {
-  kind: 'slide' | 'push' | 'fly';
+  /** A flip keeps the block's cells and pose and moves it to the other layer (`to` = `from`). */
+  kind: 'slide' | 'push' | 'fly' | 'flip';
   dir: Dir;
   from: Block;
   to: Block;
@@ -29,7 +30,16 @@ export interface StepResult {
 }
 
 export function initialState(level: Level): State {
-  return { block: { x: level.start.x, y: level.start.y, o: 'S' }, bridges: level.bridgesOn };
+  return { block: { x: level.start.x, y: level.start.y, o: 'S' }, bridges: level.bridgesOn, layer: 0 };
+}
+
+/**
+ * One layer of a level as a plain single-layer Level: the ground (0) or the ceiling (1). The rules
+ * run on a layer view, so every tile rule works the same upside down.
+ */
+export function layerView(level: Level, layer: number): Level {
+  if (layer === 0 || !level.ceiling) return level;
+  return { ...level, tiles: level.ceiling.tiles, groups: level.ceiling.groups };
 }
 
 /** Cells covered by the block: one when standing, two when lying. */
@@ -117,6 +127,11 @@ function padLaunch(level: Level, b: Block): Dir | null {
   return dirs.size === 1 ? DIRS[[...dirs][0]] : null;
 }
 
+/** Whether flip tiles fire under this block: standing on one, or lying fully on two. */
+function flipFires(level: Level, b: Block): boolean {
+  return fullyOn(level, b, Tile.Flip);
+}
+
 /**
  * Where a launch from `b` along `dir` lands: fly N−1 tiles, then tip once with an ordinary
  * roll, so the nearest landing cell is N tiles past the block's leading edge.
@@ -155,6 +170,8 @@ export function flightLandings(level: Level): { x: number; y: number }[] {
 export function step(level: Level, state: State, dir: Dir): StepResult {
   const rolled = roll(state.block, dir);
   let block = rolled;
+  let layer = state.layer ?? 0;
+  let view = layerView(level, layer);
   const motions: Motion[] = [];
   const moveTo = (kind: Motion['kind'], d: Dir, to: Block) => {
     if (to.x === block.x && to.y === block.y) return;
@@ -162,7 +179,7 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
     block = to;
   };
   const fell = (bridges: number, extra: Partial<StepResult> = {}): StepResult => ({
-    state: { block, bridges },
+    state: { block, bridges, layer },
     outcome: 'fall',
     rolled,
     motions,
@@ -171,49 +188,60 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
     ...extra,
   });
 
-  const still = () => supported(level, block, state.bridges);
-  if (still()) moveTo('slide', dir, slide(level, block, dir, state.bridges));
-  // Then belts and pads act wherever the block rests, until neither does. At most one belt push
-  // per move and each pad fires at most once, so every move ends.
+  const still = () => supported(view, block, state.bridges);
+  if (still()) moveTo('slide', dir, slide(view, block, dir, state.bridges));
+  // Then belts, pads and flip tiles act wherever the block rests, until none does. At most one
+  // belt push per move, and each pad or flip tile fires at most once, so every move ends.
   let pushed = false;
   const fired = new Set<number>();
+  const cellKeys = () => blockCells(block).map(([x, y]) => (layer * level.height + y) * level.width + x);
   while (still()) {
-    const push = pushed ? null : conveyorPush(level, block);
+    const push = pushed ? null : conveyorPush(view, block);
     if (push) {
       pushed = true;
       moveTo('push', push, shift(block, push));
-      if (still()) moveTo('slide', push, slide(level, block, push, state.bridges));
+      if (still()) moveTo('slide', push, slide(view, block, push, state.bridges));
       continue;
     }
-    const launch = padLaunch(level, block);
-    if (!launch) break;
-    const cells = blockCells(block).map(([x, y]) => y * level.width + x);
+    const launch = padLaunch(view, block);
+    const flips = !launch && flipFires(view, block);
+    if (!launch && !flips) break;
+    const cells = cellKeys();
     if (cells.some((c) => fired.has(c))) break;
     cells.forEach((c) => fired.add(c));
-    moveTo('fly', launch, flight(block, launch));
+    if (launch) {
+      moveTo('fly', launch, flight(block, launch));
+      continue;
+    }
+    // Gravity flips: the block drops "up" to the tiles directly over it, in the same pose, and
+    // those tiles may not fire back this move.
+    motions.push({ kind: 'flip', dir, from: block, to: block });
+    layer = 1 - layer;
+    view = layerView(level, layer);
+    cellKeys().forEach((c) => fired.add(c));
   }
 
   if (!still()) return fell(state.bridges);
-  if (block.o === 'S' && tileAt(level, block.x, block.y) === Tile.Fragile) {
+  if (block.o === 'S' && tileAt(view, block.x, block.y) === Tile.Fragile) {
     return fell(state.bridges, { broke: { x: block.x, y: block.y } });
   }
 
   let bridges = state.bridges;
   const pressed: { x: number; y: number }[] = [];
   for (const [x, y] of blockCells(block)) {
-    const t = tileAt(level, x, y);
+    const t = tileAt(view, x, y);
     if (t === Tile.SoftSwitch || (t === Tile.HeavySwitch && block.o === 'S')) {
-      bridges ^= 1 << groupAt(level, x, y);
+      bridges ^= 1 << groupAt(view, x, y);
       pressed.push({ x, y });
     }
   }
 
   // A switch can retract the bridge the block is resting on.
-  if (!supported(level, block, bridges)) return { ...fell(bridges), pressed };
+  if (!supported(view, block, bridges)) return { ...fell(bridges), pressed };
 
-  const won = block.o === 'S' && tileAt(level, block.x, block.y) === Tile.Goal;
+  const won = block.o === 'S' && tileAt(view, block.x, block.y) === Tile.Goal;
   return {
-    state: { block, bridges },
+    state: { block, bridges, layer },
     outcome: won ? 'win' : 'ok',
     rolled,
     motions,
@@ -222,7 +250,10 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
   };
 }
 
-export function findGoal(level: Level): { x: number; y: number } | null {
-  const i = level.tiles.indexOf(Tile.Goal);
-  return i < 0 ? null : { x: i % level.width, y: Math.floor(i / level.width) };
+export function findGoal(level: Level): { x: number; y: number; layer: number } | null {
+  for (const layer of level.ceiling ? [0, 1] : [0]) {
+    const i = layerView(level, layer).tiles.indexOf(Tile.Goal);
+    if (i >= 0) return { x: i % level.width, y: Math.floor(i / level.width), layer };
+  }
+  return null;
 }

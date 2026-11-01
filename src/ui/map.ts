@@ -17,6 +17,7 @@ const LAYOUT: Record<string, { x: number; y: number; theme: string }> = {
   wind: { x: 97, y: 30, theme: 'peaks' },
   lab: { x: 140, y: 24, theme: 'lab' },
   windlab: { x: 140, y: 68, theme: 'lab' },
+  gravlab: { x: 100, y: 72, theme: 'night' },
 };
 
 const SIGNATURE_LABEL: Record<string, string> = { ice: 'Ice & belts', pads: 'Launch pads' };
