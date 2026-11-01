@@ -28,6 +28,28 @@ npm run build          # static site in dist/ (game + levels.html)
 npx tsc --noEmit       # typecheck (scripts/ is excluded: no @types/node)
 ```
 
+Design tools (`scripts/design/`). Each takes a draft file of design blocks, or a level id (`wind-06`), or an id
+prefix (`wind-`) for a whole chapter, so playtest notes can be acted on directly:
+
+```
+npm run -s analyze -- <file|id>...        # par, states, dead ends, pad/ice uses, untouched tiles (*);
+                                          #   unsolvable → diagnosis. TRACE=1 moves · DIAG=1 diagnosis
+                                          #   always · BLOCK=1 print as a design block (copy to a draft)
+npm run -s sim -- <file|id> RRDL [name]   # replay moves; board at the end (SHOW=1: after every move)
+npm run -s search -- <template> <palette> <parLo> <parHi> 1-4 2 "chain,belt→pad" > out.txt
+                                          # seeds 1-4 in parallel, best first; stops at once with a
+                                          #   diagnosis if the template can't be solved even all-floor
+npm run verify -- wind-                   # build, serve, play every solution in headless Chrome
+```
+
+**When a draft is unsolvable, read the diagnosis before changing anything.** It lists every pad
+launch (where it lands, on what, `✗ FALLS`, whether play ever fires it), the closest approach to
+the goal with the moves to get there, and a reach map (`S` the block rests standing, `l` only
+lying, `-` never). Nearly every dead draft in Windy Peaks was one of three things it shows at a
+glance: a pad landing one column off onto nothing, a start island that boxes the block in, or a
+goal reachable only lying. **Dead ends** counts states you can reach but never win from
+(without undo): 0 is forgiving; a finale with many (wind-08: 85 of 341) punishes wandering.
+
 `/levels.html` is the level index (mini-maps, validation status, play links); `/?level=<id>` opens
 one level.
 
@@ -47,11 +69,12 @@ The process that produced the Frost chapter:
 2. **Sketch a template by hand** with the fixed pieces (start island, switches, belts, bridges,
    goal island) and leave `?` cells for the search (`%` = ice or empty). Use `!switches 0 1` lines
    when switches target different bridge groups.
-3. **Search:** `npx vite-node scripts/design/search.ts <template> "~~~#.f" <parLo> <parHi> <seed> 4
+3. **Search:** `npm run -s search -- <template> "~~~#.f" <parLo> <parHi> 1-3 4
    "slide→switch,belt→slide"`. It hill-climbs layouts with the solver and penalizes tiles the
-   solution never touches. Try 2–3 seeds.
-4. **Analyze:** `TRACE=1 npx vite-node scripts/design/analyze.ts <file>` prints par, explored states,
-   ice uses, switch presses, the move trace, and the grid with `*` on untouched tiles.
+   solution never touches; the seed range runs in parallel.
+4. **Analyze:** `TRACE=1 npm run -s analyze -- <file>` prints par, explored states, dead ends,
+   ice and pad uses, switch presses, the move trace, and the grid with `*` on untouched tiles.
+   To check a route you have in mind, replay it with `sim` instead of tracing it by hand.
 5. **Strip and judge.** Remove the `*` tiles and re-analyze: a high state count that collapses when
    stripped was maze clutter, not a puzzle. Then reframe by hand, keeping decoys only if they add
    real choices (states go up, par stays).
@@ -78,16 +101,16 @@ exceed the levels before it (frost-08: 22 moves / 387 states vs frost-07's 18 / 
 ## Verifying visually (headless Chrome)
 
 The user playtests on Firefox (needs `webgl.force-enabled=true`); Claude verifies with Playwright's
-cached Chromium, driven over the DevTools protocol by `scripts/design/play.mjs`:
+cached Chromium, driven over the DevTools protocol by `scripts/design/play.mjs`. One command does
+the build, serve, play, and cleanup:
 
 ```
-npm run build && (npx vite preview --port 4179 --strictPort &)
-npx vite-node scripts/design/solutions.ts frost- > /tmp/solutions.json
-node scripts/design/play.mjs http://localhost:4179 /tmp/solutions.json /tmp/shots
+SHOTS=<scratch dir> npm run verify -- frost-
 ```
 
 It plays every optimal solution with real key events, reports WON/NOT WON at par, and saves start
-and end screenshots to read. Gotchas:
+and end screenshots to read. For the sky map (a DOM overlay), a plain headless screenshot of `/`
+with `--virtual-time-budget=20000` is enough. Gotchas:
 
 - `--virtual-time-budget` screenshots freeze CSS transitions mid-way; use the driver instead.
 - To inspect a fast animation, build a throwaway copy with its constants slowed ~10× and capture
@@ -106,7 +129,7 @@ src/levels/    chapter .txt files, format.ts (parser), validate.ts (checks + one
 src/render/    Three.js world (tiles, animations, push cue), palette.ts (belt colors by direction)
 src/ui/        progress (localStorage), map (campaign sky map; island layout per chapter)
 src/main.ts    game controller: modes, HUD, splash, key focus sink (for Vimium)
-scripts/       check-levels.ts; design/ (search, analyze, solutions, play)
+scripts/       check-levels.ts; design/ (lib, explore, analyze, sim, search, solutions, play, verify)
 ```
 
 Rules are frozen for ice and conveyors (see DESIGN.md *Mechanics*); changing them breaks

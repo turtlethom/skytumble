@@ -9,7 +9,11 @@
     "preview": "vite preview",
     "test": "vitest run",
     "levels": "vitest run tests/print.test.ts --reporter=verbose",
-    "levels:check": "vite-node scripts/check-levels.ts"
+    "levels:check": "vite-node scripts/check-levels.ts",
+    "analyze": "vite-node scripts/design/analyze.ts",
+    "sim": "vite-node scripts/design/sim.ts",
+    "search": "vite-node scripts/design/search.ts",
+    "verify": "scripts/design/verify.sh"
   },
   "dependencies": {
     "three": "^0.169.0"

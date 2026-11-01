@@ -6,13 +6,45 @@
 // switches pressed, belt pushes, explored states; and penalizes tiles the solution never touches.
 // Env: CLUTTER (penalty per untouched filled cell, default 0.5), PRESSES (bonus per switch, default 10).
 // Prints the best layout as a design block, ready for analyze.ts.
+// A seed range (`1-4`) or list (`1,5,9`) runs one search per seed in parallel and prints every result,
+// best first: save the output to a file and run analyze.ts on it.
+// Before searching, it fills every '?' with floor (and '%' with ice): if even that can't be solved, the
+// fixed pieces are wrong (a pad aimed at nothing, a goal you can't stand on), so it prints a diagnosis
+// and stops instead of climbing for minutes with nothing to climb.
+import { spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { initialState, step } from '../../src/game/rules';
 import { solve } from '../../src/game/solver';
 import { iceUses, padUses } from '../../src/levels/validate';
+import { diagnose } from './explore';
 import { build, parseBlock, touched } from './lib';
 
 const [file, palette, lo, hi, seedArg = '1', restartsArg = '4', wantArg = ''] = process.argv.slice(2);
+const seeds = seedArg.includes('-')
+  ? (([a, b]) => Array.from({ length: b - a + 1 }, (_, i) => a + i))(seedArg.split('-').map(Number))
+  : seedArg.split(',').map(Number);
+if (seeds.length > 1) {
+  // Fan out: one child search per seed, then print the results best first.
+  const runs = seeds.map(
+    (sd) =>
+      new Promise<string>((resolve) => {
+        const args = [fileURLToPath(import.meta.url), file, palette, lo, hi, String(sd), restartsArg, wantArg];
+        const child = spawn('node_modules/.bin/vite-node', args, { stdio: ['ignore', 'pipe', 'inherit'] });
+        let out = '';
+        child.stdout.on('data', (c) => (out += c));
+        child.on('close', () => resolve(out.trim()));
+      }),
+  );
+  const outs = await Promise.all(runs);
+  const score = (o: string) => Number(/^@score (\S+)/.exec(o)?.[1] ?? -Infinity);
+  if (outs.some((o) => !o.startsWith('@score'))) {
+    console.log(outs.find((o) => !o.startsWith('@score')));
+    process.exit(1);
+  }
+  console.log(outs.sort((a, b) => score(b) - score(a)).join('\n\n'));
+  process.exit(0);
+}
 const want = wantArg.split(',').filter(Boolean);
 const { rows: template, switches, on } = parseBlock(readFileSync(file, 'utf8').trim().split('\n'));
 const clutter = Number(process.env.CLUTTER ?? 0.5);
@@ -64,6 +96,13 @@ function score(rows: string[]): number {
   s += uses.length * 8 + Math.min(pushes, 5) * 1.5 + pressed.size * pressBonus;
   s += Math.min(sol.explored, 600) * 0.05;
   return s - untouched * clutter;
+}
+
+const skeleton = render(slots.map((_, i) => (slotPalette[i] === palette ? '#' : '~')));
+if (!solve(build(skeleton, switches, on))) {
+  console.log('The template is unsolvable even with every ? as floor, so no fill can work. Diagnosis:');
+  console.log(diagnose(skeleton, build(skeleton, switches, on)).join('\n'));
+  process.exit(1);
 }
 
 const results: { s: number; rows: string[] }[] = [];

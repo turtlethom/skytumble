@@ -108,6 +108,10 @@ for (const [id, moves] of Object.entries(solutions)) {
   console.log(`${id.padEnd(12)} ${won ? 'WON' : 'NOT WON'}  ${count} moves / par ${moves.length}`);
   if (!won) failed++;
 }
-chrome.kill();
-fs.rmSync(profile, { recursive: true, force: true });
+// Wait for Chrome to exit before deleting its profile: it keeps writing there while shutting down.
+await new Promise((resolve) => {
+  chrome.once('exit', resolve);
+  chrome.kill();
+});
+fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
 process.exit(failed ? 1 : 0);
