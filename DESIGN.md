@@ -257,7 +257,14 @@ links; stars; stats; snapping camera; undo; reference levels.
    nothing about safety. Night lightened. `gravlab-01` has a trap flip tile with nothing above it.
 2. **Gravity lab** (~6 levels, one per rule question): flip up/down, falling into the sky,
    lying flip, cross-layer switch, belt or pad onto a flip tile, a round-trip combo. One
-   playtest round, then the rules freeze.
+   playtest round, then the rules freeze. — built 2026-11-01 on the shadow view (locked in after the
+   camera prototype), awaiting playtest: `gravlab-01` Up and Over (the prototype level: flip up,
+   ceiling switch raises a ground bridge, flip down, flip up onto a ceiling goal; par 11),
+   `02` Open Sky (one of three rings drops you into the sky; par 10), `03` Lie Down to Rise
+   (lying flip onto fragile planks; par 11), `04` Upstairs, Downstairs (a switch on each floor
+   drives the other's bridge; par 10), `05` Conveyor Lift (belt→flip, then a pad flight onto a
+   ring pair flips you down mid-move; par 8), `06` Round Trip (all of it, plus a trap; par 13).
+   The `gravity` signature and its guard (two distinct flip uses) are implemented.
 3. **Starfall chapter** (`star-01`…`star-08`) and its map island.
 
 **Later:** endless climb + daily seed, Frost in the generator, archipelago generation,
@@ -366,6 +373,15 @@ removed.
 
 **2026-11-01 — shadow view.** "Almost perfect": wants an outline too, very faint, keeping the
 shadow → added a thin, faint outline of the whole other floor over the shadow.
+
+**2026-11-01 — gravity lab, first round.** The flip rules feel predictable now. Still somewhat
+hard to know exactly where you land: the marks help, but the player should be able to picture the
+solution in their head without clutter. A switch that changes the other floor is too subtle: the
+only giveaways are peeking or noticing the shadow change. → Proposed swapping the floors in place
+(camera stays above, no mirroring) and colored bridge squares; the user keeps the turning camera
+and wants only the bridge squares: the other floor's bridges show on your floor as thin squares in
+their switch's color (bright when extended, faint when retracted) that pulse when a press changes
+them.
 
 ## Architecture
 

@@ -3,6 +3,7 @@ import { formatLevel, parseLevel } from '../src/game/ascii';
 import { step } from '../src/game/rules';
 import { solve } from '../src/game/solver';
 import { State } from '../src/game/types';
+import { flipUses } from '../src/levels/validate';
 
 // Ground rows, then '---', then the ceiling directly above (same coordinates).
 const at = (x: number, y: number, o: 'S' | 'X' | 'Y', layer = 0, bridges = 0): State => ({
@@ -89,5 +90,10 @@ describe('gravity flip', () => {
     const sol = solve(level);
     expect(sol!.path.map((s) => s.layer)).toEqual([0, 0, 1, 1, 0, 0, 0]);
     expect(solve(parseLevel(['S##+..###G']))).toBeNull();
+  });
+
+  it('names the ways a solution uses flips', () => {
+    const level = parseLevel(['S##+0#G', '---', '...x++.']);
+    expect(flipUses(level, solve(level)!.moves).sort()).toEqual(['cross-layer press', 'flip down', 'flip up', 'lying flip']);
   });
 });

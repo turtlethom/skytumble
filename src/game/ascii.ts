@@ -18,8 +18,8 @@ export function parseLevel(rows: string[], switchGroups: number[] = [], bridgesO
   const split = rows.findIndex((r) => /^-{3,}\s*$/.test(r));
   const groundRows = split < 0 ? rows : rows.slice(0, split);
   const ceilingRows = split < 0 ? null : rows.slice(split + 1);
-  if (ceilingRows && ceilingRows.length > groundRows.length) throw new Error('The ceiling has more rows than the ground');
-  const height = groundRows.length;
+  // The level is as tall as its taller layer; missing rows are empty.
+  const height = Math.max(groundRows.length, ceilingRows?.length ?? 0);
   const width = Math.max(...[...groundRows, ...(ceilingRows ?? [])].map((r) => r.length));
   let start = { x: -1, y: -1 };
   let switchIndex = 0;

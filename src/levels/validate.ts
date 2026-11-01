@@ -1,4 +1,4 @@
-import { blockCells, findGoal, initialState, step, tileAt } from '../game/rules';
+import { blockCells, findGoal, initialState, layerView, step, tileAt } from '../game/rules';
 import { solve } from '../game/solver';
 import { Dir, Level, Tile } from '../game/types';
 import { Chapter, HandmadeLevel } from './format';
@@ -26,6 +26,51 @@ export type PadUse =
   | 'belt→pad' // a belt pushed the block onto pads that fired
   | 'flight→belt'; // a flight landed on belts that pushed it
 
+/** Distinct ways a solution can use gravity flips; the `gravity` signature asks for two. */
+export type FlipUse =
+  | 'flip up' // flipped from the ground to the ceiling
+  | 'flip down' // flipped from the ceiling back to the ground
+  | 'lying flip' // flipped while lying across two flip tiles
+  | 'belt→flip' // a belt pushed the block onto flip tiles that fired
+  | 'flight→flip' // a pad flight landed on flip tiles that fired
+  | 'cross-layer press'; // pressed a switch that drives bridges on the other floor
+
+export function flipUses(level: Level, moves: Dir[]): FlipUse[] {
+  const uses = new Set<FlipUse>();
+  if (!level.ceiling) return [];
+  // Which floors each bridge group has tiles on.
+  const groupLayers = new Map<number, Set<number>>();
+  for (const layer of [0, 1]) {
+    const view = layerView(level, layer);
+    view.tiles.forEach((t, i) => {
+      if (t !== Tile.Bridge) return;
+      if (!groupLayers.has(view.groups[i])) groupLayers.set(view.groups[i], new Set());
+      groupLayers.get(view.groups[i])!.add(layer);
+    });
+  }
+  let state = initialState(level);
+  for (const dir of moves) {
+    const r = step(level, state, dir);
+    let layer = state.layer ?? 0;
+    r.motions.forEach((m, i) => {
+      if (m.kind !== 'flip') return;
+      uses.add(layer === 0 ? 'flip up' : 'flip down');
+      if (m.from.o !== 'S') uses.add('lying flip');
+      const before = r.motions[i - 1]?.kind;
+      if (before === 'push') uses.add('belt→flip');
+      if (before === 'fly') uses.add('flight→flip');
+      layer = 1 - layer;
+    });
+    const view = layerView(level, r.state.layer ?? 0);
+    for (const c of r.pressed) {
+      const g = view.groups[c.y * level.width + c.x];
+      if (groupLayers.get(g)?.has(1 - (r.state.layer ?? 0))) uses.add('cross-layer press');
+    }
+    state = r.state;
+  }
+  return [...uses];
+}
+
 export interface LevelReport {
   id: string;
   /** The solver's optimal move count, or null if unsolvable. */
@@ -35,6 +80,7 @@ export interface LevelReport {
   iceUses: IceUse[];
   pushes: number;
   padUses: PadUse[];
+  flipUses: FlipUse[];
   errors: string[];
 }
 
@@ -106,7 +152,11 @@ export function validateLevel(h: HandmadeLevel, chapter: Chapter): LevelReport {
   if (solution && h.guard && chapter.signature === 'pads' && pads.length < 2) {
     errors.push(`one-trick: the solution uses pads only as [${pads.join(', ') || 'nothing'}]; needs 2 distinct ways`);
   }
-  return { id: h.id, par, explored: solution?.explored ?? 0, iceUses: uses, pushes, padUses: pads, errors };
+  const flips = solution ? flipUses(h.level, solution.moves) : [];
+  if (solution && h.guard && chapter.signature === 'gravity' && flips.length < 2) {
+    errors.push(`one-trick: the solution uses flips only as [${flips.join(', ') || 'nothing'}]; needs 2 distinct ways`);
+  }
+  return { id: h.id, par, explored: solution?.explored ?? 0, iceUses: uses, pushes, padUses: pads, flipUses: flips, errors };
 }
 
 export function validateChapters(chapters: Chapter[]): Map<string, LevelReport> {

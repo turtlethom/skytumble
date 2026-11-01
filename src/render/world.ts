@@ -45,6 +45,10 @@ const SHADOW_BLUR = 5;
 /** The other floor's outline: thin and faint, so it reads as a hint, not as tiles. */
 const OUTLINE_WIDTH = 0.04;
 const OUTLINE_OPACITY = 0.28;
+/** The other floor's bridges, as squares in their switch's color: extended, retracted, and the pulse on a change. */
+const BRIDGE_ON_OPACITY = 0.9;
+const BRIDGE_OFF_OPACITY = 0.35;
+const BRIDGE_PULSE_MS = 1400;
 
 /** Each bridge group gets its own colour so you can see which switch drives which bridge. */
 const GROUP_COLORS = [0xf4a940, 0xb57edc, 0x4fc3f7, 0xef6f6c];
@@ -121,6 +125,8 @@ export class World {
   private bpAlpha = 0;
   private bpMats: THREE.MeshBasicMaterial[] = [];
   private level: Level | null = null;
+  /** Bridge groups as last drawn, so a change can pulse the bridges it moved on the other floor. */
+  private bridgeMask = 0;
   /** Dirt and hanging rock per layer: hidden when you see a layer from behind, where it's only clutter. */
   private earths: THREE.Object3D[][] = [[], []];
   private flipGlows: THREE.MeshStandardMaterial[] = [];
@@ -732,7 +738,7 @@ export class World {
   }
 
   setBridges(mask: number): Promise<void> {
-    this.buildBlueprints(mask);
+    this.buildBlueprints(mask, mask ^ this.bridgeMask);
     const changes = this.bridges.filter((b) => b.slab.visible !== (((mask >> b.group) & 1) === 1));
     if (changes.length === 0) return Promise.resolve();
     for (const b of changes) b.slab.visible = true;
@@ -913,7 +919,8 @@ export class World {
    * there's ground to fall on, like a real shadow, and tints whatever tile is there without hiding it.
    * Over it, a faint outline of the whole other floor, open sky included.
    */
-  private buildBlueprints(bridges: number): void {
+  private buildBlueprints(bridges: number, pulse = 0): void {
+    this.bridgeMask = bridges;
     this.blueprints.forEach((g) => g.clear());
     this.bpMats.forEach((m) => {
       m.map?.dispose();
@@ -986,6 +993,41 @@ export class World {
           );
           bar.position.set(x + dx * 0.5, SHADOW_LIFT + 0.005, y + dy * 0.5);
           this.blueprints[layer].add(bar);
+        }
+      }
+
+      // The other floor's bridges, as squares in their switch's color: bright when extended, faint
+      // when retracted, and a pulse when a press just changed them, so a switch that reaches the
+      // other floor shows what it did without a peek.
+      for (let i = 0; i < w * h; i++) {
+        if (there.tiles[i] !== Tile.Bridge) continue;
+        const group = there.groups[i];
+        const color = GROUP_COLORS[group % GROUP_COLORS.length];
+        const on = ((bridges >> group) & 1) === 1;
+        const [x, y] = [i % w, Math.floor(i / w)];
+        const sq = new THREE.MeshBasicMaterial({ color, transparent: true, depthWrite: false });
+        sq.userData.opacity = on ? BRIDGE_ON_OPACITY : BRIDGE_OFF_OPACITY;
+        this.bpMats.push(sq);
+        const inset = 0.36;
+        for (const [ax, az, len] of [[0, -inset, 2 * inset], [0, inset, 2 * inset], [-inset, 0, 0], [inset, 0, 0]] as const) {
+          const along = len > 0;
+          const bar = new THREE.Mesh(
+            new THREE.BoxGeometry(along ? 2 * inset + 0.06 : 0.06, 0.005, along ? 0.06 : 2 * inset + 0.06),
+            sq,
+          );
+          bar.position.set(x + ax, SHADOW_LIFT + 0.01, y + az);
+          this.blueprints[layer].add(bar);
+        }
+        if ((pulse >> group) & 1) {
+          const glow = new THREE.MeshBasicMaterial({ color, transparent: true, depthWrite: false, side: THREE.DoubleSide });
+          glow.userData.opacity = 0;
+          this.bpMats.push(glow);
+          const fill = new THREE.Mesh(new THREE.PlaneGeometry(0.78, 0.78), glow);
+          fill.rotation.x = -Math.PI / 2;
+          fill.position.set(x, SHADOW_LIFT + 0.012, y);
+          this.blueprints[layer].add(fill);
+          // Two beats, then settle to the new state. The frame loop applies the opacity.
+          void this.tween(BRIDGE_PULSE_MS, (t) => (glow.userData.opacity = 0.7 * Math.abs(Math.sin(t * Math.PI * 2))));
         }
       }
     }

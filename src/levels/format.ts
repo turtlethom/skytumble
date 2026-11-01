@@ -39,7 +39,7 @@ export interface Chapter {
   levels: HandmadeLevel[];
 }
 
-export const SIGNATURES = ['ice', 'pads'] as const;
+export const SIGNATURES = ['ice', 'pads', 'gravity'] as const;
 export type Signature = (typeof SIGNATURES)[number];
 
 const FIELD = /^([a-z-]+):\s*(.*)$/;

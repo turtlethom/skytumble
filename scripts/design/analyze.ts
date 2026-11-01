@@ -7,7 +7,7 @@
 // design block (to copy a chapter level into a draft file).
 import { initialState, step } from '../../src/game/rules';
 import { solve } from '../../src/game/solver';
-import { iceUses, padUses } from '../../src/levels/validate';
+import { flipUses, iceUses, padUses } from '../../src/levels/validate';
 import { diagnose, explore } from './explore';
 import { build, describeMotions, designBlock, loadDesigns, textRow, touched } from './lib';
 
@@ -38,7 +38,7 @@ for (const arg of process.argv.slice(2)) {
       st = r.state;
     }
     const plain = solve(build(rows.map((l) => (/^-{3,}/.test(l) ? l : l.replace(/[~^v<>UDLR+]/g, '#'))), switches, on));
-    const pads = padUses(level, sol.moves);
+    const pads = [...padUses(level, sol.moves), ...flipUses(level, sol.moves)];
     // A dead end: a state you can reach but never win from (without undo).
     const dead = ex.nodes.size - ex.canWin.size;
     console.log(

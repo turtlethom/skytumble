@@ -79,7 +79,10 @@ export async function loadDesigns(arg: string): Promise<Design[]> {
         const lines = block.split('\n');
         const { rows, switches, on } = parseBlock(lines);
         const name = lines.find((l) => l.startsWith('@'))?.slice(1) ?? `#${i + 1}`;
-        return { name, rows, switches, on, level: build(rows, switches, on) };
+        const level = build(rows, switches, on);
+        // Re-print the rows from the parsed level so every layer is full height and width, and the
+        // ceiling starts where textRow expects it.
+        return { name, rows: formatLevel(level).split('\n'), switches, on, level };
       });
   }
   // Imported lazily: the chapters pull in Vite's ?raw imports, which only vite-node understands.

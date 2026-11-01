@@ -57,7 +57,9 @@ one level.
 
 Levels live in `src/levels/<chapter>.txt` (format documented in `src/levels/format.ts`; grid
 characters in `src/game/ascii.ts`). A two-layer (gravity) level writes the ground, a `---` line,
-then the ceiling grid in the same coordinates; `+` is a flip tile. The rules run on one layer at a
+then the ceiling grid in the same coordinates; `+` is a flip tile. The layers line up row for
+row, so keep leading empty rows (trimming the ground's first row shifts it under the wrong
+ceiling row). The rules run on one layer at a
 time through `layerView`; the renderer mirrors the ceiling group (scale y −1), so tiles and
 animations are shared. Chapters are registered in play order in
 `src/levels/index.ts` (which also marks extras), and a new chapter needs an island position and

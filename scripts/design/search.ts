@@ -10,13 +10,14 @@
 // best first: save the output to a file and run analyze.ts on it.
 // Before searching, it fills every '?' with floor (and '%' with ice): if even that can't be solved, the
 // fixed pieces are wrong (a pad aimed at nothing, a goal you can't stand on), so it prints a diagnosis
-// and stops instead of climbing for minutes with nothing to climb.
+// and stops instead of climbing for minutes with nothing to climb. A restart whose random fill can't be
+// solved starts from that skeleton instead.
 import { spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { initialState, step } from '../../src/game/rules';
 import { solve } from '../../src/game/solver';
-import { iceUses, padUses } from '../../src/levels/validate';
+import { flipUses, iceUses, padUses } from '../../src/levels/validate';
 import { diagnose } from './explore';
 import { build, parseBlock, touched } from './lib';
 
@@ -24,27 +25,6 @@ const [file, palette, lo, hi, seedArg = '1', restartsArg = '4', wantArg = ''] = 
 const seeds = seedArg.includes('-')
   ? (([a, b]) => Array.from({ length: b - a + 1 }, (_, i) => a + i))(seedArg.split('-').map(Number))
   : seedArg.split(',').map(Number);
-if (seeds.length > 1) {
-  // Fan out: one child search per seed, then print the results best first.
-  const runs = seeds.map(
-    (sd) =>
-      new Promise<string>((resolve) => {
-        const args = [fileURLToPath(import.meta.url), file, palette, lo, hi, String(sd), restartsArg, wantArg];
-        const child = spawn('node_modules/.bin/vite-node', args, { stdio: ['ignore', 'pipe', 'inherit'] });
-        let out = '';
-        child.stdout.on('data', (c) => (out += c));
-        child.on('close', () => resolve(out.trim()));
-      }),
-  );
-  const outs = await Promise.all(runs);
-  const score = (o: string) => Number(/^@score (\S+)/.exec(o)?.[1] ?? -Infinity);
-  if (outs.some((o) => !o.startsWith('@score'))) {
-    console.log(outs.find((o) => !o.startsWith('@score')));
-    process.exit(1);
-  }
-  console.log(outs.sort((a, b) => score(b) - score(a)).join('\n\n'));
-  process.exit(0);
-}
 const want = wantArg.split(',').filter(Boolean);
 const { rows: template, switches, on } = parseBlock(readFileSync(file, 'utf8').trim().split('\n'));
 const clutter = Number(process.env.CLUTTER ?? 0.5);
@@ -80,7 +60,7 @@ function score(rows: string[]): number {
   if (!sol) return -1e9;
   const par = sol.moves.length;
   const ice = iceUses(level, sol.moves);
-  const uses: string[] = [...ice.uses, ...padUses(level, sol.moves)];
+  const uses: string[] = [...ice.uses, ...padUses(level, sol.moves), ...flipUses(level, sol.moves)];
   const pushes = ice.pushes;
   const seen = touched(level, sol.moves);
   const pressed = new Set<string>();
@@ -100,15 +80,41 @@ function score(rows: string[]): number {
 
 const skeleton = render(slots.map((_, i) => (slotPalette[i] === palette ? '#' : '~')));
 if (!solve(build(skeleton, switches, on))) {
-  console.log('The template is unsolvable even with every ? as floor, so no fill can work. Diagnosis:');
-  console.log(diagnose(skeleton, build(skeleton, switches, on)).join('\n'));
+  // On stderr, so a redirected results file stays empty rather than holding a non-design.
+  console.error('The template is unsolvable even with every ? as floor, so no fill can work. Diagnosis:');
+  console.error(diagnose(skeleton, build(skeleton, switches, on)).join('\n'));
   process.exit(1);
+}
+
+if (seeds.length > 1) {
+  // Fan out: one child search per seed, then print the results best first.
+  const runs = seeds.map(
+    (sd) =>
+      new Promise<string>((resolve) => {
+        const args = [fileURLToPath(import.meta.url), file, palette, lo, hi, String(sd), restartsArg, wantArg];
+        const child = spawn('node_modules/.bin/vite-node', args, { stdio: ['ignore', 'pipe', 'inherit'] });
+        let out = '';
+        child.stdout.on('data', (c) => (out += c));
+        child.on('close', () => resolve(out.trim()));
+      }),
+  );
+  const outs = await Promise.all(runs);
+  const score = (o: string) => Number(/^@score (\S+)/.exec(o)?.[1] ?? -Infinity);
+  if (outs.some((o) => !o.startsWith('@score'))) process.exit(1);
+  console.log(outs.sort((a, b) => score(b) - score(a)).join('\n\n'));
+  process.exit(0);
 }
 
 const results: { s: number; rows: string[] }[] = [];
 for (let r = 0; r < Number(restartsArg); r++) {
+  // Start from a random fill; if that can't be solved (common when the fixed pieces are far apart),
+  // start from the all-floor skeleton instead, which is known to work, and carve from there.
   let cur = slots.map((_, i) => pick(slotPalette[i]));
   let best = score(render(cur));
+  if (best <= -1e9) {
+    cur = slots.map((_, i) => (slotPalette[i] === palette ? '#' : '~'));
+    best = score(render(cur));
+  }
   for (let i = 0; i < 3000; i++) {
     const next = [...cur];
     for (let k = 0, n = 1 + Math.floor(rand() * 2); k < n; k++) {
