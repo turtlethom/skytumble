@@ -1,0 +1,119 @@
+title: Windy Peaks
+signature: pads
+
+=== wind-01
+par: 7
+name: Updraft
+idea: Stand on a launch pad and the gust flings you four tiles over the gap; you land lying down. Get upright on the pad first.
+guard: off
+.###..........
+.#S#..........
+.###..........
+..f##R...###..
+..###....##G..
+
+=== wind-02
+par: 8
+name: Skip Stone
+idea: Lie along two pads and they hop you just two tiles, landing you upright. Stand on one and you sail straight past the island.
+guard: off
+.###......
+S###......
+..##D.....
+..##D.....
+..........
+....####..
+.......#..
+.......#..
+.......G..
+
+=== wind-03
+par: 10
+name: Tailwind
+idea: The pad has no floor around it, only a belt, and a belt pushes once per move: roll onto the last belt tile standing and it hands you to the pad. Over there, the belts shove you down; use them to line up with the goal.
+##.............
+#S###..........
+####>>R...#vv..
+.###......#vv..
+..........##v..
+...........G#..
+
+=== wind-04
+par: 12
+name: Sidestep
+idea: Lie across two pads and they hop you sideways, still lying: the only safe way onto the fragile strip. Roll onto them from the side and they fire too early; come in from above.
+..####.....
+#S##RR.f#..
+####RR.f#..
+.##....###.
+.......##..
+........#..
+........D..
+...........
+...........
+...........
+.......##..
+........#..
+........G..
+
+=== wind-05
+par: 16
+name: Out and Down
+idea: Fling to the switch island and stand on the heavy switch to raise the bridge below. Then get upright just above the down pads without standing on the switch again, and tip onto them to hop down.
+switches: 0
+####..........
+#S##R...####..
+####....##x#..
+........#D##..
+.........D....
+..............
+.....#G0####..
+.....###......
+
+=== wind-06
+par: 18
+name: Relay Rock
+idea: A rock of pads passes you on in a single move, both ways. Landing on the heavy switch turns the bridge home off: let the belts hand you back onto it, then work round to the belt that feeds the return pad.
+switches: 0
+bridges-on: 0
+####............
+#S##R...RR.x<<#.
+####.........###
+.............v##
+.....#0#LL...L##
+.....###.....###
+.....###........
+.....#G#........
+
+=== wind-07
+par: 25
+name: Two Switches
+idea: Stand on the heavy switch before you leave, then get back onto the last belt tile with the belts working against you. The landing presses the second switch; line up lying across the down pads to hop to the bridges.
+switches: 1 0
+##.............
+#Sv>>R...o###..
+#x>>#....####..
+....#....####..
+..........DD...
+...............
+..........##...
+......G1100#...
+
+=== wind-08
+par: 28
+name: Crossroads
+idea: Two islands off the hub, and the order matters. The north switch flips on every touch and must end up on. The east is through a relay rock; its belts feed the return pad, which relays you home onto the north bridge.
+switches: 0 1
+....####............
+....##o#............
+....#D##............
+....................
+....................
+....................
+..####U#............
+..#S#####......###..
+..######R...RR.x##..
+..######.0.LL...L<^.
+.........1.....##^v.
+.........1.....###^.
+.........G..........

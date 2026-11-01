@@ -55,10 +55,15 @@ The process that produced the Frost chapter:
 5. **Strip and judge.** Remove the `*` tiles and re-analyze: a high state count that collapses when
    stripped was maze clutter, not a puzzle. Then reframe by hand, keeping decoys only if they add
    real choices (states go up, par stays).
-   For pad levels the search helps little; design by hand from the flight geometry instead: a
+   For pad levels, place the pads by hand from the flight geometry: a
    standing block on pad `p` lands lying on `p+4, p+5`; lying along pads `p, p+1` lands
    standing on `p+3`; lying across lands lying 2 past. Give the goal room for a two-tile
-   lying approach in line, or parity can make it unreachable standing.
+   lying approach in line, or parity can make it unreachable standing. Get the skeleton
+   solvable first (a fully random template never is), then let the search shape only the
+   floor of one island around fixed pads, switches and landing cells, with a floor-heavy
+   palette (`"#####...<v^"`). That produced the maneuvering puzzles of wind-06…08. A belt
+   pushes once per move, even after a landing, so to be fed onto a pad you must roll onto
+   the last belt tile.
 6. **Fix the ending.** Searches often leave 3–6 moves of shuffling around a cramped goal island.
    Put the goal in line with how the block arrives (and remove start-island busywork the same way).
 7. **Check the story against the trace.** Write the `name`/`idea` text from the actual solution and

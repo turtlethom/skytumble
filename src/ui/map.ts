@@ -12,10 +12,11 @@ const NATURAL_WIDTH = 1000;
 const W = 160;
 const H = 90;
 const LAYOUT: Record<string, { x: number; y: number; theme: string }> = {
-  tutorial: { x: 24, y: 38, theme: 'meadow' },
-  frost: { x: 80, y: 56, theme: 'frost' },
-  lab: { x: 137, y: 26, theme: 'lab' },
-  windlab: { x: 136, y: 68, theme: 'peaks' },
+  tutorial: { x: 20, y: 30, theme: 'meadow' },
+  frost: { x: 58, y: 62, theme: 'frost' },
+  wind: { x: 97, y: 30, theme: 'peaks' },
+  lab: { x: 140, y: 24, theme: 'lab' },
+  windlab: { x: 140, y: 68, theme: 'lab' },
 };
 
 const SIGNATURE_LABEL: Record<string, string> = { ice: 'Ice & belts', pads: 'Launch pads' };

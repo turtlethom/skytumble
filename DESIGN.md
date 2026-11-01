@@ -190,7 +190,24 @@ links; stars; stats; snapping camera; undo; reference levels.
 3. **Windy Peaks chapter** (`wind-01`…`wind-08`): two teaching levels (fling, hop;
    `guard: off`), five guarded levels each pairing two depth sources, a finale combining
    them. Belts join from the middle levels on; difficulty must climb toward the end. Theme: rocky spires, gusts, banners.
-4. **Map island** for Windy Peaks after Frost on the suggested path.
+   — built 2026-11-01, awaiting playtest: `src/levels/wind.txt`, all solved at par in
+   headless Chrome. Belts come in from 03 (Frost already taught them).
+
+   | Level | Name | Par | States | The idea |
+   |---|---|---|---|---|
+   | 01 | Updraft | 7 | 17 | Fling (teaching): get upright on the pad |
+   | 02 | Skip Stone | 8 | 21 | Hop (teaching): lie along two pads; standing overshoots |
+   | 03 | Tailwind | 10 | 50 | Belt→pad: a pad with no floor around it; belts shove you to the goal |
+   | 04 | Sidestep | 12 | 44 | Lying-across hop onto a fragile strip; come in from above |
+   | 05 | Out and Down | 16 | 92 | Heavy switch on the landing island, then set up the hop down without re-pressing it |
+   | 06 | Relay Rock | 18 | 102 | Chain both ways through a rock of pads; the landing turns the bridge off, belts hand you back onto the switch |
+   | 07 | Two Switches | 25 | 164 | Press a switch before leaving (belt puzzle), landing presses another, across-hop down |
+   | 08 | Crossroads | 28 | 334 | Hub with two spokes, order matters: soft-switch parity north, relay + belt-fed return east |
+
+   Island floors for 06–08 came from `search.ts` with the pads, switches, and landing cells
+   fixed by hand; the routes and endings were then trimmed by hand.
+4. **Map island** for Windy Peaks after Frost on the suggested path. — built: Windy Peaks
+   takes the rocky `peaks` look; Wind Lab moves to the lab colors beside Ice Lab as extras.
 
 **Later:** endless climb + daily seed, Frost in the generator, archipelago generation,
 more biomes from the backlog, visual level editor, full-level links (needed for handmade
