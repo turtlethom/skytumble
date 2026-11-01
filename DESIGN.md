@@ -70,6 +70,7 @@ detour away from the goal). Solution length alone is not the target.
 | **Ice** (Frost) | A lying block fully on ice slides in the roll direction; a standing block grips |
 | **Conveyor** (Frost) | After a move, a block fully on conveyors shifts one tile along the arrow |
 | **Launch pad** (Windy Peaks) | Flings the block along the pad's arrow: standing = long fling, lying fully on two same-arrow pads = short hop |
+| **Flip tile** (Starfall) | Standing on one, or lying fully on two, moves the block to the other floor directly above (or below), same pose |
 
 **Whole-block rule:** a special tile (ice, conveyor) acts only when the entire block is on
 it. A lying block half on ice and half on floor does not slide. A lying block on two conveyors
@@ -219,7 +220,7 @@ links; stars; stats; snapping camera; undo; reference levels.
 - *Scope:* same as Windy Peaks: camera prototype, a ~6-level lab, ~8 handmade levels, a map
   island. Mix: base layer, pads, belts. Not in scope: generator, editor, sound, ice, shape
   change. No time pressure; the user is the only player. Deep core changes are fine.
-- *Rules (open until the lab sign-off):*
+- *Rules* (**frozen** 2026-11-01 after the gravity lab playtest: "it does feel predictable now"):
   - Every level may have a **ceiling layer** directly above the ground, same coordinates.
   - **Flip tiles** fire like pads: resting standing on one, or lying fully on two; lying half
     on one is safe. A flip moves the block to the other layer **directly above (or below), in
@@ -265,7 +266,25 @@ links; stars; stats; snapping camera; undo; reference levels.
    drives the other's bridge; par 10), `05` Conveyor Lift (belt→flip, then a pad flight onto a
    ring pair flips you down mid-move; par 8), `06` Round Trip (all of it, plus a trap; par 13).
    The `gravity` signature and its guard (two distinct flip uses) are implemented.
-3. **Starfall chapter** (`star-01`…`star-08`) and its map island.
+3. **Starfall chapter** (`star-01`…`star-08`) and its map island. — built 2026-11-01, awaiting
+   playtest: `src/levels/star.txt`, all solved at par in headless Chrome, every guarded level
+   using flips in at least two ways. Starfall sits after Windy Peaks on the map path; the three
+   labs are a column of smaller extras islands.
+
+   | Level | Name | Par | States | The idea |
+   |---|---|---|---|---|
+   | 01 | First Light | 6 | 49 | Teaching: two rings two rolls away, one under open sky (read the shadow) |
+   | 02 | Over the Gap | 11 | 16 | Teaching: the first round trip, up over a gap and down on the far side |
+   | 03 | Lie Low | 14 | 44 | Lying flip onto fragile planks, then pose up to the goal |
+   | 04 | Slingshot | 18 | 61 | Pad flights land on ring pairs: up lying, later down beside the goal |
+   | 05 | Night Conveyor | 21 | 79 | Three islands, two ceiling spans; a belt hands you to a ring |
+   | 06 | Two-Floor Maze | 23 | 86 | Neither floor reaches alone: lie up, stand down, up again; two trap rings |
+   | 07 | Ring Road | 22 | 177 | A switch on each floor for the other's bridge; lying drop onto planks; flip onto the goal |
+   | 08 | Starfall | 28 | 356 | Finale: switch + belt feed, ceiling bridge and switch, pad onto rings, planks, last flip up |
+
+   Designed by fixing each idea's skeleton by hand (rings, switches, landing cells) and letting
+   the search shape only small areas around it; open templates produced parity shuffles that
+   padded par without adding ideas. A third switch-backbone level was dropped for variety.
 
 **Later:** endless climb + daily seed, Frost in the generator, archipelago generation,
 more biomes from the backlog, visual level editor, full-level links (needed for handmade

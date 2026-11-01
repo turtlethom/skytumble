@@ -15,12 +15,13 @@ const LAYOUT: Record<string, { x: number; y: number; theme: string }> = {
   tutorial: { x: 20, y: 30, theme: 'meadow' },
   frost: { x: 58, y: 62, theme: 'frost' },
   wind: { x: 97, y: 30, theme: 'peaks' },
-  lab: { x: 140, y: 24, theme: 'lab' },
-  windlab: { x: 140, y: 68, theme: 'lab' },
-  gravlab: { x: 100, y: 72, theme: 'night' },
+  star: { x: 100, y: 70, theme: 'night' },
+  lab: { x: 143, y: 13, theme: 'lab' },
+  windlab: { x: 143, y: 41, theme: 'lab' },
+  gravlab: { x: 143, y: 69, theme: 'lab' },
 };
 
-const SIGNATURE_LABEL: Record<string, string> = { ice: 'Ice & belts', pads: 'Launch pads' };
+const SIGNATURE_LABEL: Record<string, string> = { ice: 'Ice & belts', pads: 'Launch pads', gravity: 'Gravity' };
 
 /** Map keys: Left/Right step through levels in play order, Up/Down hop between islands. */
 const STEP: Record<string, number> = { ArrowLeft: -1, KeyA: -1, ArrowRight: 1, KeyD: 1 };

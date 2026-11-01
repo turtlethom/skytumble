@@ -416,7 +416,7 @@ kbd {
   --cliff-dark: #6f4a2d;
   position: absolute;
   width: 250px;
-  transform: translate(-50%, -50%) scale(var(--s, 1));
+  transform: translate(-50%, -50%) scale(calc(var(--s, 1) * var(--k, 1)));
   animation: bob 7s ease-in-out var(--delay, 0s) infinite;
 }
 
@@ -449,17 +449,24 @@ kbd {
   color: #eef0ff;
 }
 
+/* Light text on the night island's dark top. */
+.sm-island.night .sm-progress {
+  color: #d6d2ff;
+}
+
+/* Extras sit off the path, a size smaller, so a column of them fits beside the campaign. */
 .sm-island.extra {
   width: 230px;
+  --k: 0.8;
 }
 
 @keyframes bob {
   0%,
   100% {
-    transform: translate(-50%, -50%) scale(var(--s, 1));
+    transform: translate(-50%, -50%) scale(calc(var(--s, 1) * var(--k, 1)));
   }
   50% {
-    transform: translate(-50%, calc(-50% - 6px)) scale(var(--s, 1));
+    transform: translate(-50%, calc(-50% - 6px)) scale(calc(var(--s, 1) * var(--k, 1)));
   }
 }
 

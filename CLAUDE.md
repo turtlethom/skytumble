@@ -92,6 +92,11 @@ The process that produced the Frost chapter:
    palette (`"#####...<v^"`). That produced the maneuvering puzzles of wind-06…08. A belt
    pushes once per move, even after a landing, so to be fed onto a pad you must roll onto
    the last belt tile.
+   For gravity levels the same applies, with two more lessons from Starfall: open `?` areas
+   let the search pad par with parity shuffles (eight moves just to get upright on a ring),
+   so fix the idea's skeleton and leave only small `?` patches; and check that every switch in
+   the solution matters (an untouched bridge `*` means its switch press was incidental). In the
+   reach map, flip-tile cells never show `S` on their own floor: a block standing there flips.
 6. **Fix the ending.** Searches often leave 3–6 moves of shuffling around a cramped goal island.
    Put the goal in line with how the block arrives (and remove start-island busywork the same way).
 7. **Check the story against the trace.** Write the `name`/`idea` text from the actual solution and
