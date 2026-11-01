@@ -266,8 +266,8 @@ links; stars; stats; snapping camera; undo; reference levels.
    drives the other's bridge; par 10), `05` Conveyor Lift (belt→flip, then a pad flight onto a
    ring pair flips you down mid-move; par 8), `06` Round Trip (all of it, plus a trap; par 13).
    The `gravity` signature and its guard (two distinct flip uses) are implemented.
-3. **Starfall chapter** (`star-01`…`star-08`) and its map island. — built 2026-11-01, awaiting
-   playtest: `src/levels/star.txt`, all solved at par in headless Chrome, every guarded level
+3. **Starfall chapter** (`star-01`…`star-08`) and its map island. — built 2026-11-01, **approved
+   in playtest 2026-11-01** after one rework round: `src/levels/star.txt`, all solved at par in headless Chrome, every guarded level
    using flips in at least two ways. Starfall sits after Windy Peaks on the map path; the three
    labs are a column of smaller extras islands.
 
@@ -275,12 +275,12 @@ links; stars; stats; snapping camera; undo; reference levels.
    |---|---|---|---|---|
    | 01 | First Light | 6 | 49 | Teaching: two rings two rolls away, one under open sky (read the shadow) |
    | 02 | Over the Gap | 11 | 16 | Teaching: the first round trip, up over a gap and down on the far side |
-   | 03 | Lie Low | 14 | 44 | Lying flip onto fragile planks, then pose up to the goal |
+   | 03 | Lie Low | 18 | 98 | Two lying flips, both onto fragile planks: up across a column of rings, down across a row |
    | 04 | Slingshot | 18 | 61 | Pad flights land on ring pairs: up lying, later down beside the goal |
    | 05 | Night Conveyor | 21 | 79 | Three islands, two ceiling spans; a belt hands you to a ring |
-   | 06 | Two-Floor Maze | 23 | 86 | Neither floor reaches alone: lie up, stand down, up again; two trap rings |
-   | 07 | Ring Road | 22 | 177 | A switch on each floor for the other's bridge; lying drop onto planks; flip onto the goal |
-   | 08 | Starfall | 28 | 356 | Finale: switch + belt feed, ceiling bridge and switch, pad onto rings, planks, last flip up |
+   | 06 | Ring Road | 22 | 177 | A switch on each floor for the other's bridge; lying drop onto planks; flip onto the goal |
+   | 07 | Two-Floor Maze | 28 | 176 | Neither floor reaches alone; the bridge below starts raised and the switch above is on your path; belts lift you to the last ring; two trap rings |
+   | 08 | Starfall | 34 | 372 | Finale: three switches in a chain across the floors; belt feed, pad onto rings, a second round trip at the far end |
 
    Designed by fixing each idea's skeleton by hand (rings, switches, landing cells) and letting
    the search shape only small areas around it; open templates produced parity shuffles that
@@ -404,6 +404,20 @@ them. Then, at the user's request, a **landing preview**: while you're idle, eve
 flip you shows a violet wireframe of the block where that whole move leaves you on the other
 floor (after any belts or pads there), drawn on your floor like the shadow and on the other floor
 for when you peek. Nothing shows until a flip is one roll away.
+
+**2026-11-01 — Starfall, first round.** star-01: a good introduction to the mechanic. star-02:
+similar but a bit harder, which is fine. star-03: kind of simple, could be harder. star-04: solid.
+star-05: very cool, a keeper. star-06: cool, maybe needs a few more features. star-07: very, very
+good, a solid level. star-08: good, but can definitely be harder.
+→ Rework 03 (harder), 06 (more going on), 08 (harder finale); keep 01, 02, 04, 05, 07.
+Done: 03 became two lying flips onto fragile planks (column up, row down; 14 → 18 moves). The maze
+gained a starts-raised bridge whose soft switch sits on your route and a belt lift to its last ring
+(23 → 28), so it moved to 07 and Ring Road (the old 07) to 06. The finale chains three switches
+across the floors with a second round trip at the far end (28 → 34). Searches that just raised par
+added start-island shuffles, so the extra difficulty is built from steps instead.
+
+**2026-11-01 — Starfall, second round.** Satisfied with how the reworked levels came out →
+Starfall approved. Next: grill the shape-changing biome.
 
 ## Architecture
 
