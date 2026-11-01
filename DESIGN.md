@@ -381,7 +381,10 @@ only giveaways are peeking or noticing the shadow change. → Proposed swapping 
 (camera stays above, no mirroring) and colored bridge squares; the user keeps the turning camera
 and wants only the bridge squares: the other floor's bridges show on your floor as thin squares in
 their switch's color (bright when extended, faint when retracted) that pulse when a press changes
-them.
+them. Then, at the user's request, a **landing preview**: while you're idle, every roll that would
+flip you shows a violet wireframe of the block where that whole move leaves you on the other
+floor (after any belts or pads there), drawn on your floor like the shadow and on the other floor
+for when you peek. Nothing shows until a flip is one roll away.
 
 ## Architecture
 

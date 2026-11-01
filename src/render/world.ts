@@ -31,6 +31,8 @@ const COLORS = {
   flipMark: 0x8a5cf0,
   /** The faint outline of the other floor, over the shadow. */
   outline: 0xe4dcff,
+  /** The landing preview: a wireframe of the block where a flip would leave it. */
+  preview: 0xcbb2ff,
 };
 
 /** Height of the ceiling layer's walking surface above the ground's. */
@@ -127,6 +129,8 @@ export class World {
   private level: Level | null = null;
   /** Bridge groups as last drawn, so a change can pulse the bridges it moved on the other floor. */
   private bridgeMask = 0;
+  /** Landing previews currently shown (each drawn twice: on your floor and on the other floor). */
+  private previews: THREE.Object3D[] = [];
   /** Dirt and hanging rock per layer: hidden when you see a layer from behind, where it's only clutter. */
   private earths: THREE.Object3D[][] = [[], []];
   private flipGlows: THREE.MeshStandardMaterial[] = [];
@@ -230,6 +234,27 @@ export class World {
 
   get twoLayers(): boolean {
     return this.hasCeiling;
+  }
+
+  /**
+   * Show where flips would leave the block: one wireframe block per move that flips, at the spot
+   * it ends on the other floor. Each is drawn twice: flat on your floor, cell for cell under (or
+   * over) the landing like the shadow, and on the other floor itself, for when you peek.
+   */
+  showFlipPreviews(blocks: Block[]): void {
+    for (const p of this.previews) p.removeFromParent();
+    this.previews = [];
+    if (!this.hasCeiling) return;
+    for (const b of blocks) {
+      for (const parent of [this.blueprints[this.layer], this.layerGroups[1 - this.layer]]) {
+        const ghost = makeGhostBlock();
+        ghost.position.copy(blockPosition(b));
+        if (b.o === 'X') ghost.rotation.z = Math.PI / 2;
+        else if (b.o === 'Y') ghost.rotation.x = Math.PI / 2;
+        parent.add(ghost);
+        this.previews.push(ghost);
+      }
+    }
   }
 
   /**
@@ -1216,3 +1241,18 @@ function makeStars(): THREE.Points {
   return new THREE.Points(geom, new THREE.PointsMaterial({ size: 0.9, vertexColors: true, sizeAttenuation: true }));
 }
 
+/** A wireframe of the block with a faint fill: where a flip would leave you. */
+function makeGhostBlock(): THREE.Object3D {
+  const geom = new THREE.BoxGeometry(0.98, 1.96, 0.98);
+  const fill = new THREE.Mesh(
+    geom,
+    new THREE.MeshBasicMaterial({ color: COLORS.preview, transparent: true, opacity: 0.14, depthWrite: false }),
+  );
+  fill.add(
+    new THREE.LineSegments(
+      new THREE.EdgesGeometry(geom),
+      new THREE.LineBasicMaterial({ color: COLORS.preview, transparent: true, opacity: 0.85 }),
+    ),
+  );
+  return fill;
+}

@@ -2,7 +2,7 @@ import './style.css';
 import { randomSeed } from './game/rng';
 import { initialState, step } from './game/rules';
 import { solve } from './game/solver';
-import { Dir, Level, State, TIERS, Tier } from './game/types';
+import { DIRS, Dir, Level, State, TIERS, Tier } from './game/types';
 import { HANDMADE, findLevel } from './levels';
 import { World } from './render/world';
 import { SkyMap, suggestedLevel } from './ui/map';
@@ -92,6 +92,7 @@ class Game {
     this.renderChrome();
     await this.world.setLevel(level, this.state);
     this.status = 'playing';
+    this.updatePreviews();
     this.drainQueue();
   }
 
@@ -128,6 +129,7 @@ class Game {
     this.history.push(from);
     this.moves++;
     this.status = 'busy';
+    this.world.showFlipPreviews([]);
     this.renderChrome();
 
     await this.world.roll(from.block, result.rolled, dir);
@@ -155,7 +157,22 @@ class Game {
       return;
     }
     this.status = 'playing';
+    this.updatePreviews();
     this.drainQueue();
+  }
+
+  /**
+   * Two-layer levels: for every roll that would flip gravity, show where the whole move would leave
+   * the block on the other floor (after any belts or pads up there).
+   */
+  private updatePreviews(): void {
+    const level = this.level;
+    if (!level?.ceiling) return this.world.showFlipPreviews([]);
+    const layer = this.state.layer ?? 0;
+    const spots = DIRS.map((d) => step(level, this.state, d))
+      .filter((r) => r.motions.some((m) => m.kind === 'flip') && (r.state.layer ?? 0) !== layer)
+      .map((r) => r.state.block);
+    this.world.showFlipPreviews(spots);
   }
 
   private drainQueue(): void {
@@ -172,6 +189,7 @@ class Game {
     this.moves--;
     this.status = 'playing';
     this.world.syncState(prev);
+    this.updatePreviews();
     this.hideModals();
     this.renderChrome();
   }
@@ -183,6 +201,7 @@ class Game {
     this.moves = 0;
     this.status = 'playing';
     this.world.syncState(this.state);
+    this.updatePreviews();
     this.hideModals();
     this.renderChrome();
   }
