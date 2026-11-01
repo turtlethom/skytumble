@@ -12,14 +12,15 @@ const NATURAL_WIDTH = 1000;
 const W = 160;
 const H = 90;
 const LAYOUT: Record<string, { x: number; y: number; theme: string }> = {
-  tutorial: { x: 20, y: 30, theme: 'meadow' },
-  frost: { x: 58, y: 62, theme: 'frost' },
-  wind: { x: 97, y: 30, theme: 'peaks' },
-  star: { x: 100, y: 70, theme: 'night' },
-  lab: { x: 143, y: 13, theme: 'lab' },
-  windlab: { x: 143, y: 41, theme: 'lab' },
-  gravlab: { x: 143, y: 69, theme: 'lab' },
-  shapelab: { x: 58, y: 15, theme: 'lab' },
+  tutorial: { x: 16, y: 27, theme: 'meadow' },
+  frost: { x: 40, y: 62, theme: 'frost' },
+  wind: { x: 64, y: 27, theme: 'peaks' },
+  star: { x: 88, y: 62, theme: 'night' },
+  toy: { x: 110, y: 27, theme: 'toy' },
+  lab: { x: 143, y: 11, theme: 'lab' },
+  windlab: { x: 143, y: 33, theme: 'lab' },
+  gravlab: { x: 143, y: 55, theme: 'lab' },
+  shapelab: { x: 143, y: 77, theme: 'lab' },
 };
 
 const SIGNATURE_LABEL: Record<string, string> = { ice: 'Ice & belts', pads: 'Launch pads', gravity: 'Gravity', shapes: 'Shapes' };

@@ -332,7 +332,21 @@ links; stars; stats; snapping camera; undo; reference levels.
    block rolls along two rails over a gap; 16), `05` Shape Belts (a cube is pushed back every move;
    a tall block straddles the belt; 10), `06` Heavyweight (tall lands on the extra-heavy switch
    across a gap, then back to normal for the bridge; 18).
-3. **Toybox chapter** (`toy-01`…`toy-08`) and its map island.
+3. **Toybox chapter** (`toy-01`…`toy-08`) and its map island. — built 2026-11-01, awaiting
+   playtest: `src/levels/toy.txt`, all solved at par in headless Chrome, guarded levels using
+   shapes in at least two ways. The map path now zigzags Tutorial → Frost → Windy Peaks →
+   Starfall → Toybox, with the four labs as a column of smaller extras islands.
+
+   | Level | Name | Par | States | The idea |
+   |---|---|---|---|---|
+   | 01 | Building Blocks | 6 | 25 | Teaching: become tall, tip across gaps onto a tall goal |
+   | 02 | Tiny Steps | 12 | 96 | Teaching: become a cube, roll over planks to a cube goal |
+   | 03 | Long Reach | 14 | 60 | Start tall and stay tall: line up three-tile tips, lie over planks |
+   | 04 | Light and Heavy | 19 | 160 | Cube across a plank, normal for the heavy switch and its bridge |
+   | 05 | Conveyor Toys | 20 | 114 | Start as a cube riding belt pushes, then tall to the tall goal |
+   | 06 | Shape Shifter | 20 | 69 | Normal → cube → tall (lie across a decoy switch) |
+   | 07 | Heavy Lifting | 28 | 593 | Tall reaches the extra-heavy switch past the gaps, back to normal for the bridge |
+   | 08 | Toybox | 39 | 585 | Finale: tall, extra-heavy, cube over planks, normal, bridge to the goal |
 
 **Later:** endless climb + daily seed, Frost in the generator, archipelago generation,
 more biomes from the backlog, visual level editor, full-level links (needed for handmade

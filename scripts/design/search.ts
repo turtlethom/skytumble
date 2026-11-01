@@ -130,5 +130,9 @@ for (let r = 0; r < Number(restartsArg); r++) {
   results.push({ s: best, rows: render(cur) });
 }
 results.sort((a, b) => b.s - a.s);
-const opts = [switches.length ? `!switches ${switches.join(' ')}` : '', on.length ? `!on ${on.join(' ')}` : ''];
+const opts = [
+  switches.length ? `!switches ${switches.join(' ')}` : '',
+  on.length ? `!on ${on.join(' ')}` : '',
+  shape !== 2 ? `!shape ${shape === 1 ? 'cube' : 'tall'}` : '',
+];
 console.log([`@score ${results[0].s.toFixed(1)} seed ${seedArg}`, ...opts.filter(Boolean), ...results[0].rows].join('\n'));

@@ -4,6 +4,7 @@ import gravlab from './gravlab.txt?raw';
 import lab from './lab.txt?raw';
 import shapelab from './shapelab.txt?raw';
 import star from './star.txt?raw';
+import toy from './toy.txt?raw';
 import wind from './wind.txt?raw';
 import windlab from './windlab.txt?raw';
 import tutorial from './tutorial.txt?raw';
@@ -14,6 +15,7 @@ export const CHAPTERS: Chapter[] = [
   parseChapter('frost', frost),
   parseChapter('wind', wind),
   parseChapter('star', star),
+  parseChapter('toy', toy),
   // The rule prototypes from the ice lab playtest, kept as extras after the campaign.
   parseChapter('lab', lab),
   // Launch-pad prototypes for the Windy Peaks lab playtest.

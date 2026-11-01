@@ -454,10 +454,18 @@ kbd {
   color: #d6d2ff;
 }
 
-/* Extras sit off the path, a size smaller, so a column of them fits beside the campaign. */
+/* Toybox: a playroom of primary colors. */
+.sm-island.toy {
+  --top: linear-gradient(#ffe7a3, #ffd166);
+  --edge: #e9a93a;
+  --cliff: #ef6f6c;
+  --cliff-dark: #a8403e;
+}
+
+/* Extras sit off the path, smaller, so a column of them fits beside the campaign. */
 .sm-island.extra {
   width: 230px;
-  --k: 0.8;
+  --k: 0.66;
 }
 
 @keyframes bob {
