@@ -295,7 +295,7 @@ links; stars; stats; snapping camera; undo; reference levels.
   Mix: base layer and belts only (pads, flips, ice stay in their chapters). Same process as
   Starfall minus the camera prototype: rules, solver, and animations with tests → a ~6-level
   lab → playtest → rules freeze → 8 levels and a map island. No rush; the user is the only player.
-- *Rules (open until the lab sign-off):*
+- *Rules* (**frozen** 2026-11-01: the user went on to the chapter after the shape lab with no rule notes):
   - **Shape switches** set the block's shape when it **stands** on them (lying across is safe):
     cube, tall, and a **normal** switch to turn back. A shape change happens where you stand, so
     it always fits.
@@ -325,7 +325,13 @@ links; stars; stats; snapping camera; undo; reference levels.
    block, and a `shape: cube|tall` field to start in a shape. Shape switches show a toy model of
    their shape; marked goals float that shape; shape changes squash and stretch. A demo level,
    `shapelab-01` (Shape Demo, par 11), on a Shape Lab extras island uses every shape idea once.
-2. **Shape lab** (~6 levels, one per rule question), one playtest, rules freeze.
+2. **Shape lab** (~6 levels, one per rule question), one playtest, rules freeze. — built 2026-11-01,
+   awaiting playtest: `shapelab-01` Shape Demo (every idea once; par 11), `02` Born Small (start
+   as a cube, cross planks, go tall to span the gap, tall goal; 7), `03` Featherweight (cube
+   crosses planks, but only the normal block presses the heavy switch; 17), `04` Rails (a lying tall
+   block rolls along two rails over a gap; 16), `05` Shape Belts (a cube is pushed back every move;
+   a tall block straddles the belt; 10), `06` Heavyweight (tall lands on the extra-heavy switch
+   across a gap, then back to normal for the bridge; 18).
 3. **Toybox chapter** (`toy-01`…`toy-08`) and its map island.
 
 **Later:** endless climb + daily seed, Frost in the generator, archipelago generation,
@@ -466,6 +472,8 @@ switch and extra-heavy switch look stands out too much next to the other switche
 restyled in the existing switch language: shape switches are grass tiles with a low stone disc and
 a small raised bar whose length shows the shape (nub = cube, two = normal, three = tall), in muted
 colors; the extra-heavy switch is the heavy switch's cross, chunkier, with a third bar.
+
+**2026-11-01 — shape lab.** No rule notes; went straight on to the chapter → shape rules frozen.
 
 ## Architecture
 

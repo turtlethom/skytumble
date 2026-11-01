@@ -7,3 +7,55 @@ idea: Shape switches change you when you stand on them; the bar on each shows th
 ###...............
 S##t#.#X0##cffffC.
 ###...............
+
+=== shapelab-02
+par: 7
+name: Born Small
+idea: You start as a cube: light enough for the planks, but a cube can't cross the gap. The three-bar switch makes you tall; tip across the gap, resting on your ends, and stand on the goal marked for a tall block.
+shape: cube
+#####..#########
+#Sfft#.#####T###
+#####..#########
+
+=== shapelab-03
+par: 17
+name: Featherweight
+idea: Become a cube to cross the planks (a cube never breaks them), then turn back to normal on the two-bar switch: the cube is too light to press the heavy switch that raises the bridge.
+#####...............
+#S##c#..............
+#####ffff...........
+.....ffff...........
+.....ffff#n##x#0###G
+
+=== shapelab-04
+par: 16
+name: Rails
+idea: A lying tall block rests on its two ends, so it can lie across two rails and roll along the gap between them. Ride the rails, then tip off onto the tall goal.
+shape: tall
+######............
+#S####............
+.....#############
+..................
+.....#############
+.................T
+
+=== shapelab-05
+par: 10
+name: Shape Belts
+idea: The belt pushes back after every move. A cube is always fully on it and goes nowhere; as a tall block you straddle the belt's ends, and it only pushes you when all three tiles are on it.
+shape: cube
+#####.............
+#S#t#<<<<<.#####T.
+#####.....#####...
+
+=== shapelab-06
+par: 18
+name: Heavyweight
+idea: Only a standing tall block presses the extra-heavy switch, and it's across a gap. Tip over as a tall block to land on it, then turn back to normal to cross the bridge it raised to the goal.
+switches: 0
+#######.#X###
+#S##t##.#####
+#######.#####
+#######.###..
+........n#0#G
+
