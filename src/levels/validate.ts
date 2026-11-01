@@ -1,4 +1,4 @@
-import { blockCells, findGoal, initialState, layerView, step, tileAt } from '../game/rules';
+import { blockCells, blockLength, findGoal, initialState, isSolid, layerView, step, tileAt } from '../game/rules';
 import { solve } from '../game/solver';
 import { Dir, Level, Tile } from '../game/types';
 import { Chapter, HandmadeLevel } from './format';
@@ -71,6 +71,36 @@ export function flipUses(level: Level, moves: Dir[]): FlipUse[] {
   return [...uses];
 }
 
+/** Distinct ways a solution can use shapes; the `shapes` signature asks for two. */
+export type ShapeUse =
+  | 'become cube'
+  | 'become tall'
+  | 'back to normal'
+  | 'cube crosses fragile' // a cube rested standing on a fragile tile
+  | 'tall spans a gap' // a lying tall block rested with its middle over nothing
+  | 'tall presses extra-heavy'
+  | 'shaped goal'; // won as a cube or a tall block
+
+export function shapeUses(level: Level, moves: Dir[]): ShapeUse[] {
+  const uses = new Set<ShapeUse>();
+  let state = initialState(level);
+  for (const dir of moves) {
+    const r = step(level, state, dir);
+    const b = r.state.block;
+    const view = layerView(level, r.state.layer ?? 0);
+    if (r.reshaped) uses.add(r.reshaped.to === 1 ? 'become cube' : r.reshaped.to === 3 ? 'become tall' : 'back to normal');
+    if (blockLength(b) === 1 && tileAt(view, b.x, b.y) === Tile.Fragile) uses.add('cube crosses fragile');
+    if (blockLength(b) === 3 && b.o !== 'S') {
+      const [mx, my] = blockCells(b)[1];
+      if (!isSolid(view, mx, my, r.state.bridges)) uses.add('tall spans a gap');
+    }
+    if (r.pressed.some((c) => tileAt(view, c.x, c.y) === Tile.ExtraHeavy)) uses.add('tall presses extra-heavy');
+    if (r.outcome === 'win' && blockLength(b) !== 2) uses.add('shaped goal');
+    state = r.state;
+  }
+  return [...uses];
+}
+
 export interface LevelReport {
   id: string;
   /** The solver's optimal move count, or null if unsolvable. */
@@ -81,6 +111,7 @@ export interface LevelReport {
   pushes: number;
   padUses: PadUse[];
   flipUses: FlipUse[];
+  shapeUses: ShapeUse[];
   errors: string[];
 }
 
@@ -156,7 +187,11 @@ export function validateLevel(h: HandmadeLevel, chapter: Chapter): LevelReport {
   if (solution && h.guard && chapter.signature === 'gravity' && flips.length < 2) {
     errors.push(`one-trick: the solution uses flips only as [${flips.join(', ') || 'nothing'}]; needs 2 distinct ways`);
   }
-  return { id: h.id, par, explored: solution?.explored ?? 0, iceUses: uses, pushes, padUses: pads, flipUses: flips, errors };
+  const shapes = solution ? shapeUses(h.level, solution.moves) : [];
+  if (solution && h.guard && chapter.signature === 'shapes' && shapes.length < 2) {
+    errors.push(`one-trick: the solution uses shapes only as [${shapes.join(', ') || 'nothing'}]; needs 2 distinct ways`);
+  }
+  return { id: h.id, par, explored: solution?.explored ?? 0, iceUses: uses, pushes, padUses: pads, flipUses: flips, shapeUses: shapes, errors };
 }
 
 export function validateChapters(chapters: Chapter[]): Map<string, LevelReport> {

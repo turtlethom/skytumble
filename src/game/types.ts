@@ -14,6 +14,10 @@ export enum Tile {
   Pad = 9,
   /** Flips gravity for a block standing on it (or lying fully on two): it moves to the other layer. */
   Flip = 10,
+  /** Sets the block's shape (group = its length: 1 cube, 2 normal, 3 tall) when it stands on it. */
+  ShapeSwitch = 11,
+  /** Toggles its bridge group only under a standing tall block. */
+  ExtraHeavy = 12,
 }
 
 /** Standing upright, lying along the x axis, or lying along the y axis. */
@@ -24,6 +28,11 @@ export interface Block {
   x: number;
   y: number;
   o: Orientation;
+  /**
+   * Length in tiles: 1 is the cube (always standing), 3 the tall block. Absent means the normal
+   * block (2), so every level and test written before shapes still compares equal.
+   */
+  n?: 1 | 3;
 }
 
 export interface Level {
@@ -39,6 +48,8 @@ export interface Level {
   start: { x: number; y: number };
   /** Bitmask of bridge groups that start switched on. */
   bridgesOn: number;
+  /** The block's shape at the start (its length: 1 cube, 3 tall); absent means normal. */
+  startShape?: 1 | 3;
   /**
    * Optional second layer directly above the ground, same size and coordinates, walked upside
    * down. Bridge groups are shared between layers; the start is always on the ground.

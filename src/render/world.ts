@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Motion, blockCells, flightLandings, layerView } from '../game/rules';
+import { Motion, blockCells, blockLength, flightLandings, layerView } from '../game/rules';
 import { Block, DIR_DELTA, DIRS, Dir, Level, State, Tile } from '../game/types';
 import { CONVEYOR_COLORS } from './palette';
 
@@ -33,6 +33,16 @@ const COLORS = {
   outline: 0xe4dcff,
   /** The landing preview: a wireframe of the block where a flip would leave it. */
   preview: 0xcbb2ff,
+  /** Shape switches: a stone disc like the other switches, with a bar in the block's own color. */
+  shapeStone: 0xc9c2b4,
+  shapeBar: 0xd9a95f,
+};
+
+/** Shape goal markers: width and height of the floating shape, by block length. */
+const SHAPE_MODEL: Record<number, { w: number; h: number }> = {
+  1: { w: 0.3, h: 0.3 },
+  2: { w: 0.24, h: 0.48 },
+  3: { w: 0.2, h: 0.6 },
 };
 
 /** Height of the ceiling layer's walking surface above the ground's. */
@@ -248,6 +258,7 @@ export class World {
     for (const b of blocks) {
       for (const parent of [this.blueprints[this.layer], this.layerGroups[1 - this.layer]]) {
         const ghost = makeGhostBlock();
+        ghost.scale.set(1, blockLength(b) / 2, 1);
         ghost.position.copy(blockPosition(b));
         if (b.o === 'X') ghost.rotation.z = Math.PI / 2;
         else if (b.o === 'Y') ghost.rotation.x = Math.PI / 2;
@@ -354,7 +365,9 @@ export class World {
     this.center.set((minX + maxX) / 2, 0, (minZ + maxZ) / 2);
     this.viewSize = Math.max(maxX - minX, maxZ - minZ, 6);
     this.bounds = [];
-    const ys = this.hasCeiling ? [-0.6, CEIL_H + 0.6] : [-0.6, 2];
+    // Leave headroom for the tallest block the level can make (a tall block stands three high).
+    const canBeTall = level.startShape === 3 || level.tiles.some((t, i) => t === Tile.ShapeSwitch && level.groups[i] === 3);
+    const ys = this.hasCeiling ? [-0.6, CEIL_H + 0.6] : [-0.6, canBeTall ? 3 : 2];
     for (const x of [minX, maxX]) for (const z of [minZ, maxZ]) for (const y of ys) this.bounds.push(new THREE.Vector3(x, y, z));
     this.fitCamera();
     this.camDist = this.fitDist[this.camIndex];
@@ -419,8 +432,10 @@ export class World {
         g.add(edge);
       }
       // A square pyramid hovering point-down over the hole: "drop in here", in the tiles' own shape.
+      // A goal marked for a cube or a tall block hovers that shape instead.
+      const shaped = group === 1 || group === 3;
       const marker = new THREE.Mesh(
-        new THREE.ConeGeometry(0.34, 0.56, 4),
+        shaped ? new THREE.BoxGeometry(SHAPE_MODEL[group].w * 1.3, SHAPE_MODEL[group].h * 1.3, SHAPE_MODEL[group].w * 1.3) : new THREE.ConeGeometry(0.34, 0.56, 4),
         new THREE.MeshStandardMaterial({
           color: COLORS.goal,
           emissive: COLORS.goal,
@@ -430,7 +445,7 @@ export class World {
           flatShading: true,
         }),
       );
-      marker.rotation.x = Math.PI;
+      if (!shaped) marker.rotation.x = Math.PI;
       const spinner = new THREE.Group();
       spinner.add(marker);
       spinner.position.y = MARKER_Y;
@@ -520,9 +535,45 @@ export class World {
       return g;
     }
 
+    if (tile === Tile.ShapeSwitch) {
+      // Same language as the other switches: a grass tile with a low stone disc. On it, a raised bar
+      // in the block's own color whose length says the shape: a nub for the cube, two for normal,
+      // three for tall.
+      const grass = box(0.98, 0.18, 0.98, COLORS.grass);
+      grass.position.y = -0.09;
+      const disc = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.36, 0.4, 0.06, 28),
+        new THREE.MeshStandardMaterial({ color: COLORS.shapeStone, roughness: 0.7 }),
+      );
+      disc.position.y = 0.03;
+      disc.receiveShadow = true;
+      const len = [0, 0.14, 0.3, 0.46][group];
+      const bar = box(len, 0.07, 0.14, COLORS.shapeBar, { roughness: 0.5 });
+      bar.position.y = 0.095;
+      bar.castShadow = true;
+      g.add(grass, earth(jitter), disc, bar);
+      return g;
+    }
+
     const grass = box(0.98, 0.18, 0.98, COLORS.grass);
     grass.position.y = -0.09;
     g.add(grass, earth(jitter));
+
+    if (tile === Tile.ExtraHeavy) {
+      // The heavy switch's cross, chunkier and with a third bar: it takes more weight.
+      const color = GROUP_COLORS[group % GROUP_COLORS.length];
+      const sw = new THREE.Group();
+      for (const angle of [0, Math.PI / 3, -Math.PI / 3]) {
+        const bar = box(0.78, 0.14, 0.18, color, { roughness: 0.4 });
+        bar.rotation.y = angle;
+        sw.add(bar);
+      }
+      sw.position.y = 0.07;
+      sw.traverse((o) => (o.castShadow = true));
+      g.add(sw);
+      this.switches.set(cell, sw);
+      return g;
+    }
 
     if (tile === Tile.SoftSwitch || tile === Tile.HeavySwitch) {
       const color = GROUP_COLORS[group % GROUP_COLORS.length];
@@ -605,6 +656,8 @@ export class World {
 
   private placeBlock(b: Block): void {
     this.block.rotation.set(0, 0, 0);
+    // The mesh is a normal block (two tiles long); stretch it along its length for other shapes.
+    this.block.scale.set(1, blockLength(b) / 2, 1);
     this.block.position.copy(blockPosition(b));
     if (b.o === 'X') this.block.rotation.z = Math.PI / 2;
     else if (b.o === 'Y') this.block.rotation.x = Math.PI / 2;
@@ -660,8 +713,9 @@ export class World {
       const axis = new THREE.Vector3(-dy, 0, dx).normalize();
       const lying = m.from.o !== 'S';
       const alongLength = (m.from.o === 'X' && dx !== 0) || (m.from.o === 'Y' && dy !== 0);
-      const halfAlong = alongLength ? 0.98 : 0.49;
-      const toPivot = new THREE.Vector3(-dx * halfAlong, lying ? -0.49 : -0.98, -dy * halfAlong);
+      const n = blockLength(m.from);
+      const halfAlong = alongLength ? 0.49 * n : 0.49;
+      const toPivot = new THREE.Vector3(-dx * halfAlong, lying ? -0.49 : -0.49 * n, -dy * halfAlong);
       const base = this.block.quaternion.clone();
       const lean = new THREE.Quaternion();
       await this.tween(PUSH_MS, (t) => {
@@ -755,6 +809,18 @@ export class World {
     });
   }
 
+  /** A shape switch changed the block: it squashes or stretches to its new length, with a little bounce. */
+  async reshape(from: Block, to: Block): Promise<void> {
+    const [a, b] = [blockLength(from), blockLength(to)];
+    await this.tween(360, (t) => {
+      const e = easeOutBack(t);
+      const n = a + (b - a) * e;
+      this.block.scale.set(1 + 0.12 * Math.sin(t * Math.PI), n / 2, 1 + 0.12 * Math.sin(t * Math.PI));
+      this.block.position.y = n / 2;
+    });
+    this.placeBlock(to);
+  }
+
   pressSwitches(cells: { x: number; y: number }[]): void {
     for (const { x, y } of cells) {
       const sw = this.switches.get(this.layer * 1e8 + y * 10000 + x);
@@ -805,7 +871,7 @@ export class World {
     const start = this.block.position.y;
     const marker = this.goalMarker;
     await this.tween(650, (t) => {
-      this.block.position.y = start - 2.4 * easeIn(t);
+      this.block.position.y = start - (0.4 + this.block.scale.y * 2) * easeIn(t);
       // The marker swells briefly, then shrinks away as the block sinks.
       if (marker) marker.scale.setScalar(Math.max((1 - t) * (1 + Math.sin(t * Math.PI) * 0.5), 0.001));
     });
@@ -1185,9 +1251,10 @@ function makeLandingMark(color: number = COLORS.mark): THREE.Object3D {
 
 /** Centre of the block's mesh for a grid position. */
 function blockPosition(b: Block): THREE.Vector3 {
-  if (b.o === 'S') return new THREE.Vector3(b.x, 1, b.y);
-  if (b.o === 'X') return new THREE.Vector3(b.x + 0.5, 0.5, b.y);
-  return new THREE.Vector3(b.x, 0.5, b.y + 0.5);
+  const half = (blockLength(b) - 1) / 2;
+  if (b.o === 'S') return new THREE.Vector3(b.x, blockLength(b) / 2, b.y);
+  if (b.o === 'X') return new THREE.Vector3(b.x + half, 0.5, b.y);
+  return new THREE.Vector3(b.x, 0.5, b.y + half);
 }
 
 /** The dirt and hanging rock under a floating tile. */
@@ -1213,6 +1280,7 @@ function earth(jitter: number): THREE.Object3D {
 
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
 const easeIn = (t: number) => t * t;
+const easeOutBack = (t: number) => 1 + 2.2 * (t - 1) ** 3 + 1.2 * (t - 1) ** 2;
 const easeOut = (t: number) => 1 - (1 - t) ** 2;
 function easeOutBounce(t: number): number {
   const n = 7.5625;

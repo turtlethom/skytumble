@@ -17,7 +17,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { initialState, step } from '../../src/game/rules';
 import { solve } from '../../src/game/solver';
-import { flipUses, iceUses, padUses } from '../../src/levels/validate';
+import { flipUses, iceUses, padUses, shapeUses } from '../../src/levels/validate';
 import { diagnose } from './explore';
 import { build, parseBlock, touched } from './lib';
 
@@ -26,7 +26,7 @@ const seeds = seedArg.includes('-')
   ? (([a, b]) => Array.from({ length: b - a + 1 }, (_, i) => a + i))(seedArg.split('-').map(Number))
   : seedArg.split(',').map(Number);
 const want = wantArg.split(',').filter(Boolean);
-const { rows: template, switches, on } = parseBlock(readFileSync(file, 'utf8').trim().split('\n'));
+const { rows: template, switches, on, shape } = parseBlock(readFileSync(file, 'utf8').trim().split('\n'));
 const clutter = Number(process.env.CLUTTER ?? 0.5);
 const pressBonus = Number(process.env.PRESSES ?? 10);
 let seed = Number(seedArg);
@@ -52,7 +52,7 @@ const render = (choice: string[]) => {
 function score(rows: string[]): number {
   let level;
   try {
-    level = build(rows, switches, on);
+    level = build(rows, switches, on, shape);
   } catch {
     return -1e9;
   }
@@ -60,7 +60,7 @@ function score(rows: string[]): number {
   if (!sol) return -1e9;
   const par = sol.moves.length;
   const ice = iceUses(level, sol.moves);
-  const uses: string[] = [...ice.uses, ...padUses(level, sol.moves), ...flipUses(level, sol.moves)];
+  const uses: string[] = [...ice.uses, ...padUses(level, sol.moves), ...flipUses(level, sol.moves), ...shapeUses(level, sol.moves)];
   const pushes = ice.pushes;
   const seen = touched(level, sol.moves);
   const pressed = new Set<string>();
@@ -79,10 +79,10 @@ function score(rows: string[]): number {
 }
 
 const skeleton = render(slots.map((_, i) => (slotPalette[i] === palette ? '#' : '~')));
-if (!solve(build(skeleton, switches, on))) {
+if (!solve(build(skeleton, switches, on, shape))) {
   // On stderr, so a redirected results file stays empty rather than holding a non-design.
   console.error('The template is unsolvable even with every ? as floor, so no fill can work. Diagnosis:');
-  console.error(diagnose(skeleton, build(skeleton, switches, on)).join('\n'));
+  console.error(diagnose(skeleton, build(skeleton, switches, on, shape)).join('\n'));
   process.exit(1);
 }
 

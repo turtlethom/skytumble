@@ -10,11 +10,14 @@ const PAD_CHARS: Record<Dir, string> = { up: 'U', down: 'D', left: 'L', right: '
  *   ~  ice          ^ v < >  conveyor pointing that way
  *   U D L R  launch pad flinging up / down / left / right
  *   +  flip tile (gravity)
+ *   c t n  shape switch: turns a block standing on it into a cube / tall block / normal block
+ *   X  extra-heavy switch (only a standing tall block presses it)
+ *   C T  goal marked for a cube / a tall block (G takes the normal block)
  * A line of dashes (`---`) ends the ground and starts the ceiling layer: the same grid seen from
  * above, cell for cell directly over the ground (not mirrored). The start is on the ground.
  * Switches target group 0 unless `switchGroups` lists groups in reading order (ground, then ceiling).
  */
-export function parseLevel(rows: string[], switchGroups: number[] = [], bridgesOn = 0): Level {
+export function parseLevel(rows: string[], switchGroups: number[] = [], bridgesOn = 0, startShape = 2): Level {
   const split = rows.findIndex((r) => /^-{3,}\s*$/.test(r));
   const groundRows = split < 0 ? rows : rows.slice(0, split);
   const ceilingRows = split < 0 ? null : rows.slice(split + 1);
@@ -35,13 +38,20 @@ export function parseLevel(rows: string[], switchGroups: number[] = [], bridgesO
         if (c === '#') tile = Tile.Floor;
         else if (c === 'f') tile = Tile.Fragile;
         else if (c === 'G') tile = Tile.Goal;
+        else if (c === 'C' || c === 'T') {
+          tile = Tile.Goal;
+          group = SHAPE_GOALS[c];
+        } else if (c in SHAPE_SWITCHES) {
+          tile = Tile.ShapeSwitch;
+          group = SHAPE_SWITCHES[c];
+        }
         else if (c === '+') tile = Tile.Flip;
         else if (c === 'S') {
           if (!ground) throw new Error(`The start must be on the ground, not the ceiling (${x},${y})`);
           tile = Tile.Floor;
           start = { x, y };
-        } else if (c === 'o' || c === 'x') {
-          tile = c === 'o' ? Tile.SoftSwitch : Tile.HeavySwitch;
+        } else if (c === 'o' || c === 'x' || c === 'X') {
+          tile = c === 'o' ? Tile.SoftSwitch : c === 'x' ? Tile.HeavySwitch : Tile.ExtraHeavy;
           group = switchGroups[switchIndex++] ?? 0;
         } else if (c === '~') {
           tile = Tile.Ice;
@@ -67,8 +77,22 @@ export function parseLevel(rows: string[], switchGroups: number[] = [], bridgesO
   const { tiles, groups } = grid(groundRows, true);
   const ceiling = ceilingRows ? grid(ceilingRows, false) : undefined;
   if (start.x < 0) throw new Error('Level has no start (S)');
-  return { width, height, tiles, groups, start, bridgesOn, ...(ceiling ? { ceiling } : {}) };
+  if (startShape !== 1 && startShape !== 2 && startShape !== 3) throw new Error(`Unknown start shape ${startShape}`);
+  return {
+    width,
+    height,
+    tiles,
+    groups,
+    start,
+    bridgesOn,
+    ...(ceiling ? { ceiling } : {}),
+    ...(startShape !== 2 ? { startShape: startShape as 1 | 3 } : {}),
+  };
 }
+
+/** Shape switch characters by the block length they set, and marked goals by the length they take. */
+const SHAPE_SWITCHES: Record<string, number> = { c: 1, n: 2, t: 3 };
+const SHAPE_GOALS: Record<string, number> = { C: 1, T: 3 };
 
 const CHARS: Record<Tile, string> = {
   [Tile.Empty]: '.',
@@ -82,6 +106,8 @@ const CHARS: Record<Tile, string> = {
   [Tile.Conveyor]: '?',
   [Tile.Pad]: '?',
   [Tile.Flip]: '+',
+  [Tile.ShapeSwitch]: '?',
+  [Tile.ExtraHeavy]: 'X',
 };
 
 export function formatLevel(level: Level): string {
@@ -98,6 +124,8 @@ export function formatLevel(level: Level): string {
         else if (t === Tile.Bridge) row += String(l.groups[i]);
         else if (t === Tile.Conveyor) row += CONVEYOR_CHARS[DIRS[l.groups[i]]];
         else if (t === Tile.Pad) row += PAD_CHARS[DIRS[l.groups[i]]];
+        else if (t === Tile.ShapeSwitch) row += Object.keys(SHAPE_SWITCHES).find((k) => SHAPE_SWITCHES[k] === l.groups[i]);
+        else if (t === Tile.Goal && l.groups[i] > 0) row += Object.keys(SHAPE_GOALS).find((k) => SHAPE_GOALS[k] === l.groups[i]);
         else row += CHARS[t];
       }
       rows.push(row);

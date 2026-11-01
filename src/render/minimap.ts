@@ -14,6 +14,8 @@ const FILL: Partial<Record<Tile, string>> = {
   [Tile.Conveyor]: '#4a5266',
   [Tile.Pad]: '#dfe5ec',
   [Tile.Flip]: '#b48cff',
+  [Tile.ShapeSwitch]: '#f6f1e6',
+  [Tile.ExtraHeavy]: '#86d07a',
 };
 export const PAD_ARROW = '#2fa8e8';
 /** Arrow glyph rotation per DIRS entry (up, down, left, right), for a "→" drawn pointing right. */

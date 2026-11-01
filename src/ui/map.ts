@@ -19,9 +19,10 @@ const LAYOUT: Record<string, { x: number; y: number; theme: string }> = {
   lab: { x: 143, y: 13, theme: 'lab' },
   windlab: { x: 143, y: 41, theme: 'lab' },
   gravlab: { x: 143, y: 69, theme: 'lab' },
+  shapelab: { x: 58, y: 15, theme: 'lab' },
 };
 
-const SIGNATURE_LABEL: Record<string, string> = { ice: 'Ice & belts', pads: 'Launch pads', gravity: 'Gravity' };
+const SIGNATURE_LABEL: Record<string, string> = { ice: 'Ice & belts', pads: 'Launch pads', gravity: 'Gravity', shapes: 'Shapes' };
 
 /** Map keys: Left/Right step through levels in play order, Up/Down hop between islands. */
 const STEP: Record<string, number> = { ArrowLeft: -1, KeyA: -1, ArrowRight: 1, KeyD: 1 };

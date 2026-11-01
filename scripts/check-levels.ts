@@ -24,8 +24,9 @@ for (const chapter of CHAPTERS) {
     const belts = r.pushes ? `  pushes: ${r.pushes}` : '';
     const pads = r.padUses.length ? `  pads: ${r.padUses.join(', ')}` : '';
     const flips = r.flipUses.length ? `  flips: ${r.flipUses.join(', ')}` : '';
+    const shapes = r.shapeUses.length ? `  shapes: ${r.shapeUses.join(', ')}` : '';
     const status = r.errors.length ? `✗ ${r.errors.join('; ')}` : '✓';
-    console.log(`  ${h.id.padEnd(12)} par ${String(r.par ?? '–').padStart(3)}  states ${String(r.explored).padStart(5)}${ice}${belts}${pads}${flips}  ${status}`);
+    console.log(`  ${h.id.padEnd(12)} par ${String(r.par ?? '–').padStart(3)}  states ${String(r.explored).padStart(5)}${ice}${belts}${pads}${flips}${shapes}  ${status}`);
     if (r.errors.length) failed++;
   }
   if (fillPar) writeFileSync(file, text);

@@ -286,6 +286,48 @@ links; stars; stats; snapping camera; undo; reference levels.
    the search shape only small areas around it; open templates produced parity shuffles that
    padded par without adding ideas. A third switch-backbone level was dropped for variety.
 
+**Next release — Toybox** (shape-changing blocks), planned in a grilling session 2026-11-01:
+
+- *Goal:* "right shape here": a gap only a long block spans, a spot only a cube can use.
+  Success = a fresh rhythm: long stretches where you move differently, not one-step detours.
+- *Scope:* the **cube (1×1×1)** and the **tall block (1×1×3)**. Split and paint were cut to the
+  following biome (scope challenge: four shapes in eight levels would each be taught and dropped).
+  Mix: base layer and belts only (pads, flips, ice stay in their chapters). Same process as
+  Starfall minus the camera prototype: rules, solver, and animations with tests → a ~6-level
+  lab → playtest → rules freeze → 8 levels and a map island. No rush; the user is the only player.
+- *Rules (open until the lab sign-off):*
+  - **Shape switches** set the block's shape when it **stands** on them (lying across is safe):
+    cube, tall, and a **normal** switch to turn back. A shape change happens where you stand, so
+    it always fits.
+  - Levels may **start** you in any shape.
+  - **Cube:** rolls one tile at a time, always standing; **light**: never breaks fragile tiles,
+    never presses heavy switches (soft switches yes).
+  - **Tall:** tips three tiles at a time; lying, it rests on its **two ends**, so it **spans a
+    one-tile gap** (and, lying across two parallel rails, can roll along the gap between them); breaks fragile tiles only standing (like normal); **extra-heavy switches**
+    respond only to a standing tall block.
+  - **Goal:** normal standing by default; a goal can be **marked** for a cube or a tall block.
+  - Belts follow the whole-block rule (a lying tall block moves only if all three tiles are belts).
+  - *One-trick guard* (`signature: shapes`): two distinct shape uses among become cube, become tall,
+    back to normal, cube crosses fragile, tall spans a gap, tall presses an extra-heavy switch,
+    shaped goal.
+- *Readability from day one:* each shape switch shows a small model of its shape; a shaped goal's
+  marker takes that shape.
+- *Pre-mortem:* too many rules, same rhythm, unreadable (and fiddly split, now deferred).
+- *Theme:* toy blocks in a sky playroom. Name: **Toybox**.
+- *Kept for the split/paint biome:* a swap key steers one cube at a time; cubes merge on touch and
+  must merge before the goal; wrong-color gates are walls (pushing into one does nothing, no move
+  counted); each split cube can carry its own color.
+
+1. **Shape rules**: rules, solver, animations, design tools, tests. — built 2026-11-01: blocks
+   carry a length (1 cube, 2 normal, 3 tall) that rolling, support, weight, the solver state,
+   the design tools, and every animation follow; every existing level keeps its par. Level text:
+   `c` `t` `n` shape switches, `X` extra-heavy switch, `C` `T` goals marked for a cube or a tall
+   block, and a `shape: cube|tall` field to start in a shape. Shape switches show a toy model of
+   their shape; marked goals float that shape; shape changes squash and stretch. A demo level,
+   `shapelab-01` (Shape Demo, par 11), on a Shape Lab extras island uses every shape idea once.
+2. **Shape lab** (~6 levels, one per rule question), one playtest, rules freeze.
+3. **Toybox chapter** (`toy-01`…`toy-08`) and its map island.
+
 **Later:** endless climb + daily seed, Frost in the generator, archipelago generation,
 more biomes from the backlog, visual level editor, full-level links (needed for handmade
 levels anyway), cosmetic rank & skins, swapping code-made terrain for a CC0 asset pack.
@@ -418,6 +460,12 @@ added start-island shuffles, so the extra difficulty is built from steps instead
 
 **2026-11-01 — Starfall, second round.** Satisfied with how the reworked levels came out →
 Starfall approved. Next: grill the shape-changing biome.
+
+**2026-11-01 — shape rules demo (shapelab-01).** Likes how the mechanic works. The shape
+switch and extra-heavy switch look stands out too much next to the other switches and tiles →
+restyled in the existing switch language: shape switches are grass tiles with a low stone disc and
+a small raised bar whose length shows the shape (nub = cube, two = normal, three = tall), in muted
+colors; the extra-heavy switch is the heavy switch's cross, chunkier, with a third bar.
 
 ## Architecture
 

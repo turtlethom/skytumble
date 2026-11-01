@@ -1,0 +1,9 @@
+title: Shape Lab (prototypes)
+
+=== shapelab-01
+par: 11
+name: Shape Demo
+idea: Shape switches change you when you stand on them; the bar on each shows the shape: three long makes you tall, a small nub makes you a cube. Tall, tip across the gap and stand on the extra-heavy switch to raise the bridge. As a cube you're light enough to cross the planks, and this goal wants a cube.
+###...............
+S##t#.#X0##cffffC.
+###...............

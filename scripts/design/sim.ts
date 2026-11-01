@@ -45,7 +45,8 @@ for (const [i, dir] of moves.entries()) {
   const b = r.state.block;
   const extra = [describeMotions(r.motions), r.pressed.length ? 'PRESS' : '', r.broke ? 'BROKE' : ''].filter(Boolean);
   const up = d.level.ceiling ? (r.state.layer ? ' ceiling' : ' ground') : '';
-  console.log(`${String(i + 1).padStart(3)} ${dir[0].toUpperCase()} → ${b.o}(${b.x},${b.y})${up} ${r.outcome}${extra.length ? `  ${extra.join(' ')}` : ''}`);
+  const shape = b.n === 1 ? 'cube ' : b.n === 3 ? 'tall ' : '';
+  console.log(`${String(i + 1).padStart(3)} ${dir[0].toUpperCase()} → ${shape}${b.o}(${b.x},${b.y})${up} ${r.outcome}${extra.length ? `  ${extra.join(' ')}` : ''}`);
   s = r.state;
   if (process.env.SHOW === '1') console.log(board(d.rows, d.level, s));
   if (r.outcome !== 'ok') break;

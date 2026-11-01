@@ -14,6 +14,7 @@ import { Level } from '../game/types';
  *   switches: 0 1                 optional: switch target groups in reading order
  *   bridges-on: 1                 optional: bridge groups that start extended
  *   guard: off                    optional: a teaching level skips the signature's one-trick guard
+ *   shape: cube                   optional: start as a cube or a tall block (default: the normal block)
  *   S~~~~#G                       grid rows, in the format of game/ascii.ts
  *
  * Grid rows never contain ':', so any "key: value" line is a field.
@@ -39,7 +40,8 @@ export interface Chapter {
   levels: HandmadeLevel[];
 }
 
-export const SIGNATURES = ['ice', 'pads', 'gravity'] as const;
+export const SIGNATURES = ['ice', 'pads', 'gravity', 'shapes'] as const;
+const START_SHAPES: Record<string, number> = { cube: 1, normal: 2, tall: 3 };
 export type Signature = (typeof SIGNATURES)[number];
 
 const FIELD = /^([a-z-]+):\s*(.*)$/;
@@ -91,7 +93,7 @@ export function parseChapter(id: string, text: string): Chapter {
 
   const levels = drafts.map((d): HandmadeLevel => {
     for (const key of d.fields.keys()) {
-      if (!['name', 'idea', 'par', 'switches', 'bridges-on', 'guard'].includes(key)) fail(d.line, `unknown field '${key}'`);
+      if (!['name', 'idea', 'par', 'switches', 'bridges-on', 'guard', 'shape'].includes(key)) fail(d.line, `unknown field '${key}'`);
     }
     if (d.rows.length === 0) fail(d.line, `${d.id} has no grid`);
     const numbers = (key: string) =>
@@ -104,7 +106,9 @@ export function parseChapter(id: string, text: string): Chapter {
     const bridgesOn = numbers('bridges-on').reduce((mask, g) => mask | (1 << g), 0);
     let level: Level;
     try {
-      level = parseLevel(d.rows, numbers('switches'), bridgesOn);
+      const shape = d.fields.get('shape') ?? 'normal';
+      if (!(shape in START_SHAPES)) fail(d.line, `shape: expected cube, normal or tall, got '${shape}'`);
+      level = parseLevel(d.rows, numbers('switches'), bridgesOn, START_SHAPES[shape]);
     } catch (err) {
       return fail(d.line, `${d.id}: ${(err as Error).message}`);
     }

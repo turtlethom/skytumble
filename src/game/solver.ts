@@ -13,7 +13,8 @@ const O_INDEX = { S: 0, X: 1, Y: 2 } as const;
 
 function key(level: Level, s: State): number {
   const b = s.block;
-  return (((s.bridges * 3 + O_INDEX[b.o]) * 2 + (s.layer ?? 0)) * level.height + b.y) * level.width + b.x;
+  const shape = (b.n ?? 2) - 1;
+  return ((((s.bridges * 3 + O_INDEX[b.o]) * 2 + (s.layer ?? 0)) * 3 + shape) * level.height + b.y) * level.width + b.x;
 }
 
 /** Breadth-first search for the shortest solution, or null if the level is unsolvable. */

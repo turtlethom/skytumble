@@ -139,6 +139,10 @@ class Game {
       await this.world.move(motion);
     }
     this.world.pressSwitches(result.pressed);
+    if (result.reshaped) {
+      const before = result.motions.length ? result.motions[result.motions.length - 1].to : result.rolled;
+      await this.world.reshape(before, result.state.block);
+    }
     if (result.toggled) await this.world.setBridges(result.state.bridges);
     this.state = result.state;
 

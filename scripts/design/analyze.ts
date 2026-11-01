@@ -7,7 +7,7 @@
 // design block (to copy a chapter level into a draft file).
 import { initialState, step } from '../../src/game/rules';
 import { solve } from '../../src/game/solver';
-import { flipUses, iceUses, padUses } from '../../src/levels/validate';
+import { flipUses, iceUses, padUses, shapeUses } from '../../src/levels/validate';
 import { diagnose, explore } from './explore';
 import { build, describeMotions, designBlock, loadDesigns, textRow, touched } from './lib';
 
@@ -34,11 +34,12 @@ for (const arg of process.argv.slice(2)) {
       r.pressed.forEach((c) => pressed.push(`${rows[textRow(level, r.state.layer ?? 0, c.y)][c.x]}@${c.x},${c.y}${r.state.layer ? '↑' : ''}`));
       const b = r.state.block;
       const up = level.ceiling && r.state.layer ? '↑' : '';
-      trace.push(`${dir[0].toUpperCase()}:${b.o}(${b.x},${b.y})${up}${m ? ` [${m}]` : ''}${r.pressed.length ? ' PRESS' : ''}`);
+      const shape = b.n === 1 ? 'cube ' : b.n === 3 ? 'tall ' : '';
+      trace.push(`${dir[0].toUpperCase()}:${shape}${b.o}(${b.x},${b.y})${up}${m ? ` [${m}]` : ''}${r.pressed.length ? ' PRESS' : ''}`);
       st = r.state;
     }
-    const plain = solve(build(rows.map((l) => (/^-{3,}/.test(l) ? l : l.replace(/[~^v<>UDLR+]/g, '#'))), switches, on));
-    const pads = [...padUses(level, sol.moves), ...flipUses(level, sol.moves)];
+    const plain = solve(build(rows.map((l) => (/^-{3,}/.test(l) ? l : l.replace(/[~^v<>UDLR+]/g, '#'))), switches, on, level.startShape ?? 2));
+    const pads = [...padUses(level, sol.moves), ...flipUses(level, sol.moves), ...shapeUses(level, sol.moves)];
     // A dead end: a state you can reach but never win from (without undo).
     const dead = ex.nodes.size - ex.canWin.size;
     console.log(

@@ -27,10 +27,24 @@ export interface StepResult {
   pressed: { x: number; y: number }[];
   /** Fragile cell that broke under a standing block. */
   broke?: { x: number; y: number };
+  /** The block's length before and after a shape switch changed it this move. */
+  reshaped?: { from: number; to: number };
 }
 
 export function initialState(level: Level): State {
-  return { block: { x: level.start.x, y: level.start.y, o: 'S' }, bridges: level.bridgesOn, layer: 0 };
+  const block = withLength({ x: level.start.x, y: level.start.y, o: 'S' }, level.startShape ?? 2);
+  return { block, bridges: level.bridgesOn, layer: 0 };
+}
+
+/** The block's length in tiles: 1 cube, 2 normal, 3 tall. */
+export function blockLength(b: Block): number {
+  return b.n ?? 2;
+}
+
+/** The same block with another length; the normal length is stored as no `n` at all. */
+export function withLength(b: Block, n: number): Block {
+  const { n: _old, ...rest } = b;
+  return n === 2 ? rest : { ...rest, n: n as 1 | 3 };
 }
 
 /**
@@ -42,30 +56,39 @@ export function layerView(level: Level, layer: number): Level {
   return { ...level, tiles: level.ceiling.tiles, groups: level.ceiling.groups };
 }
 
-/** Cells covered by the block: one when standing, two when lying. */
+/** Cells covered by the block: one when standing, its length when lying. */
 export function blockCells(b: Block): [number, number][] {
   if (b.o === 'S') return [[b.x, b.y]];
-  if (b.o === 'X') return [[b.x, b.y], [b.x + 1, b.y]];
-  return [[b.x, b.y], [b.x, b.y + 1]];
+  const n = blockLength(b);
+  const cells: [number, number][] = [];
+  for (let i = 0; i < n; i++) cells.push(b.o === 'X' ? [b.x + i, b.y] : [b.x, b.y + i]);
+  return cells;
 }
 
-/** Tip the block over one edge in the given direction. */
+/**
+ * Tip the block over one edge in the given direction. A block of length n standing tips onto the
+ * n tiles beyond its edge; lying along the roll, it stands up just past its far end. A cube just
+ * rolls one tile and stays a cube.
+ */
 export function roll(b: Block, dir: Dir): Block {
   const { dx, dy } = DIR_DELTA[dir];
+  const n = blockLength(b);
+  const at = (x: number, y: number, o: Block['o']) => withLength({ x, y, o }, n);
+  if (n === 1) return at(b.x + dx, b.y + dy, 'S');
   switch (b.o) {
     case 'S':
-      if (dx === 1) return { x: b.x + 1, y: b.y, o: 'X' };
-      if (dx === -1) return { x: b.x - 2, y: b.y, o: 'X' };
-      if (dy === 1) return { x: b.x, y: b.y + 1, o: 'Y' };
-      return { x: b.x, y: b.y - 2, o: 'Y' };
+      if (dx === 1) return at(b.x + 1, b.y, 'X');
+      if (dx === -1) return at(b.x - n, b.y, 'X');
+      if (dy === 1) return at(b.x, b.y + 1, 'Y');
+      return at(b.x, b.y - n, 'Y');
     case 'X':
-      if (dx === 1) return { x: b.x + 2, y: b.y, o: 'S' };
-      if (dx === -1) return { x: b.x - 1, y: b.y, o: 'S' };
-      return { x: b.x, y: b.y + dy, o: 'X' };
+      if (dx === 1) return at(b.x + n, b.y, 'S');
+      if (dx === -1) return at(b.x - 1, b.y, 'S');
+      return at(b.x, b.y + dy, 'X');
     case 'Y':
-      if (dy === 1) return { x: b.x, y: b.y + 2, o: 'S' };
-      if (dy === -1) return { x: b.x, y: b.y - 1, o: 'S' };
-      return { x: b.x + dx, y: b.y, o: 'Y' };
+      if (dy === 1) return at(b.x, b.y + n, 'S');
+      if (dy === -1) return at(b.x, b.y - 1, 'S');
+      return at(b.x + dx, b.y, 'Y');
   }
 }
 
@@ -85,8 +108,14 @@ export function isSolid(level: Level, x: number, y: number, bridges: number): bo
   return true;
 }
 
+/**
+ * Every cell must be on something, except that a lying tall block rests on its two ends like a
+ * plank, so its middle can hang over a gap.
+ */
 function supported(level: Level, b: Block, bridges: number): boolean {
-  return blockCells(b).every(([x, y]) => isSolid(level, x, y, bridges));
+  const cells = blockCells(b);
+  const needed = blockLength(b) === 3 && b.o !== 'S' ? [cells[0], cells[2]] : cells;
+  return needed.every(([x, y]) => isSolid(level, x, y, bridges));
 }
 
 /** Whole-block rule: special tiles act only when every cell of the block is on them. */
@@ -96,7 +125,7 @@ function fullyOn(level: Level, b: Block, tile: Tile): boolean {
 
 function shift(b: Block, dir: Dir): Block {
   const { dx, dy } = DIR_DELTA[dir];
-  return { x: b.x + dx, y: b.y + dy, o: b.o };
+  return { ...b, x: b.x + dx, y: b.y + dy };
 }
 
 /** Slide a lying block along `dir` while it is fully on ice; stops on leaving ice or losing support. */
@@ -139,7 +168,7 @@ function flipFires(level: Level, b: Block): boolean {
 export function flight(b: Block, dir: Dir): Block {
   const n = (b.o === 'S' ? FLING : HOP) - 1;
   const { dx, dy } = DIR_DELTA[dir];
-  return roll({ x: b.x + dx * n, y: b.y + dy * n, o: b.o }, dir);
+  return roll({ ...b, x: b.x + dx * n, y: b.y + dy * n }, dir);
 }
 
 /** Every grid cell some flight in this level can land on, for the landing marks. */
@@ -222,7 +251,11 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
   }
 
   if (!still()) return fell(state.bridges);
-  if (block.o === 'S' && tileAt(view, block.x, block.y) === Tile.Fragile) {
+  // Weight: a standing block breaks fragile tiles and presses heavy switches, except the light
+  // cube; only a standing tall block presses extra-heavy switches.
+  const length = blockLength(block);
+  const standing = block.o === 'S';
+  if (standing && length >= 2 && tileAt(view, block.x, block.y) === Tile.Fragile) {
     return fell(state.bridges, { broke: { x: block.x, y: block.y } });
   }
 
@@ -230,16 +263,35 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
   const pressed: { x: number; y: number }[] = [];
   for (const [x, y] of blockCells(block)) {
     const t = tileAt(view, x, y);
-    if (t === Tile.SoftSwitch || (t === Tile.HeavySwitch && block.o === 'S')) {
+    const fires =
+      t === Tile.SoftSwitch ||
+      (t === Tile.HeavySwitch && standing && length >= 2) ||
+      (t === Tile.ExtraHeavy && standing && length === 3);
+    if (fires) {
       bridges ^= 1 << groupAt(view, x, y);
       pressed.push({ x, y });
+    }
+  }
+
+  // A shape switch under a standing block sets its shape, right where it stands.
+  let reshaped: StepResult['reshaped'];
+  if (standing && tileAt(view, block.x, block.y) === Tile.ShapeSwitch) {
+    const to = groupAt(view, block.x, block.y);
+    if (to !== length) {
+      reshaped = { from: length, to };
+      block = withLength(block, to);
     }
   }
 
   // A switch can retract the bridge the block is resting on.
   if (!supported(view, block, bridges)) return { ...fell(bridges), pressed };
 
-  const won = block.o === 'S' && tileAt(view, block.x, block.y) === Tile.Goal;
+  // The goal takes a standing block of its shape: normal unless the goal is marked (group = length).
+  const goalShape = (x: number, y: number) => (groupAt(view, x, y) > 0 ? groupAt(view, x, y) : 2);
+  const won =
+    block.o === 'S' &&
+    tileAt(view, block.x, block.y) === Tile.Goal &&
+    blockLength(block) === goalShape(block.x, block.y);
   return {
     state: { block, bridges, layer },
     outcome: won ? 'win' : 'ok',
@@ -247,6 +299,7 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
     motions,
     toggled: state.bridges ^ bridges,
     pressed,
+    ...(reshaped ? { reshaped } : {}),
   };
 }
 

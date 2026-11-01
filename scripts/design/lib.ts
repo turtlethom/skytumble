@@ -9,15 +9,18 @@ import { Block, DIR_DELTA, Dir, Level, Tile } from '../../src/game/types';
  *   @name          label for output
  *   !switches 0 1  switch target groups in reading order
  *   !on 1          bridge groups that start extended
+ *   !shape cube    the shape the block starts in (cube, normal, tall)
  */
-export function parseBlock(lines: string[]): { rows: string[]; switches: number[]; on: number[] } {
+export function parseBlock(lines: string[]): { rows: string[]; switches: number[]; on: number[]; shape: number } {
   const opt = (k: string) =>
     (lines.find((l) => l.startsWith(`!${k} `)) ?? '').split(/\s+/).slice(1).filter(Boolean).map(Number);
-  return { rows: lines.filter((l) => !l.startsWith('!') && !l.startsWith('@')), switches: opt('switches'), on: opt('on') };
+  const shapeWord = (lines.find((l) => l.startsWith('!shape ')) ?? '!shape normal').split(/\s+/)[1];
+  const shape = { cube: 1, normal: 2, tall: 3 }[shapeWord] ?? 2;
+  return { rows: lines.filter((l) => !l.startsWith('!') && !l.startsWith('@')), switches: opt('switches'), on: opt('on'), shape };
 }
 
-export function build(rows: string[], switches: number[], on: number[]): Level {
-  return parseLevel(rows, switches, on.reduce((mask, g) => mask | (1 << g), 0));
+export function build(rows: string[], switches: number[], on: number[], shape = 2): Level {
+  return parseLevel(rows, switches, on.reduce((mask, g) => mask | (1 << g), 0), shape);
 }
 
 /** Where a layer's row sits in the level text: the ceiling follows the ground and a `---` line. */
@@ -77,9 +80,9 @@ export async function loadDesigns(arg: string): Promise<Design[]> {
       .filter(Boolean)
       .map((block, i) => {
         const lines = block.split('\n');
-        const { rows, switches, on } = parseBlock(lines);
+        const { rows, switches, on, shape } = parseBlock(lines);
         const name = lines.find((l) => l.startsWith('@'))?.slice(1) ?? `#${i + 1}`;
-        const level = build(rows, switches, on);
+        const level = build(rows, switches, on, shape);
         // Re-print the rows from the parsed level so every layer is full height and width, and the
         // ceiling starts where textRow expects it.
         return { name, rows: formatLevel(level).split('\n'), switches, on, level };
@@ -97,7 +100,7 @@ export async function loadDesigns(arg: string): Promise<Design[]> {
 export function fromLevel(name: string, level: Level): Design {
   const switches: number[] = [];
   level.tiles.forEach((t, i) => {
-    if (t === Tile.SoftSwitch || t === Tile.HeavySwitch) switches.push(level.groups[i]);
+    if (t === Tile.SoftSwitch || t === Tile.HeavySwitch || t === Tile.ExtraHeavy) switches.push(level.groups[i]);
   });
   const on = [...Array(10).keys()].filter((g) => (level.bridgesOn >> g) & 1);
   return { name, rows: formatLevel(level).split('\n'), switches, on, level };
@@ -105,7 +108,8 @@ export function fromLevel(name: string, level: Level): Design {
 
 /** Print a design as a block that analyze.ts, sim.ts and search.ts read back. */
 export function designBlock(d: Design): string {
-  const opts = [d.switches.length ? `!switches ${d.switches.join(' ')}` : '', d.on.length ? `!on ${d.on.join(' ')}` : ''];
+  const shape = { 1: '!shape cube', 3: '!shape tall' }[d.level.startShape ?? 2] ?? '';
+  const opts = [d.switches.length ? `!switches ${d.switches.join(' ')}` : '', d.on.length ? `!on ${d.on.join(' ')}` : '', shape];
   return [`@${d.name}`, ...opts.filter(Boolean), ...d.rows].join('\n');
 }
 

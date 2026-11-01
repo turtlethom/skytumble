@@ -61,7 +61,10 @@ then the ceiling grid in the same coordinates; `+` is a flip tile. The layers li
 row, so keep leading empty rows (trimming the ground's first row shifts it under the wrong
 ceiling row). The rules run on one layer at a
 time through `layerView`; the renderer mirrors the ceiling group (scale y −1), so tiles and
-animations are shared. Chapters are registered in play order in
+animations are shared. Shapes: a block's length (`n`: 1 cube, absent = 2, 3 tall) drives
+rolling, support (a lying tall block rests on its ends), and weight; `c`/`t`/`n` are shape
+switches, `X` an extra-heavy switch, `C`/`T` goals marked for a shape, and `shape: cube|tall`
+(or `!shape` in a design block) sets the start shape. Traces print `cube`/`tall` before a pose. Chapters are registered in play order in
 `src/levels/index.ts` (which also marks extras), and a new chapter needs an island position and
 theme in `LAYOUT` in `src/ui/map.ts`. A chapter with `signature: ice` enforces the one-trick guard: the optimal
 solution must use ice in at least two distinct ways (`src/levels/validate.ts`).

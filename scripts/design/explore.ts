@@ -4,8 +4,8 @@
 import { blockCells, findGoal, flight, initialState, isSolid, layerView, step, tileAt } from '../../src/game/rules';
 import { Block, DIRS, Dir, Level, State, Tile } from '../../src/game/types';
 
-const keyOf = (s: State) => `${s.block.x},${s.block.y},${s.block.o},${s.bridges},${s.layer ?? 0}`;
-const blockKey = (b: Block, layer = 0) => `${b.x},${b.y},${b.o},${layer}`;
+const keyOf = (s: State) => `${s.block.x},${s.block.y},${s.block.o},${s.block.n ?? 2},${s.bridges},${s.layer ?? 0}`;
+const blockKey = (b: Block, layer = 0) => `${b.x},${b.y},${b.o},${b.n ?? 2},${layer}`;
 
 interface Node {
   state: State;
@@ -76,6 +76,7 @@ const DIR_LETTER: Record<Dir, string> = { up: 'U', down: 'D', left: 'L', right: 
 export const movesText = (moves: Dir[]) => moves.map((d) => DIR_LETTER[d]).join('');
 
 const POSE: Record<Block['o'], string> = { S: 'standing', X: 'lying along x', Y: 'lying along y' };
+const SHAPE: Record<number, string> = { 1: 'cube ', 2: '', 3: 'tall block ' };
 const cellsText = (b: Block) => blockCells(b).map(([x, y]) => `${x},${y}`).join(' + ');
 
 /** The arrow pads fire with under `b`, mirroring rules.ts: standing on one, or lying fully on two that agree. */
@@ -215,7 +216,7 @@ export function diagnose(rows: string[], level: Level, ex = explore(level)): str
   if (near && goal) {
     const where = near.dist === 0 ? 'on the goal but not standing' : `${near.dist} tile${near.dist > 1 ? 's' : ''} from the goal`;
     out.push(
-      `closest approach: ${POSE[near.block.o]} on ${cellsText(near.block)}${level.ceiling ? (near.layer ? ' (ceiling)' : ' (ground)') : ''}, ${where}, ` +
+      `closest approach: ${SHAPE[near.block.n ?? 2]}${POSE[near.block.o]} on ${cellsText(near.block)}${level.ceiling ? (near.layer ? ' (ceiling)' : ' (ground)') : ''}, ${where}, ` +
         `after ${movesText(pathTo(ex, near.key)) || '(start)'}`,
     );
   }
