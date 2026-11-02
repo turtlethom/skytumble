@@ -22,7 +22,7 @@ by side it feels better than the old games; the project keeps growing.
 | Area | Decision | Why |
 |---|---|---|
 | Identity | Original game, **Skytumble**, sky-islands theme | Own look and name; not a clone |
-| Visuals | 3D (Three.js). Free CC0 asset packs for terrain; special tiles as code-made effects | No hand-drawn art |
+| Visuals | 3D (Three.js). All art made in code, no model packs (decided 2026-11-01) | One consistent style, nothing to download |
 | Platform | Desktop only, keyboard | — |
 | Camera | Rotates in 90° snaps; controls are screen-relative (Up = away from you) | No ambiguous diagonals |
 | Timing | Turn-based only; anything "timed" counts moves, not seconds | Solver stays exact; par stays meaningful |
@@ -348,13 +348,54 @@ links; stars; stats; snapping camera; undo; reference levels.
    | 07 | Heavy Lifting | 32 | 528 | Tall reaches the extra-heavy switch past the gaps, back to normal for the bridge |
    | 08 | Toybox | 39 | 585 | Finale: tall, extra-heavy, cube over planks, normal, bridge to the goal |
 
-**Next (not yet planned in detail):** the split + paint biome. Decisions already made in the
+**Next release — chapter themes**, shared rules settled in a grilling session 2026-11-01. New
+levels wait until this is done. Themes only change how levels are drawn; rules, pars and
+solutions don't change.
+
+- **Main job:** the world explains the mechanics (ice is slippery because this place is frozen).
+- **Biggest risk:** puzzles getting harder to read. Clarity beats decoration, always.
+
+| Area | Rule |
+|---|---|
+| Worlds | Distinct palette, lighting, sky and materials per chapter, still floating in the sky |
+| Scenery | Far backdrops, things hanging under tiles, flat tile details. No nearby islets |
+| Below the board | Treetops or summits may rise from below if they stop under board level and fade into haze, so gaps still read as empty |
+| Floor tiles | Same cubes, new color and material. Detail on most tiles, in shades of the floor's one color |
+| Mechanics and goal | Same shape and color coding in every chapter, with a themed finish: an ice tile stays recognizable wherever chapters mix |
+| Outlines | A subtle rim on colored switches and bridges in every world, to solve color clashes consistently |
+| Block | Same block, tinted per chapter |
+| Motion | Gentle ambience: slow swaying and light drifting particles |
+| Interface | Accent colors only. Sky map islands match each world's colors |
+| Within a chapter | One look throughout |
+| Chapter arrival | A fade and the chapter's name on every entry from another chapter or a fresh page load. A key press skips it and never counts as a move |
+| Labs, Easy, Medium | One neutral sky-island look. Gravity Lab loses the night sky but keeps its ceiling lit |
+| Art | All code-made. If something fails twice, change the idea rather than use a model pack |
+| Sound | Not part of this work |
+| Performance | About 60 fps at 1080p on the user's laptop (i7-1255U, Iris Xe), checked in their browser with a hidden frame-rate readout. Ambient motion is cut first. Slower machines may stutter |
+
+- **Order:** Tutorial (forest), Frost (ice), Windy Peaks, Toybox (toy island), Starfall (add to
+  the night look).
+- **Each theme:** grill the user and record a short spec here → a screenshot sheet of every tile
+  on the new floor, for approval before anything else → scenery and motion → sign-off → ask
+  before pushing it live. Finished themes go live one at a time.
+- **Sign-off:** the chapter can be named from a screenshot with the text hidden, and a replay of a
+  few of its levels has no misread tiles. A misread removes the detail that caused it, across the
+  whole theme.
+- **Time limit:** a first build plus two rounds of changes per theme, then move on and note what's
+  left. Clarity fixes aren't capped.
+- **Known risks:** Frost's floor can't be too pale, since ice tiles have no rim to separate them
+  from snow. Code-made trees may not read as a forest; the fallback is moss, roots and light.
+
+Status: the per-chapter plumbing is in (`src/render/themes.ts`), and Starfall's night is now a
+chapter choice rather than a property of two-floor levels. No new world is built yet.
+
+**After themes (not yet planned in detail):** the split + paint biome. Decisions already made in the
 Toybox grilling are listed under *Kept for the split/paint biome* above; start with a short
 grilling session to fill the gaps (where split cubes appear, how many colors, the look).
 
 **Later:** endless climb + daily seed, Frost in the generator, archipelago generation,
 more biomes from the backlog, visual level editor, full-level links (needed for handmade
-levels anyway), cosmetic rank & skins, swapping code-made terrain for a CC0 asset pack.
+levels anyway), cosmetic rank & skins.
 
 **Non-goals:** mobile/touch, servers, accounts, global leaderboards, real-time mechanics.
 
