@@ -144,7 +144,8 @@ with `--virtual-time-budget=20000` is enough. Gotchas:
 ```
 src/game/      pure rules: types, rules (step: roll → slide → push → slide), solver (BFS), generator
 src/levels/    chapter .txt files, format.ts (parser), validate.ts (checks + one-trick guard), index.ts
-src/render/    Three.js world (tiles, animations, push cue), palette.ts (belt colors by direction)
+src/render/    Three.js world (tiles, animations, push cue), palette.ts (belt colors by direction),
+               themes.ts (each chapter's look; rules in DESIGN.md's *Chapter themes*)
 src/ui/        progress (localStorage), map (campaign sky map; island layout per chapter)
 src/main.ts    game controller: modes, HUD, splash, key focus sink (for Vimium)
 scripts/       check-levels.ts; design/ (lib, explore, analyze, sim, search, solutions, play, verify)

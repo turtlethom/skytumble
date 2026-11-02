@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Motion, blockCells, blockLength, flightLandings, layerView } from '../game/rules';
 import { Block, DIR_DELTA, DIRS, Dir, Level, State, Tile } from '../game/types';
 import { CONVEYOR_COLORS } from './palette';
+import { Theme } from './themes';
 
 const COLORS = {
   grass: 0x86d07a,
@@ -191,7 +192,7 @@ export class World {
     container.appendChild(this.renderer.domElement);
 
     this.scene.add(this.hemi);
-    // A light from below for the ceiling's walking side, which faces down; on only at night.
+    // A light from below for the ceiling's walking side, which faces down; on only with a ceiling.
     this.moonlight.position.set(0, -30, 10);
     this.scene.add(this.moonlight, this.moonlight.target);
     this.stars = makeStars();
@@ -294,7 +295,7 @@ export class World {
   // -------------------------------------------------------------------------
   // Level construction.
 
-  setLevel(level: Level, state: State): Promise<void> {
+  setLevel(level: Level, state: State, theme: Theme): Promise<void> {
     this.layerGroups.forEach((g) => g.clear());
     this.tiles.clear();
     this.layerMats = [[], []];
@@ -302,7 +303,7 @@ export class World {
     this.level = level;
     this.flipGlows = [];
     this.hasCeiling = !!level.ceiling;
-    this.setNight(this.hasCeiling);
+    this.applyTheme(theme);
     this.switches.clear();
     this.bridges = [];
     this.goalMarker = null;
@@ -1162,19 +1163,20 @@ export class World {
     });
   }
 
-  /** The Starfall look for two-layer levels: night sky, stars, a moon lighting the ceiling from below. */
-  private setNight(on: boolean): void {
-    document.body.classList.toggle('night', on);
-    this.hemi.color.set(on ? 0xc2ccff : 0xcfe8ff);
-    this.hemi.groundColor.set(on ? 0x9a8cd0 : 0x8a7a66);
-    this.hemi.intensity = on ? 1.7 : 1.4;
-    this.sun.color.set(on ? 0xeef0ff : 0xfff4e0);
-    this.sun.intensity = on ? 2 : 2.2;
-    // The ceiling would shade the whole ground; at night the light is soft anyway.
-    this.sun.castShadow = !on;
-    this.moonlight.intensity = on ? 2.2 : 0;
-    this.stars.visible = on;
-    for (const c of this.clouds) c.visible = !on;
+  /** Dress the scene in a chapter's look. A two-floor level also needs its ceiling lit in any theme. */
+  private applyTheme(theme: Theme): void {
+    document.body.dataset.theme = theme.id;
+    this.hemi.color.set(theme.hemi.sky);
+    this.hemi.groundColor.set(theme.hemi.ground);
+    this.hemi.intensity = theme.hemi.intensity;
+    this.sun.color.set(theme.sun.color);
+    this.sun.intensity = theme.sun.intensity;
+    // The ceiling would shade the whole ground.
+    this.sun.castShadow = !this.hasCeiling;
+    this.moonlight.intensity = this.hasCeiling ? 2.2 : 0;
+    this.stars.visible = theme.sky === 'stars';
+    // Clouds drift below the ground, right where the camera goes to look up at a ceiling.
+    for (const c of this.clouds) c.visible = theme.sky === 'clouds' && !this.hasCeiling;
   }
 
   /** For each 90° camera position, the closest distance that keeps the whole island on screen. */

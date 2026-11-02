@@ -4,6 +4,7 @@ import { initialState, step } from './game/rules';
 import { solve } from './game/solver';
 import { DIRS, Dir, Level, State, TIERS, Tier } from './game/types';
 import { HANDMADE, findLevel } from './levels';
+import { NEUTRAL, themeForLevel } from './render/themes';
 import { World } from './render/world';
 import { SkyMap, suggestedLevel } from './ui/map';
 import { Progress, loadProgress, saveProgress, starsFor } from './ui/progress';
@@ -90,7 +91,7 @@ class Game {
     this.moves = 0;
     this.status = 'busy';
     this.renderChrome();
-    await this.world.setLevel(level, this.state);
+    await this.world.setLevel(level, this.state, this.mode.kind === 'hand' ? themeForLevel(this.mode.id) : NEUTRAL);
     this.status = 'playing';
     this.updatePreviews();
     this.drainQueue();
