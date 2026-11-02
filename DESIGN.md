@@ -596,6 +596,29 @@ a lit window and a cable car around the board; First Glade, a giant tree with a 
 Each addition passes the usual checks (gaps stay readable, runs well on the user's laptop), and First Glade,
 which the user already loves, must not lose what works. The *Scenery* rule above widens to allow these framing pieces.
 
+**Windy Peaks pass**, settled in a grilling session 2026-11-02: wild, untouched peaks with no sign of people, where
+the wind has carved great stone arches and giant birds nest on top of them. The gale funnels through vents in the rock,
+which is why pads fling you. What the world lacked most: a sense of place. The biggest fear: losing its clean, airy feel.
+
+| Area | Decision |
+|---|---|
+| Landmark and framing | Four wind-carved stone arches, one per side of the board at middle distance in light haze, each with a giant nest on top. They stop below board level, so nothing covers a tile |
+| Moving piece | A flock of medium storybook birds, mostly soft grey and white with a small warm accent, flying in formation from one nest to another every 20 to 30 seconds |
+| Color | Pink-violet mountain heather on the arches and nest ledges |
+| Banners | Removed, since they imply people; long white streamers of cloud pour off the peak tops instead |
+| Unchanged | Tiles, grey stone, sky, gusts, pads, interface. Wind Lab keeps its neutral look |
+| If it runs slowly | Cut grit first, then cloud streamers, then deep clouds, with gusts and birds last |
+
+- **Sign-off:** switching between the two, Windy Peaks no longer feels behind Toybox, and a replay of `wind-06` and
+  `wind-08` has no misread gaps.
+- **Build order:** one arch with its nest and one bird up close for approval → the ring, streamers and flights →
+  sign-off → ask before it goes live.
+- **Risks to watch:** nests reading as odd clumps (if so, try bare arches and birds simply crossing); fake-looking birds
+  (if they fail twice, smaller silhouettes); the arches crowding the airy feel (push back or add haze first); rock arches
+  suggesting a desert; streamers echoing Frost's spindrift; white birds blurring with the gust streaks.
+
+Status: settled; the samples are next.
+
 **After that pass: 20 levels per biome** (decided by the user 2026-11-02). Levels
 come out in **batches of 5**, and each batch is playtested and tuned before the next one starts.
 
