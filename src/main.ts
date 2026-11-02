@@ -4,7 +4,8 @@ import { initialState, step } from './game/rules';
 import { solve } from './game/solver';
 import { DIRS, Dir, Level, State, TIERS, Tier } from './game/types';
 import { HANDMADE, findLevel } from './levels';
-import { NEUTRAL, themeForLevel } from './render/themes';
+import { tileSheet } from './levels/sheet';
+import { NEUTRAL, THEMES, Theme, themeForLevel } from './render/themes';
 import { World } from './render/world';
 import { SkyMap, suggestedLevel } from './ui/map';
 import { Progress, loadProgress, saveProgress, starsFor } from './ui/progress';
@@ -40,6 +41,8 @@ class Game {
   private queued: Dir | null = null;
   private requestId = 0;
   private toastTimer = 0;
+  /** A theme forced from the URL, to preview it on any level. */
+  private themeOverride: Theme | null = null;
 
   constructor() {
     // A bare URL lands on the map, with the suggested level waiting behind it.
@@ -53,6 +56,12 @@ class Game {
     // 3 left) rolls the block in a grid direction from the current view.
     (window as unknown as { skytumbleKeyFor: (d: Dir) => number }).skytumbleKeyFor = (d) =>
       [0, 1, 2, 3].find((k) => this.world.gridDirForScreen(k) === d) ?? -1;
+    const params = new URLSearchParams(location.search);
+    this.themeOverride = THEMES[params.get('theme') ?? params.get('sheet') ?? ''] ?? null;
+    if (params.has('sheet')) {
+      void this.start(tileSheet(Number(params.get('bridges') ?? 15)), 0);
+      return;
+    }
     this.load(this.mode);
     if (landing) this.showMap();
   }
@@ -91,7 +100,8 @@ class Game {
     this.moves = 0;
     this.status = 'busy';
     this.renderChrome();
-    await this.world.setLevel(level, this.state, this.mode.kind === 'hand' ? themeForLevel(this.mode.id) : NEUTRAL);
+    const theme = this.themeOverride ?? (this.mode.kind === 'hand' ? themeForLevel(this.mode.id) : NEUTRAL);
+    await this.world.setLevel(level, this.state, theme);
     this.status = 'playing';
     this.updatePreviews();
     this.drainQueue();

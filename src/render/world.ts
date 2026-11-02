@@ -1,19 +1,13 @@
 import * as THREE from 'three';
 import { Motion, blockCells, blockLength, flightLandings, layerView } from '../game/rules';
 import { Block, DIR_DELTA, DIRS, Dir, Level, State, Tile } from '../game/types';
-import { CONVEYOR_COLORS } from './palette';
-import { Theme } from './themes';
+import { CONVEYOR_COLORS, cssColor } from './palette';
+import { NEUTRAL, Theme } from './themes';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const COLORS = {
-  grass: 0x86d07a,
-  dirt: 0x9a6b4b,
-  rock: 0x7d5a44,
-  plank: 0xe2b26f,
-  plankDark: 0xb98545,
   hole: 0x1d1a2b,
   goal: 0xffd36b,
-  block: 0xf0c987,
-  blockEdge: 0x8a6436,
   cloud: 0xffffff,
   ice: 0xbfe6ff,
   glint: 0xffffff,
@@ -117,6 +111,9 @@ export class World {
   private probe = new THREE.PerspectiveCamera(38, 1, 0.1, 500);
   private sun = new THREE.DirectionalLight(0xfff4e0, 2.2);
   private levelGroup = new THREE.Group();
+  private theme: Theme = NEUTRAL;
+  private blockMat = new THREE.MeshStandardMaterial({ color: NEUTRAL.block.color, roughness: 0.55 });
+  private blockEdgeMat = new THREE.LineBasicMaterial({ color: NEUTRAL.block.edge });
   /**
    * One group per layer. The ceiling's is mirrored (scale y −1) at CEIL_H, so every tile, mark and
    * animation is built and played exactly as on the ground and comes out upside down.
@@ -213,11 +210,9 @@ export class World {
     this.scene.add(this.sun, this.sun.target, this.levelGroup);
 
     const geom = new THREE.BoxGeometry(0.98, 1.96, 0.98);
-    this.block = new THREE.Mesh(geom, new THREE.MeshStandardMaterial({ color: COLORS.block, roughness: 0.55 }));
+    this.block = new THREE.Mesh(geom, this.blockMat);
     this.block.castShadow = true;
-    this.block.add(
-      new THREE.LineSegments(new THREE.EdgesGeometry(geom), new THREE.LineBasicMaterial({ color: COLORS.blockEdge })),
-    );
+    this.block.add(new THREE.LineSegments(new THREE.EdgesGeometry(geom), this.blockEdgeMat));
     this.frames[0].add(this.block);
 
     this.makeClouds();
@@ -402,18 +397,45 @@ export class World {
       const color = GROUP_COLORS[group % GROUP_COLORS.length];
       const ghost = box(0.94, 0.04, 0.94, color, { transparent: true, opacity: 0.4 });
       ghost.position.y = -0.1;
-      const slab = box(0.96, 0.16, 0.96, color, { roughness: 0.7 });
+      // A retracted bridge keeps its group's color at the edges, so it still names its switch on a pale sky.
+      for (const [dx, dz, w, d] of [[0, -0.44, 0.94, 0.06], [0, 0.44, 0.94, 0.06], [-0.44, 0, 0.06, 0.82], [0.44, 0, 0.06, 0.82]]) {
+        const edge = box(w, 0.045, d, rimColor(color, 0.8), { transparent: true, opacity: 0.85 });
+        edge.position.set(dx, -0.1, dz);
+        g.add(edge);
+      }
+      // The slab's body is the rim: a darker shade of the group's color around a bright plate.
+      const slab = box(0.96, 0.16, 0.96, rimColor(color), { roughness: 0.7 });
       slab.position.y = -0.08;
+      const plate = box(0.84, 0.01, 0.84, color, { roughness: 0.7 });
+      plate.position.y = 0.085;
+      slab.add(plate);
+      if (this.theme.finish.wood) {
+        // Plank seams across the plate, in the same hue so the group's color still reads first.
+        for (const z of [-0.14, 0.14]) {
+          const seam = box(0.84, 0.004, 0.025, rimColor(color, 0.75), { roughness: 0.9 });
+          seam.position.set(0, 0.092, z);
+          slab.add(seam);
+        }
+      }
       g.add(ghost, slab);
       this.bridges.push({ group, slab });
       return g;
     }
 
     if (tile === Tile.Fragile) {
+      const { light, dark, weathered } = this.theme.fragile;
       for (let p = -1; p <= 1; p++) {
-        const plank = box(0.3, 0.12, 0.96, p === 0 ? COLORS.plankDark : COLORS.plank);
+        const plank = box(0.3, 0.12, 0.96, p === 0 ? dark : light);
         plank.position.set(p * 0.32, -0.06, 0);
         g.add(plank);
+        if (weathered) {
+          // Worn grain along each plank: this wood has seen better days.
+          for (const [dz, len] of [[-0.22, 0.34], [0.2, 0.42]]) {
+            const grain = box(0.03, 0.004, len, rimColor(p === 0 ? dark : light, 0.68), { roughness: 1 });
+            grain.position.set(p * 0.32 + (dz > 0 ? 0.05 : -0.05), 0.002, dz);
+            g.add(grain);
+          }
+        }
       }
       return g;
     }
@@ -422,12 +444,28 @@ export class World {
       const pit = box(0.9, 0.5, 0.9, COLORS.hole);
       pit.position.y = -0.35;
       g.add(pit);
-      const rim = new THREE.MeshStandardMaterial({ color: COLORS.goal, emissive: COLORS.goal, emissiveIntensity: 0.6 });
+      const wood = this.theme.finish.wood;
+      const rim = new THREE.MeshStandardMaterial({
+        color: COLORS.goal,
+        emissive: COLORS.goal,
+        emissiveIntensity: wood ? 0.3 : 0.6,
+        roughness: wood ? 0.8 : 1,
+      });
       for (const [dx, dz, w, d] of [[0, -0.44, 0.96, 0.08], [0, 0.44, 0.96, 0.08], [-0.44, 0, 0.08, 0.96], [0.44, 0, 0.08, 0.96]]) {
         const edge = new THREE.Mesh(new THREE.BoxGeometry(w, 0.2, d), rim);
         edge.position.set(dx, -0.1, dz);
         edge.receiveShadow = true;
         g.add(edge);
+      }
+      if (wood) {
+        // Darker joints at the corners, so the bright rim reads as a framed wooden edge.
+        for (const dx of [-0.44, 0.44]) {
+          for (const dz of [-0.44, 0.44]) {
+            const joint = box(0.09, 0.006, 0.09, rimColor(COLORS.goal, 0.62), { roughness: 0.9 });
+            joint.position.set(dx, 0.002, dz);
+            g.add(joint);
+          }
+        }
       }
       // A goal marked for a cube or a tall block carries the shape switches' sign on its rim: the
       // same bar (a nub for the cube, three long for tall) inlaid on two opposite edges.
@@ -463,7 +501,7 @@ export class World {
     if (tile === Tile.Ice) {
       const ice = box(0.98, 0.18, 0.98, COLORS.ice, { roughness: 0.08, metalness: 0.1 });
       ice.position.y = -0.09;
-      g.add(ice, earth(jitter));
+      g.add(ice, earth(jitter, this.theme));
       // A couple of diagonal glints so ice reads as slick even without reflections.
       for (const [off, len] of [[-0.18, 0.5], [0.16, 0.3]]) {
         const glint = box(len, 0.01, 0.05, COLORS.glint, { transparent: true, opacity: 0.7, roughness: 0.1 });
@@ -477,7 +515,7 @@ export class World {
     if (tile === Tile.Conveyor) {
       const belt = box(0.98, 0.18, 0.98, COLORS.belt, { roughness: 0.9 });
       belt.position.y = -0.09;
-      g.add(belt, earth(jitter));
+      g.add(belt, earth(jitter, this.theme));
       // Chevrons are built pointing +x (right), then the whole belt top turns to face its arrow.
       const dir = DIRS[group];
       const top = new THREE.Group();
@@ -501,7 +539,7 @@ export class World {
       stone.position.y = -0.09;
       const plate = box(0.82, 0.04, 0.82, COLORS.padStone, { roughness: 0.6 });
       plate.position.y = 0.01;
-      g.add(stone, plate, earth(jitter));
+      g.add(stone, plate, earth(jitter, this.theme));
       const dir = DIRS[group];
       const top = new THREE.Group();
       top.rotation.y = BELT_ROTATION[dir];
@@ -528,7 +566,7 @@ export class World {
     if (tile === Tile.Flip) {
       const stone = box(0.98, 0.18, 0.98, COLORS.flipStone, { roughness: 0.7 });
       stone.position.y = -0.09;
-      g.add(stone, earth(jitter));
+      g.add(stone, earth(jitter, this.theme));
       // A glowing ring with a bright core: "gravity turns here".
       const glow = new THREE.MeshStandardMaterial({ color: COLORS.flip, emissive: COLORS.flip, emissiveIntensity: 0.8 });
       const ring = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.05, 8, 32), glow);
@@ -545,8 +583,7 @@ export class World {
       // Same language as the other switches: a grass tile with a low stone disc. On it, a raised bar
       // in the block's own color whose length says the shape: a nub for the cube, two for normal,
       // three for tall.
-      const grass = box(0.98, 0.18, 0.98, COLORS.grass);
-      grass.position.y = -0.09;
+      const grass = floorTile(jitter, this.theme);
       const disc = new THREE.Mesh(
         new THREE.CylinderGeometry(0.36, 0.4, 0.06, 28),
         new THREE.MeshStandardMaterial({ color: COLORS.shapeStone, roughness: 0.7 }),
@@ -557,22 +594,34 @@ export class World {
       const bar = box(len, 0.07, 0.14, COLORS.shapeBar, { roughness: 0.5 });
       bar.position.y = 0.095;
       bar.castShadow = true;
-      g.add(grass, earth(jitter), disc, bar);
+      g.add(grass, earth(jitter, this.theme), disc, bar);
       return g;
     }
 
-    const grass = box(0.98, 0.18, 0.98, COLORS.grass);
-    grass.position.y = -0.09;
-    g.add(grass, earth(jitter));
+    g.add(floorTile(jitter, this.theme), earth(jitter, this.theme));
+
+    const isSwitch = tile === Tile.ExtraHeavy || tile === Tile.SoftSwitch || tile === Tile.HeavySwitch;
+    if (isSwitch && this.theme.finish.switchBase !== undefined) {
+      const base = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.43, 0.46, 0.04, 28),
+        new THREE.MeshStandardMaterial({ color: this.theme.finish.switchBase, roughness: 1 }),
+      );
+      base.position.y = 0.02;
+      base.receiveShadow = true;
+      g.add(base);
+    }
 
     if (tile === Tile.ExtraHeavy) {
       // The heavy switch's cross, chunkier and with a third bar: it takes more weight.
       const color = GROUP_COLORS[group % GROUP_COLORS.length];
       const sw = new THREE.Group();
       for (const angle of [0, Math.PI / 3, -Math.PI / 3]) {
+        const edge = box(0.84, 0.08, 0.24, rimColor(color), { roughness: 0.6 });
+        edge.rotation.y = angle;
+        edge.position.y = -0.03;
         const bar = box(0.78, 0.14, 0.18, color, { roughness: 0.4 });
         bar.rotation.y = angle;
-        sw.add(bar);
+        sw.add(edge, bar);
       }
       sw.position.y = 0.07;
       sw.traverse((o) => (o.castShadow = true));
@@ -585,16 +634,24 @@ export class World {
       const color = GROUP_COLORS[group % GROUP_COLORS.length];
       const sw = new THREE.Group();
       if (tile === Tile.SoftSwitch) {
+        const edge = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.345, 0.385, 0.07, 24),
+          new THREE.MeshStandardMaterial({ color: rimColor(color), roughness: 0.6 }),
+        );
+        edge.position.y = -0.01;
         const disc = new THREE.Mesh(
           new THREE.CylinderGeometry(0.3, 0.34, 0.1, 24),
           new THREE.MeshStandardMaterial({ color, roughness: 0.4 }),
         );
-        sw.add(disc);
+        sw.add(edge, disc);
       } else {
         for (const angle of [Math.PI / 4, -Math.PI / 4]) {
+          const edge = box(0.84, 0.06, 0.24, rimColor(color), { roughness: 0.6 });
+          edge.rotation.y = angle;
+          edge.position.y = -0.015;
           const bar = box(0.78, 0.1, 0.18, color, { roughness: 0.4 });
           bar.rotation.y = angle;
-          sw.add(bar);
+          sw.add(edge, bar);
         }
       }
       sw.position.y = 0.05;
@@ -1165,7 +1222,10 @@ export class World {
 
   /** Dress the scene in a chapter's look. A two-floor level also needs its ceiling lit in any theme. */
   private applyTheme(theme: Theme): void {
+    this.theme = theme;
     document.body.dataset.theme = theme.id;
+    this.blockMat.color.set(theme.block.color);
+    this.blockEdgeMat.color.set(theme.block.edge);
     this.hemi.color.set(theme.hemi.sky);
     this.hemi.groundColor.set(theme.hemi.ground);
     this.hemi.intensity = theme.hemi.intensity;
@@ -1280,18 +1340,125 @@ function blockPosition(b: Block): THREE.Vector3 {
   return new THREE.Vector3(b.x, 0.5, b.y + half);
 }
 
-/** The dirt and hanging rock under a floating tile. */
-function earth(jitter: number): THREE.Object3D {
+/** A darker shade of a color: the rim that keeps a mechanic readable on any floor. */
+function rimColor(color: number, shade = 0.55): number {
+  return new THREE.Color(color).multiplyScalar(shade).getHex();
+}
+
+/** One top tile of walkable ground: a plain box, or one of a few detailed tops in a theme's shades. */
+function floorTile(jitter: number, theme: Theme): THREE.Mesh {
+  if (!theme.floor.detail) {
+    const plain = box(0.98, 0.18, 0.98, theme.floor.color);
+    plain.position.y = -0.09;
+    return plain;
+  }
+  const mats = detailMaterials(theme.id, theme.floor.detail);
+  const mesh = new THREE.Mesh(floorGeometry(), mats[Math.floor(jitter * mats.length)]);
+  mesh.position.y = -0.09;
+  // A quarter turn per tile, so neighbors sharing a top don't look stamped.
+  mesh.rotation.y = (Math.floor(jitter * 64) % 4) * (Math.PI / 2);
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+let sharedFloorGeometry: THREE.BoxGeometry | null = null;
+
+/** A tile box with the detail texture on its top only: the other faces sample one solid shade. */
+function floorGeometry(): THREE.BoxGeometry {
+  if (sharedFloorGeometry) return sharedFloorGeometry;
+  const geom = new THREE.BoxGeometry(0.98, 0.18, 0.98);
+  const uv = geom.attributes.uv;
+  const TOP_FACE = 2;
+  for (let v = 0; v < uv.count; v++) {
+    if (Math.floor(v / 4) !== TOP_FACE) uv.setXY(v, 0.5, 0.5);
+  }
+  sharedFloorGeometry = geom;
+  return geom;
+}
+
+const detailCache = new Map<string, THREE.MeshStandardMaterial[]>();
+
+/** Materials for a theme's detailed floor, built once and shared by every tile. */
+function detailMaterials(id: string, shades: number[]): THREE.MeshStandardMaterial[] {
+  const cached = detailCache.get(id);
+  if (cached) return cached;
+  const mats = [1, 2, 3, 4].map((seed) => {
+    const map = detailTexture(shades, seed);
+    return new THREE.MeshStandardMaterial({ map, roughness: 1 });
+  });
+  detailCache.set(id, mats);
+  return mats;
+}
+
+/** Soft overlapping blotches and fine specks in shades of one color, seeded so tiles never change. */
+function detailTexture(shades: number[], seed: number): THREE.CanvasTexture {
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  let s = seed * 7919;
+  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  ctx.fillStyle = cssColor(shades[1]);
+  ctx.fillRect(0, 0, size, size);
+  const dab = (count: number, min: number, max: number, alpha: number) => {
+    ctx.globalAlpha = alpha;
+    for (let i = 0; i < count; i++) {
+      ctx.fillStyle = cssColor(shades[Math.floor(rnd() * shades.length)]);
+      ctx.beginPath();
+      ctx.arc(rnd() * size, rnd() * size, min + rnd() * (max - min), 0, Math.PI * 2);
+      ctx.fill();
+    }
+  };
+  dab(46, 8, 20, 0.4);
+  dab(120, 1.5, 4, 0.55);
+  const map = new THREE.CanvasTexture(canvas);
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.anisotropy = 4;
+  return map;
+}
+
+/** Thin tapering roots around a soil clump, merged into one mesh per variant. */
+const rootGeometries = [0, 1, 2, 3].map((variant) => {
+  const roots: THREE.BufferGeometry[] = [];
+  const count = 3 + variant;
+  for (let i = 0; i < count; i++) {
+    const a = (i / count) * Math.PI * 2 + variant;
+    const len = 0.35 + ((i * 37 + variant * 13) % 10) * 0.05;
+    const root = new THREE.CylinderGeometry(0.042, 0.012, len, 5);
+    root.translate(0, -len / 2, 0);
+    root.rotateX(0.14 * Math.sin(a * 3));
+    root.rotateZ(0.14 * Math.cos(a * 2));
+    root.translate(Math.cos(a) * 0.24, -0.72, Math.sin(a) * 0.24);
+    roots.push(root);
+  }
+  return mergeGeometries(roots)!;
+});
+const clumpGeometry = new THREE.SphereGeometry(0.38, 14, 10);
+
+/** What's under a floating tile: soil, and either hanging rock or a clump with dangling roots. */
+function earth(jitter: number, theme: Theme): THREE.Object3D {
   const g = new THREE.Group();
   g.userData.earth = true;
-  const dirt = box(0.9, 0.45, 0.9, COLORS.dirt);
+  const dirt = box(0.9, 0.45, 0.9, theme.earth.soil);
   dirt.position.y = -0.4;
   g.add(dirt);
+  if (theme.earth.style === 'roots') {
+    const clump = new THREE.Mesh(clumpGeometry, new THREE.MeshStandardMaterial({ color: theme.earth.soil, roughness: 1 }));
+    clump.position.y = -0.62;
+    clump.scale.set(1, 0.55 + jitter * 0.3, 1);
+    const variant = Math.floor(jitter * rootGeometries.length);
+    const roots = new THREE.Mesh(
+      rootGeometries[variant],
+      new THREE.MeshStandardMaterial({ color: theme.earth.hanging, roughness: 1 }),
+    );
+    g.add(clump, roots);
+    return g;
+  }
   if (jitter > 0.35) {
     const h = 0.4 + jitter * 0.9;
     const rock = new THREE.Mesh(
       new THREE.ConeGeometry(0.38, h, 5),
-      new THREE.MeshStandardMaterial({ color: COLORS.rock, roughness: 1, flatShading: true }),
+      new THREE.MeshStandardMaterial({ color: theme.earth.hanging, roughness: 1, flatShading: true }),
     );
     rock.rotation.x = Math.PI;
     rock.rotation.y = jitter * 6;

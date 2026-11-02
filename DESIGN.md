@@ -387,7 +387,29 @@ solutions don't change.
   from snow. Code-made trees may not read as a forest; the fallback is moss, roots and light.
 
 Status: the per-chapter plumbing is in (`src/render/themes.ts`), and Starfall's night is now a
-chapter choice rather than a property of two-floor levels. No new world is built yet.
+chapter choice rather than a property of two-floor levels.
+
+**First Glade** (Tutorial's world), settled in a grilling session 2026-11-01. A sunny storybook
+glade, in the spirit of Totoro and Ghibli films.
+
+| Area | Decision |
+|---|---|
+| Art style | Soft, rounded shapes with gentle shading |
+| Floor | Soft moss, detailed in shades of green |
+| Below the board | A sea of treetops fading with distance into pale blue-green haze, so moss stands out and the board's edge stays clear |
+| Under the tiles | Soil clumps with thin dangling roots, replacing the rock spikes |
+| Sky | Blue with big, soft summer clouds set far off |
+| Motion | A few drifting leaves, pollen in sunbeams, a slowly swaying canopy, cloud shadows on the treetops |
+| Leaves | Two or three on screen at once; they may pass over tiles. If one causes a misread, the leaves go |
+| Block | Warm honey wood |
+| Fragile tiles | Old weathered planks |
+| Other mechanics | Mossy stone under switches, wooden bridges, a wooden goal frame in the goal's yellow; colors stay bright |
+| Interface | Cream panels with a wooden-brown highlight; the sky map island takes the moss and treetop colors |
+| Names | The chapter is **First Glade**; `tutorial-03` is **Old Planks**. Ids and links stay the same |
+| If it runs slowly | Cut canopy sway first, then leaves, then cloud shadows, with pollen last |
+
+Build order: tile sheet (every mechanic on moss, with the new rims) → the world → the shared
+chapter title and frame-rate readout.
 
 **After themes (not yet planned in detail):** the split + paint biome. Decisions already made in the
 Toybox grilling are listed under *Kept for the split/paint biome* above; start with a short

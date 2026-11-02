@@ -25,6 +25,11 @@ body {
   background: linear-gradient(180deg, #6fb6ff 0%, #a9d7ff 45%, #e6f4ff 75%, #fff1dc 100%);
 }
 
+/* First Glade: summer blue fading down into the pale haze over the treetops. */
+body[data-theme='forest'] {
+  background: linear-gradient(180deg, #74bdf2 0%, #b4def2 42%, #cfe8dc 72%, #d8ecd2 100%);
+}
+
 /* Starfall plays under a night sky. */
 body[data-theme='night'] {
   background: linear-gradient(180deg, #1f2a66 0%, #34418f 45%, #5560ad 78%, #7a6cb4 100%);
