@@ -469,9 +469,42 @@ overwhelms the amber bridges, pull back the trim first.
 Status: live. The grey version went live with no further notes, so its open questions (how the
 wind feels in motion, the block's grey, neutral versus warm light) stay open if they come up in play.
 
-**Next, at a later session:** the Toybox grilling, then Starfall. Follow *Each theme* above, starting
-with a grilling on the toy island, and read the logged notes for what each world taught: keep scenery
-deep below the board at first, and check that a palette doesn't suggest a different biome.
+**Toybox**, settled in a grilling session 2026-11-02: a shiny plastic playroom in the clouds at a
+pastel sunset. The block changes shape because this is a building set. The toys look new, so the
+sunset, wallpaper and dust carry the nostalgia. The biggest worry is code-made toys looking fake.
+
+| Area | Decision |
+|---|---|
+| Setting | A playroom in the clouds: distant walls dissolve upward into open sky, with no roof |
+| Sky | Pastel sunset, lavender and peach |
+| Below the board | A sea of toy piles (bricks, towers, rings) in full color, fading into haze |
+| Walls | Wallpaper with a pattern of toy silhouettes |
+| Train | A raised track in a wide ring around the board, below board level, so it shows from every camera angle |
+| Motion | The train circling, tops spinning on tall towers, dust and sparkles in the light |
+| Floor | Soft, dusty red glossy plastic with small, shallow pegboard holes |
+| Under the tiles | Dangling pegs and connector pieces |
+| Block | Sunny yellow, deeper than the goal, with a darker edge |
+| Fragile tiles | Thin, light grey snap-on plates with plank lines, keeping the "planks break" cue |
+| Shape switches | A model of the shape on a peg |
+| Other switches, bridges | Ivory plastic bases, with colors unchanged |
+| Belts | Tank-tread links, with the same arrows |
+| Goal | A glossy yellow raised frame; marked goals still float their shape |
+| Interface | Ivory panels with a brick-red highlight; the map island takes the same colors |
+| If it runs slowly | Cut dust first, then spinning tops, with the train last |
+
+- **Bar for sign-off:** named as toys from a tight screenshot with no text, on board details alone.
+  If that proves too high, judge a normal full-level screenshot before moving toys closer to the board.
+- **Build order:** tile sheet plus three sample toys up close (tower, ring stack, top) for approval,
+  before the sea of piles, then the world, sign-off, and asking before it goes live.
+- **Risks to watch:** floor holes must not read as unsafe or as the goal, or flicker at a distance
+  (the fallback is four holes per tile); the block, goal and up-pointing belts are all yellow; bright
+  piles and moving toys could make gaps harder to read; fine wallpaper shapes may not read from far off.
+
+Status: settled; the tile sheet and sample toys are next.
+
+**Next, after Toybox:** Starfall. Follow *Each theme* above, and read the logged notes for what each
+world taught: keep scenery deep below the board at first, and check that a palette doesn't suggest a
+different biome.
 
 **Planned with Starfall's theme: a better peek** (asked for by the user 2026-11-02; they love flip
 gravity, and this would help a lot). While holding Space to look at the other floor:
