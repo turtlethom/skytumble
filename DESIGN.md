@@ -279,7 +279,7 @@ links; stars; stats; snapping camera; undo; reference levels.
 
    | Level | Name | Par | States | The idea |
    |---|---|---|---|---|
-   | 01 | First Light | 6 | 49 | Teaching: two rings two rolls away, one under open sky (read the shadow) |
+   | 01 | First Light | 6 | 49 | Teaching: two rings two rolls away, one under open sky (hold Space to see which) |
    | 02 | Over the Gap | 11 | 16 | Teaching: the first round trip, up over a gap and down on the far side |
    | 03 | Lie Low | 18 | 98 | Two lying flips, both onto fragile planks: up across a column of rings, down across a row |
    | 04 | Slingshot | 18 | 61 | Pad flights land on ring pairs: up lying, later down beside the goal |

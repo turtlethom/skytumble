@@ -4,7 +4,7 @@ signature: gravity
 === star-01
 par: 6
 name: First Light
-idea: Violet rings flip gravity: stand on one and you fall up to the floor right above. Two rings, two rolls away; only one has a floor above it. The shadow on your tiles shows what's overhead.
+idea: Violet rings flip gravity: stand on one and you fall up to the floor right above. Two rings, two rolls away; only one has a floor above it. Hold Space to look up and see which.
 guard: off
 ######..
 #S##+#..

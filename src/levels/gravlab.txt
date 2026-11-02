@@ -3,7 +3,7 @@ title: Gravity Lab (prototypes)
 === gravlab-01
 par: 11
 name: Up and Over
-idea: Violet rings flip gravity: stand on one and you fall up to the floor right above you. The soft shadow on your tiles is the other floor overhead. Hold Space to look at it: violet corners mark where each ring lands, and one ring here has nothing above it.
+idea: Violet rings flip gravity: stand on one and you fall up to the floor right above you. Hold Space to look at the other floor overhead: violet corners mark where each ring lands, and one ring here has nothing above it.
 switches: 0
 ####...........
 #S##+....###...
@@ -22,7 +22,7 @@ switches: 0
 === gravlab-02
 par: 10
 name: Open Sky
-idea: Three rings, but a flip only works if there's a floor directly above. Read the shadow on your tiles, or hold Space to look: one ring drops you into the sky. Up there, mind the edges too: rolling off the ceiling is a fall.
+idea: Three rings, but a flip only works if there's a floor directly above. Hold Space to look: one ring drops you into the sky. Up there, mind the edges too: rolling off the ceiling is a fall.
 #####.....
 #S#+#.....
 #+###.....
