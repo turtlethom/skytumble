@@ -5,7 +5,8 @@ import { ForestScenery } from './forest';
 import { FrostScenery } from './frost';
 import { CONVEYOR_COLORS, cssColor } from './palette';
 import { PeaksScenery } from './peaks';
-import { Scenery } from './scenery';
+import { Scenery, softDot } from './scenery';
+import { StarfallScenery } from './starfall';
 import { NEUTRAL, Theme } from './themes';
 import { ToyboxScenery } from './toybox';
 import { makeToySamples, plasticEnvironment } from './toys';
@@ -33,7 +34,7 @@ const COLORS = {
   flip: 0xb48cff,
   /** Flip landing marks: the flip tiles' violet, deep enough to hold up on grass. */
   flipMark: 0x8a5cf0,
-  /** The landing preview: a wireframe of the block where a flip would leave it. */
+  /** The landing preview: the block's footprint where a flip would leave it. */
   preview: 0xcbb2ff,
   /** Shape switches: a stone disc like the other switches, with a bar in the block's own color. */
   shapeStone: 0xc9c2b4,
@@ -50,6 +51,19 @@ const TURN_RATE = 9;
 /** The other floor's shadow: how far above your floor it lies, its darkness, and its softness. */
 const SHADOW_LIFT = 0.02;
 const SHADOW_OPACITY = 0.16;
+/**
+ * While peeking: how much of your own floor stays visible, how thin it's pressed as it lies on the floor
+ * you're viewing, how far in front of that floor it sits, and how fast the block's outline blinks.
+ */
+const PEEK_GHOST = 0.24;
+const PEEK_GHOST_THICKNESS = 0.02;
+const PEEK_GHOST_LIFT = 0.03;
+const PEEK_BLINK_MS = 340;
+/** Flat footprints (the peek's block outline, the flip landing preview): just clear of belt rails, border thickness, and inset from the tile's edge. */
+const FOOTPRINT_LIFT = 0.05;
+const FOOTPRINT_BORDER = 0.07;
+const FOOTPRINT_INSET = 0.02;
+const PEEK_AXIS = new THREE.Vector3();
 const SHADOW_PX = 32;
 const SHADOW_BLUR = 5;
 /** The other floor's bridges, as squares in their switch's color: extended, retracted, and the pulse on a change. */
@@ -114,6 +128,7 @@ const SCENERY: Partial<Record<Theme['sky'], () => Scenery>> = {
   frost: () => new FrostScenery(),
   peaks: () => new PeaksScenery(),
   toybox: () => new ToyboxScenery(),
+  stars: () => new StarfallScenery(),
 };
 
 /** Three.js view of a level. Holds no game rules: the controller tells it what happened. */
@@ -164,6 +179,10 @@ export class World {
   /** The layer the block is on, and the one being looked at (differs while peeking). */
   private layer = 0;
   private peeking = false;
+  /** Stands in for the block while peeking: where it would be on the floor you're looking at. */
+  private peekOutline: THREE.Group;
+  /** Per layer, how far its ghost has moved onto the other floor: 0 in its own place, 1 lying flat on the other. */
+  private ghostShift = [0, 0];
   /** 0 = camera above looking down, 1 = below looking up; eased toward its target. */
   private side = 0;
   private moonlight = new THREE.DirectionalLight(0xbcc8ff, 0);
@@ -238,6 +257,12 @@ export class World {
     this.block.add(new THREE.LineSegments(new THREE.EdgesGeometry(geom), this.blockEdgeMat));
     this.frames[0].add(this.block);
 
+    this.peekOutline = makeFootprint(
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, side: THREE.DoubleSide }),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false }),
+    );
+    this.peekOutline.visible = false;
+
     this.makeClouds();
     window.addEventListener('resize', () => this.resize());
     this.resize();
@@ -263,7 +288,7 @@ export class World {
   }
 
   /**
-   * Show where flips would leave the block: one wireframe block per move that flips, at the spot
+   * Show where flips would leave the block: one flat footprint per move that flips, at the spot
    * it ends on the other floor. Each is drawn twice: flat on your floor, cell for cell under (or
    * over) the landing like the shadow, and on the other floor itself, for when you peek.
    */
@@ -273,13 +298,15 @@ export class World {
     if (!this.hasCeiling) return;
     for (const b of blocks) {
       for (const parent of [this.blueprints[this.layer], this.layerGroups[1 - this.layer]]) {
-        const ghost = makeGhostBlock();
-        ghost.scale.set(1, blockLength(b) / 2, 1);
-        ghost.position.copy(blockPosition(b));
-        if (b.o === 'X') ghost.rotation.z = Math.PI / 2;
-        else if (b.o === 'Y') ghost.rotation.x = Math.PI / 2;
-        parent.add(ghost);
-        this.previews.push(ghost);
+        const n = blockLength(b);
+        // Your own floor's copy lies on the dark flip tiles, which need the pale violet.
+        const color = parent === this.blueprints[this.layer] ? COLORS.preview : this.theme.flipMark ?? COLORS.preview;
+        const footprint = makeFootprint(new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.14, depthWrite: false, side: THREE.DoubleSide }), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9, depthWrite: false }));
+        setFootprint(footprint, b.o === 'X' ? n : 1, b.o === 'Y' ? n : 1);
+        const center = blockPosition(b);
+        footprint.position.set(center.x, FOOTPRINT_LIFT, center.z);
+        parent.add(footprint);
+        this.previews.push(footprint);
       }
     }
   }
@@ -1199,6 +1226,8 @@ export class World {
     this.side += (this.sideTarget() - this.side) * k;
     this.layerAlpha = this.layerAlpha.map((a, l) => a + (this.alphaTarget(l) - a) * k);
     this.applyLayerAlpha();
+    this.updatePeekGhost(k);
+    this.updatePeekOutline(now);
     for (const g of this.flipGlows) g.emissiveIntensity += (0.8 + Math.sin(now / 400) * 0.25 - g.emissiveIntensity) * 0.1;
     this.bpAlpha += (this.bpTarget() - this.bpAlpha) * k;
     for (const m of this.bpMats) m.opacity = m.userData.opacity * this.bpAlpha;
@@ -1261,7 +1290,54 @@ export class World {
    */
   private alphaTarget(layer: number): number {
     if (!this.hasCeiling) return 1;
-    return layer === this.sideTarget() ? 1 : 0;
+    if (layer === this.sideTarget()) return 1;
+    return this.peeking && layer === this.layer ? PEEK_GHOST : 0;
+  }
+
+  /**
+   * While peeking, your own floor lies pressed flat on the floor you're viewing, cell for cell. In its real
+   * place, four tiles off, it would show up somewhere else on screen and say nothing about what lines up.
+   */
+  private updatePeekGhost(k: number): void {
+    this.ghostShift.forEach((shift, layer) => {
+      const next = shift + ((this.peeking && layer === this.layer ? 1 : 0) - shift) * k;
+      this.ghostShift[layer] = next;
+      const [home, sign] = layer ? [CEIL_H, -1] : [0, 1];
+      const away = layer ? PEEK_GHOST_LIFT : CEIL_H - PEEK_GHOST_LIFT;
+      const group = this.layerGroups[layer];
+      group.position.y = THREE.MathUtils.lerp(home, away, next);
+      group.scale.y = sign * THREE.MathUtils.lerp(1, PEEK_GHOST_THICKNESS, next);
+    });
+  }
+
+  /** While peeking the real block hides, and a blinking outline of its face shows where it would be: same cells, flush with the other floor. */
+  private updatePeekOutline(now: number): void {
+    const outline = this.peekOutline;
+    const parent = this.block.parent;
+    // Hides the block's frame, not the block, which stays hidden by itself once it's won or fallen.
+    for (const f of this.frames) f.visible = !(this.peeking && f === parent);
+    outline.visible = this.peeking && this.block.visible;
+    if (!outline.visible) return;
+    const frame = this.frames[this.frames[0] === parent ? 1 : 0];
+    if (outline.parent !== frame) frame.add(outline);
+    // Work out the cells from the block itself, so a move made during a peek carries over, cell by cell.
+    const along = PEEK_AXIS.set(0, 1, 0).applyQuaternion(this.block.quaternion);
+    const n = THREE.MathUtils.clamp(Math.round(this.block.scale.y * 2), 1, 3);
+    const standing = Math.abs(along.y) > 0.7;
+    const alongX = !standing && Math.abs(along.x) > Math.abs(along.z);
+    const alongZ = !standing && !alongX;
+    const half = (n - 1) / 2;
+    const { x, z } = this.block.position;
+    outline.position.set(
+      alongX ? Math.round(x - half) + half : Math.round(x),
+      FOOTPRINT_LIFT,
+      alongZ ? Math.round(z - half) + half : Math.round(z),
+    );
+    setFootprint(outline, alongX ? n : 1, alongZ ? n : 1);
+    const pulse = 0.5 + 0.5 * Math.sin((now / PEEK_BLINK_MS) * Math.PI * 2);
+    const [fill, edge] = outline.userData.mats as THREE.MeshBasicMaterial[];
+    fill.opacity = 0.05 + pulse * 0.17;
+    edge.opacity = 0.4 + pulse * 0.6;
   }
 
   /**
@@ -1395,6 +1471,8 @@ export class World {
     this.blockMat.color.set(theme.block.color);
     this.blockEdgeMat.color.set(theme.block.edge);
     this.blockMat.roughness = theme.block.roughness ?? 0.55;
+    // White shows on space; a pale sky needs a dark outline.
+    for (const m of this.peekOutline.userData.mats as THREE.MeshBasicMaterial[]) m.color.set(theme.sky === 'stars' ? 0xffffff : 0x2b2f8f);
     if (theme.finish.plastic && !this.plasticEnv) this.plasticEnv = plasticEnvironment(this.renderer);
     this.scene.environment = theme.finish.plastic ? this.plasticEnv : null;
     this.scene.environmentIntensity = 0.5;
@@ -1411,7 +1489,8 @@ export class World {
     // Clouds drift below the ground, right where the camera goes to look up at a ceiling.
     for (const c of this.clouds) c.visible = theme.sky === 'clouds' && !this.hasCeiling;
     if (this.scenery) this.scenery.group.visible = false;
-    this.scenery = this.hasCeiling ? null : this.sceneryFor(theme.sky);
+    // The camera turns over on two-floor levels, and only Starfall's surroundings are built for that.
+    this.scenery = this.hasCeiling && theme.sky !== 'stars' ? null : this.sceneryFor(theme.sky);
     if (this.scenery) this.scenery.group.visible = true;
   }
 
@@ -2037,7 +2116,8 @@ function makeStars(): THREE.Points {
   const c = new THREE.Color();
   for (let i = 0; i < 900; i++) {
     const v = new THREE.Vector3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1).normalize();
-    v.multiplyScalar(90 + Math.random() * 60);
+    // Far beyond the home world and moon, so they pass in front of the stars.
+    v.multiplyScalar(340 + Math.random() * 110);
     pts.push(v.x, v.y, v.z);
     c.setHSL(0.6 + Math.random() * 0.15, 0.6, 0.75 + Math.random() * 0.25);
     colors.push(c.r, c.g, c.b);
@@ -2045,21 +2125,31 @@ function makeStars(): THREE.Points {
   const geom = new THREE.BufferGeometry();
   geom.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
   geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-  return new THREE.Points(geom, new THREE.PointsMaterial({ size: 0.9, vertexColors: true, sizeAttenuation: true }));
+  return new THREE.Points(geom, new THREE.PointsMaterial({ size: 3.4, vertexColors: true, sizeAttenuation: true, map: softDot(), transparent: true, depthWrite: false }));
 }
 
-/** A wireframe of the block with a faint fill: where a flip would leave you. */
-function makeGhostBlock(): THREE.Object3D {
-  const geom = new THREE.BoxGeometry(0.98, 1.96, 0.98);
-  const fill = new THREE.Mesh(
-    geom,
-    new THREE.MeshBasicMaterial({ color: COLORS.preview, transparent: true, opacity: 0.14, depthWrite: false }),
-  );
-  fill.add(
-    new THREE.LineSegments(
-      new THREE.EdgesGeometry(geom),
-      new THREE.LineBasicMaterial({ color: COLORS.preview, transparent: true, opacity: 0.85 }),
-    ),
-  );
-  return fill;
+const footprintBar = new THREE.BoxGeometry(1, 0.004, 1);
+const footprintFill = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+
+/** A flat rectangle lying on a floor: a bright border and a faint fill. Sized by setFootprint. */
+function makeFootprint(fill: THREE.MeshBasicMaterial, edge: THREE.MeshBasicMaterial): THREE.Group {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(footprintFill, fill));
+  for (let i = 0; i < 4; i++) g.add(new THREE.Mesh(footprintBar, edge));
+  g.userData.mats = [fill, edge];
+  return g;
+}
+
+/** Size a footprint to cover `w` by `d` tiles, around its center. */
+function setFootprint(g: THREE.Group, w: number, d: number): void {
+  const [fw, fd] = [w - FOOTPRINT_INSET * 2, d - FOOTPRINT_INSET * 2];
+  const t = FOOTPRINT_BORDER;
+  const [fill, ...bars] = g.children;
+  fill.scale.set(fw, 1, fd);
+  bars.forEach((bar, i) => {
+    const across = i < 2;
+    const side = i % 2 ? 1 : -1;
+    bar.scale.set(across ? fw : t, 1, across ? t : fd);
+    bar.position.set(across ? 0 : side * (fw - t) / 2, 0, across ? side * (fd - t) / 2 : 0);
+  });
 }

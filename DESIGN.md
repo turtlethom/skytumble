@@ -525,9 +525,10 @@ level has two floors and the camera turns over, so everything must look right fr
 | Area | Decision |
 |---|---|
 | Setting | Open cosmos as a tiny storybook world, so grass in space works |
-| Below the ground floor | A blue-green home world with swirling cloud and city lights; you see it when you're on the ground |
-| Above the ceiling floor | A huge silver moon; you see it when you're on the ceiling |
-| Where they sit | Off to one side and fixed in space, visible at a level's starting camera angle and one neighbor, so gaps mostly show plain space |
+| Below the ground floor | A picture-book Earth filling the space under the board, with swirling cloud and warm city lights; you see it when you're on the ground |
+| Above the ceiling floor | A picture-book moon filling the space behind the flipped floor; you see it when you're on the ceiling |
+| Where they sit | Centered behind the board, with a curved edge near the top of the screen, visible from every camera angle (changed 2026-11-02: planets to the side looked out of place, and too realistic) |
+| Gaps | Both are painted darker than the grass, so a gap always reads as a darker hole |
 | Sky | Deep indigo |
 | Motion | A comet far behind the board every 20 to 30 seconds, and falling stars |
 | Framing | A faint glowing orbit path around the board, with a small satellite on it |
@@ -544,14 +545,13 @@ level has two floors and the camera turns over, so everything must look right fr
 - **Flips:** a camera turn of about 0.8s, so the planet and moon are seen trading places. A burst of light from
   the flip tile, a trail of stardust, and a soft violet pulse on the landing tiles. The peek stays as quick as
   today, with no effects. All of this also applies to Gravity Lab, which keeps its neutral look.
-- **Build order:** tile sheet for approval → planet, moon and sky → flip effects and the peek → sign-off → ask
-  before it goes live.
+- **Build order:** tile sheet for approval → Earth, moon and sky → the better peek → comet, falling stars, orbit
+  path and flip effects → sign-off → ask before it goes live.
 - **Sign-off:** play `star-05` and `star-07`: you never hunt for the block after a flip, flips still feel good at
   the end of a level, and no gap misreads.
 - **Risks to watch:** the moon showing bright behind gaps (dim it first); silver block near moonstone bases; teal
   on periwinkle may need to go darker; violet on tiles, marks, pulse and interface may get samey; 0.8s flips
-  adding up on long levels (`star-07`); two of the four camera angles have no planet or moon (add small far
-  landmarks if that causes trouble).
+  adding up on long levels (`star-07`); every gap now shows the planet or moon, so darken them first if gaps misread.
 
 - **A calmer two-floor view (2026-11-02):** on floors that overlap, the shadow dimmed most of the board and the
   outlines added lines over empty space. The shadow is now much softer (opacity 0.38 → 0.16) and the outline of the
@@ -560,8 +560,8 @@ level has two floors and the camera turns over, so everything must look right fr
   they show what a switch did without a peek.
 
 Status: the tiles and the calmer view are approved and committed. Landing marks on this grass use a darker violet,
-since the usual one nearly matched it. Next: the planet, moon and sky. There's no planet, moon or comet yet, so don't
-push until the world is done.
+since the usual one nearly matched it. Earth, the moon and the better peek are built, awaiting approval; the comet, falling stars, orbit path and flip
+effects are next. Don't push until the world is done.
 
 **Planned with Starfall's theme: a better peek** (asked for by the user 2026-11-02; they love flip
 gravity, and this would help a lot). While holding Space to look at the other floor:
@@ -574,7 +574,11 @@ gravity, and this would help a lot). While holding Space to look at the other fl
 - **The real block hides** during a peek, and the outline stands in for it.
 
 This changes only the view, not the rules, so pars and solutions stay the same. It also applies to
-Gravity Lab. Still open: how faint the ghost can be while the floor you're viewing stays easy to read.
+Gravity Lab. Built: your floor is pressed flat onto the floor you're viewing, cell for cell, at 24%, since in its real place it
+showed up elsewhere on screen and said nothing about what lines up. The outline is flat, the block's footprint flush with the
+tile rather than its full shape (the user's call: it only has to answer "which cells am I over?"), and it's white on
+Starfall, dark blue on Gravity Lab's pale sky. The flip landing preview is flattened the same way, in violet, so white
+means where you are and violet where a flip lands. Still open: how faint the ghost can be while the floor you're viewing stays easy to read.
 
 **After themes (not yet planned in detail):** the split + paint biome. Decisions already made in the
 Toybox grilling are listed under *Kept for the split/paint biome* above; start with a short
@@ -804,6 +808,14 @@ still faded out, so after the first Starfall level in a session, ceilings showed
 Checks that load each level fresh can't catch this, so also go from one level to the next. Separately, "with the
 outlines and the shadows, there is just too much going on", and it would confuse new users even more → softer
 shadow and no outline, chosen after trying four views.
+
+**2026-11-02 — Starfall home world and moon.** Built off to the side, in a realistic style: "i do not like the
+planets on the side, and it looks wildly out of place with the themes we have had so far." → Earth directly under
+the bottom floor, the moon behind the flipped floor, repainted like a picture book. The better peek moves up, next
+after this, ahead of the comet and orbit path.
+
+**2026-11-02 — The better peek.** The full 3D outline was more than needed: "the outline of the face of the block
+is fine... it should be flush with the tile" → flat footprints for both the block outline and the flip landing preview.
 
 ## Architecture
 
