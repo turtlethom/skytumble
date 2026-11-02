@@ -5,8 +5,8 @@
 export interface Theme {
   /** Also set as `data-theme` on the page body, where the sky gradient and text colors are styled. */
   id: 'neutral' | 'night' | 'forest';
-  /** What fills the 3D sky around the level. */
-  sky: 'clouds' | 'stars' | 'none';
+  /** What surrounds the level. */
+  sky: 'clouds' | 'stars' | 'forest';
   hemi: { sky: number; ground: number; intensity: number };
   sun: { color: number; intensity: number };
   block: { color: number; edge: number };
@@ -48,7 +48,7 @@ const NIGHT: Theme = {
 /** First Glade: a sunny storybook forest. */
 const FOREST: Theme = {
   id: 'forest',
-  sky: 'none',
+  sky: 'forest',
   hemi: { sky: 0xe6f5ff, ground: 0x7d8f60, intensity: 1.5 },
   sun: { color: 0xfff0cf, intensity: 2.4 },
   block: { color: 0xe2a94f, edge: 0x7a4f1e },

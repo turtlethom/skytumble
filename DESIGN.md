@@ -409,7 +409,8 @@ glade, in the spirit of Totoro and Ghibli films.
 | If it runs slowly | Cut canopy sway first, then leaves, then cloud shadows, with pollen last |
 
 Build order: tile sheet (every mechanic on moss, with the new rims) → the world → the shared
-chapter title and frame-rate readout.
+chapter title and frame-rate readout. Status: the world is signed off and locked in; the chapter
+title and frame-rate readout are next, then Frost.
 
 **After themes (not yet planned in detail):** the split + paint biome. Decisions already made in the
 Toybox grilling are listed under *Kept for the split/paint biome* above; start with a short
@@ -579,6 +580,10 @@ a plank corridor only the cube can walk, then the heavy switch among planks (19 
 
 **2026-11-01 — Toybox, third round.** Likes the reworked toy-04 → Toybox approved. Paused here;
 the next release (split + paint) will be discussed another time.
+
+**2026-11-01 — First Glade.** "I love every detail of the forest level" → the world is locked in
+and goes live, with no changes after its first build. The chapter title and frame-rate readout
+still come next.
 
 ## Architecture
 

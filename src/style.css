@@ -25,9 +25,51 @@ body {
   background: linear-gradient(180deg, #6fb6ff 0%, #a9d7ff 45%, #e6f4ff 75%, #fff1dc 100%);
 }
 
-/* First Glade: summer blue fading down into the pale haze over the treetops. */
+/* First Glade: summer blue fading down into the pale haze over the treetops, with wood and cream accents. */
 body[data-theme='forest'] {
-  background: linear-gradient(180deg, #74bdf2 0%, #b4def2 42%, #cfe8dc 72%, #d8ecd2 100%);
+  --accent: #a9713d;
+  --accent-ink: #fff7e6;
+  --glass: rgba(255, 249, 234, 0.84);
+  --glass-border: rgba(255, 246, 224, 0.95);
+  --shadow: 0 6px 24px rgba(70, 60, 30, 0.2);
+  background: linear-gradient(180deg, #5fb2f0 0%, #9bd3f4 24%, #cde9e6 42%, #cfe8dc 100%);
+}
+
+/* Big soft summer clouds, far off behind the canvas. Only First Glade shows them. */
+#sky {
+  display: none;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+body[data-theme='forest'] #sky {
+  display: block;
+}
+
+#sky i {
+  position: absolute;
+  left: -60vw;
+  top: var(--y);
+  width: var(--w);
+  height: calc(var(--w) * 0.46);
+  opacity: var(--o);
+  background:
+    radial-gradient(ellipse 25% 46% at 34% 42%, #fff 76%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(ellipse 20% 38% at 56% 36%, #fff 76%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(ellipse 18% 32% at 18% 60%, #fff 76%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(ellipse 21% 33% at 74% 56%, #fff 76%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(ellipse 46% 26% at 48% 72%, #fff 80%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(ellipse 47% 24% at 48% 82%, #d5e6f2 80%, rgba(213, 230, 242, 0) 100%);
+  filter: blur(3px);
+  animation: sky-drift var(--t) linear var(--d) infinite;
+}
+
+@keyframes sky-drift {
+  to {
+    transform: translateX(170vw);
+  }
 }
 
 /* Starfall plays under a night sky. */
@@ -425,6 +467,16 @@ kbd {
   animation: bob 7s ease-in-out var(--delay, 0s) infinite;
 }
 
+.sm-island.glade {
+  --top: linear-gradient(#86c06c, #5fa04a);
+  --edge: #9ec7a2;
+  --cliff: #6d4c33;
+  --cliff-dark: #4a3222;
+}
+.sm-island.glade .sm-progress {
+  color: #f6fbe9;
+  text-shadow: 0 1px 2px rgba(25, 50, 20, 0.6);
+}
 .sm-island.frost {
   --top: linear-gradient(#f6fcff, #cbe8ff);
   --edge: #9cc8e8;

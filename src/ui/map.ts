@@ -12,7 +12,7 @@ const NATURAL_WIDTH = 1000;
 const W = 160;
 const H = 90;
 const LAYOUT: Record<string, { x: number; y: number; theme: string }> = {
-  tutorial: { x: 16, y: 27, theme: 'meadow' },
+  tutorial: { x: 16, y: 27, theme: 'glade' },
   frost: { x: 40, y: 62, theme: 'frost' },
   wind: { x: 64, y: 27, theme: 'peaks' },
   star: { x: 88, y: 62, theme: 'night' },

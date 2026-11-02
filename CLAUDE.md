@@ -54,7 +54,8 @@ goal reachable only lying. **Dead ends** counts states you can reach but never w
 (without undo): 0 is forgiving; a finale with many (wind-08: 85 of 341) punishes wandering.
 
 `/levels.html` is the level index (mini-maps, validation status, play links); `/?level=<id>` opens
-one level.
+one level. `/?sheet=<theme>` shows every tile in a theme (`&bridges=0` retracts the bridges), for
+approving readability before scenery; `&theme=<theme>` previews a theme on any level.
 
 ## Designing handmade levels
 
@@ -145,7 +146,8 @@ with `--virtual-time-budget=20000` is enough. Gotchas:
 src/game/      pure rules: types, rules (step: roll → slide → push → slide), solver (BFS), generator
 src/levels/    chapter .txt files, format.ts (parser), validate.ts (checks + one-trick guard), index.ts
 src/render/    Three.js world (tiles, animations, push cue), palette.ts (belt colors by direction),
-               themes.ts (each chapter's look; rules in DESIGN.md's *Chapter themes*)
+               themes.ts (each chapter's look; rules in DESIGN.md's *Chapter themes*),
+               forest.ts (First Glade's treetops, leaves and pollen; its clouds are `#sky` in the page)
 src/ui/        progress (localStorage), map (campaign sky map; island layout per chapter)
 src/main.ts    game controller: modes, HUD, splash, key focus sink (for Vimium)
 scripts/       check-levels.ts; design/ (lib, explore, analyze, sim, search, solutions, play, verify)

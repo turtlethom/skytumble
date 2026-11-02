@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Motion, blockCells, blockLength, flightLandings, layerView } from '../game/rules';
 import { Block, DIR_DELTA, DIRS, Dir, Level, State, Tile } from '../game/types';
+import { ForestScenery } from './forest';
 import { CONVEYOR_COLORS, cssColor } from './palette';
 import { NEUTRAL, Theme } from './themes';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -112,6 +113,8 @@ export class World {
   private sun = new THREE.DirectionalLight(0xfff4e0, 2.2);
   private levelGroup = new THREE.Group();
   private theme: Theme = NEUTRAL;
+  /** Built the first time a forest level opens. */
+  private forest: ForestScenery | null = null;
   private blockMat = new THREE.MeshStandardMaterial({ color: NEUTRAL.block.color, roughness: 0.55 });
   private blockEdgeMat = new THREE.LineBasicMaterial({ color: NEUTRAL.block.edge });
   /**
@@ -373,6 +376,7 @@ export class World {
         this.center.z + Math.sin(c.userData.angle) * r,
       );
     }
+    this.forest?.place(this.center, this.viewSize);
     this.stars.position.copy(this.center);
     this.moonlight.target.position.copy(this.center);
     this.moonlight.position.copy(this.center).add(new THREE.Vector3(-8, -30, 12));
@@ -1000,6 +1004,7 @@ export class World {
       c.position.x += c.userData.speed * dt;
       if (c.position.x > this.center.x + 30) c.position.x = this.center.x - 30;
     }
+    if (this.forest?.group.visible) this.forest.update(now / 1000, dt, this.renderer.domElement.height);
     for (const c of this.chevrons) {
       // Each chevron travels across the tile, growing in at the back and shrinking out at the front.
       const p = (now / BELT_MS + c.phase) % 1;
@@ -1237,6 +1242,11 @@ export class World {
     this.stars.visible = theme.sky === 'stars';
     // Clouds drift below the ground, right where the camera goes to look up at a ceiling.
     for (const c of this.clouds) c.visible = theme.sky === 'clouds' && !this.hasCeiling;
+    if (theme.sky === 'forest' && !this.forest) {
+      this.forest = new ForestScenery();
+      this.scene.add(this.forest.group);
+    }
+    if (this.forest) this.forest.group.visible = theme.sky === 'forest' && !this.hasCeiling;
   }
 
   /** For each 90° camera position, the closest distance that keeps the whole island on screen. */

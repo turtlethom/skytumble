@@ -1,4 +1,4 @@
-title: Tutorial
+title: First Glade
 
 === tutorial-01
 par: 12
@@ -28,7 +28,7 @@ idea: Precise orientation: one-wide ledges only work if you reach each corner st
 
 === tutorial-03
 par: 18
-name: Thin Ice
+name: Old Planks
 idea: Fragile tiles: cross sideways so your weight is spread over two tiles.
 ######..........
 #S####ffffff####
