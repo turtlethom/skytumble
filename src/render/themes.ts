@@ -4,22 +4,23 @@
  */
 export interface Theme {
   /** Also set as `data-theme` on the page body, where the sky gradient and text colors are styled. */
-  id: 'neutral' | 'night' | 'forest' | 'frost' | 'peaks';
+  id: 'neutral' | 'night' | 'forest' | 'frost' | 'peaks' | 'toybox';
   /** What surrounds the level. */
-  sky: 'clouds' | 'stars' | 'forest' | 'frost' | 'peaks';
+  sky: 'clouds' | 'stars' | 'forest' | 'frost' | 'peaks' | 'toybox';
   hemi: { sky: number; ground: number; intensity: number };
   sun: { color: number; intensity: number };
-  block: { color: number; edge: number };
-  /** Walkable ground. `detail` lists shades of one color, darkest first, painted over each tile: as soft blotches, as snow, or as slate. */
-  floor: { color: number; detail?: number[]; style?: 'snow' | 'slate' };
-  /** Under the tiles: a block of soil, and rock spikes, a clump with dangling roots, icicles, or jagged shards. */
-  earth: { soil: number; hanging: number; style: 'rock' | 'roots' | 'icicles' | 'shards' };
+  block: { color: number; edge: number; roughness?: number };
+  /** Walkable ground. `detail` lists shades of one color, darkest first, painted over each tile: as soft blotches, as snow, as slate, or as holes in a pegboard. */
+  floor: { color: number; detail?: number[]; style?: 'snow' | 'slate' | 'pegboard' };
+  /** Under the tiles: a block of soil, and rock spikes, a clump with dangling roots, icicles, jagged shards, or dangling pegs. */
+  earth: { soil: number; hanging: number; style: 'rock' | 'roots' | 'icicles' | 'shards' | 'pegs' };
   fragile: { light: number; dark: number; weathered?: boolean };
   /**
    * A finish for mechanics. Their shapes and color coding never change. `snow` is a color laid on
-   * stone bases, belt rails and plank seams, never on a switch's or bridge's own color.
+   * stone bases, belt rails and plank seams, never on a switch's or bridge's own color. `plastic` makes
+   * the board a shiny building set: reflections, rounded edges, snap-on plates and tread belts.
    */
-  finish: { switchBase?: number; wood?: boolean; snow?: number; iceSheen?: boolean; brass?: number; padVents?: boolean };
+  finish: { switchBase?: number; wood?: boolean; snow?: number; iceSheen?: boolean; brass?: number; padVents?: boolean; plastic?: boolean };
   /** Where a pad flight lands, if this floor needs a color other than the usual deep blue. */
   landingMark?: number;
 }
@@ -91,6 +92,19 @@ const PEAKS: Theme = {
   landingMark: 0x5cc8ff,
 };
 
+/** Toybox: a shiny plastic building set in a playroom in the clouds, at a pastel sunset. */
+const TOYBOX: Theme = {
+  id: 'toybox',
+  sky: 'toybox',
+  hemi: { sky: 0xf3e2f0, ground: 0xb18f9c, intensity: 0.9 },
+  sun: { color: 0xffe6d0, intensity: 1.95 },
+  block: { color: 0xf5c518, edge: 0x7f5a05, roughness: 0.2 },
+  floor: { color: 0xa04a46, detail: [0x5e2522, 0xa04a46, 0xb86660], style: 'pegboard' },
+  earth: { soil: 0x7c3733, hanging: 0xcfc2a6, style: 'pegs' },
+  fragile: { light: 0xb4b6bb, dark: 0x9b9ea4 },
+  finish: { switchBase: 0xdcd1b8, plastic: true },
+};
+
 /** Chapters with a world of their own; any other chapter uses NEUTRAL. */
 export const CHAPTER_THEMES: Record<string, Theme> = {
   tutorial: FOREST,
@@ -100,7 +114,7 @@ export const CHAPTER_THEMES: Record<string, Theme> = {
 };
 
 /** Every theme by id, so `?theme=forest` can preview one on any level or on the tile sheet. */
-export const THEMES: Record<string, Theme> = { neutral: NEUTRAL, night: NIGHT, forest: FOREST, frost: FROST, peaks: PEAKS };
+export const THEMES: Record<string, Theme> = { neutral: NEUTRAL, night: NIGHT, forest: FOREST, frost: FROST, peaks: PEAKS, toybox: TOYBOX };
 
 /** The theme for a handmade level, from the chapter in its id (`star-03` is in `star`). */
 export function themeForLevel(id: string): Theme {

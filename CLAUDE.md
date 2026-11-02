@@ -55,7 +55,7 @@ goal reachable only lying. **Dead ends** counts states you can reach but never w
 
 `/levels.html` is the level index (mini-maps, validation status, play links); `/?level=<id>` opens
 one level. `/?sheet=<theme>` shows every tile in a theme (`&bridges=0` retracts the bridges), for
-approving readability before scenery; `&theme=<theme>` previews a theme on any level; `&gray` shows
+approving readability before scenery; `/?sheet=toybox&toys` stands Toybox's sample toys on its floor; `&theme=<theme>` previews a theme on any level; `&gray` shows
 the page in black and white, to check a tile reads without color. In the game,
 F (or `?fps`) toggles a hidden frame-rate readout, which also shows triangles and draw calls.
 
@@ -150,7 +150,8 @@ src/levels/    chapter .txt files, format.ts (parser), validate.ts (checks + one
 src/render/    Three.js world (tiles, animations, push cue), palette.ts (belt colors by direction),
                themes.ts (each chapter's look; rules in DESIGN.md's *Chapter themes*),
                scenery.ts (what a world's surroundings provide), forest.ts, frost.ts and peaks.ts (each world's
-               scenery; the big clouds behind the game are `#sky` in the page)
+               scenery; the big clouds behind the game are `#sky` in the page), toys.ts (Toybox's toys and
+               plastic reflections)
 src/ui/        progress (localStorage), map (campaign sky map; island layout per chapter)
 src/main.ts    game controller: modes, HUD, splash, key focus sink (for Vimium)
 scripts/       check-levels.ts; design/ (lib, explore, analyze, sim, search, solutions, play, verify)

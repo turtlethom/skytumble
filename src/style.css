@@ -104,6 +104,16 @@ body[data-theme='peaks'] #sky i {
   top: calc(var(--y) - 3vh);
 }
 
+/* Toybox: a pastel sunset, lavender above and peach below, with ivory panels and a brick-red highlight. */
+body[data-theme='toybox'] {
+  --accent: #a8483f;
+  --accent-ink: #fff8ec;
+  --glass: rgba(255, 249, 236, 0.86);
+  --glass-border: rgba(255, 246, 228, 0.95);
+  --shadow: 0 6px 24px rgba(80, 45, 70, 0.22);
+  background: linear-gradient(180deg, #a999dc 0%, #c9aede 22%, #eebfd0 46%, #f9cfae 72%, #fbdcb6 100%);
+}
+
 /* Starfall plays under a night sky. */
 body[data-theme='night'] {
   background: linear-gradient(180deg, #1f2a66 0%, #34418f 45%, #5560ad 78%, #7a6cb4 100%);
@@ -339,6 +349,10 @@ kbd {
 .arrival[data-theme='peaks'] {
   color: #5c6675;
   background: #eef1f3;
+}
+.arrival[data-theme='toybox'] {
+  color: #a8483f;
+  background: #fbf2e0;
 }
 .arrival[data-theme='night'] {
   color: #e8ecff;

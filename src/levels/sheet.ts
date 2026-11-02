@@ -23,3 +23,8 @@ const SWITCH_GROUPS = [0, 1, 2, 3, 0, 1, 2, 3, 2];
 export function tileSheet(bridgesOn: number): Level {
   return parseLevel(ROWS, SWITCH_GROUPS, bridgesOn);
 }
+
+/** A strip of floor for `?sheet=toybox&toys`: the sample toys stand on it, beside the block. */
+export function toySampleFloor(): Level {
+  return parseLevel(['#############', '#############', '#############', 'S############', '#############']);
+}

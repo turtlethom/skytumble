@@ -7,6 +7,8 @@ import { CONVEYOR_COLORS, cssColor } from './palette';
 import { PeaksScenery } from './peaks';
 import { Scenery } from './scenery';
 import { NEUTRAL, Theme } from './themes';
+import { makeToySamples, plasticEnvironment } from './toys';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const COLORS = {
@@ -37,6 +39,8 @@ const COLORS = {
   /** Shape switches: a stone disc like the other switches, with a bar in the block's own color. */
   shapeStone: 0xc9c2b4,
   shapeBar: 0xd9a95f,
+  /** Toybox's tread belts: the molded body, and the links. */
+  treadBody: 0x35323c,
 };
 
 
@@ -128,6 +132,10 @@ export class World {
   /** The current world's surroundings, and every world's built so far. */
   private scenery: Scenery | null = null;
   private sceneries = new Map<Theme['sky'], Scenery>();
+  /** What shiny plastic reflects, drawn the first time a plastic world opens. */
+  private plasticEnv: THREE.Texture | null = null;
+  /** A light kept opposite the camera, so flat plastic shows a soft highlight from every view. */
+  private sheen = new THREE.DirectionalLight(0xfff0e2, 0.34);
   private blockMat = new THREE.MeshStandardMaterial({ color: NEUTRAL.block.color, roughness: 0.55 });
   private blockEdgeMat = new THREE.LineBasicMaterial({ color: NEUTRAL.block.edge });
   /**
@@ -224,6 +232,8 @@ export class World {
     this.sun.shadow.mapSize.set(2048, 2048);
     this.sun.shadow.bias = -0.0005;
     this.scene.add(this.sun, this.sun.target, this.levelGroup);
+    this.sheen.visible = false;
+    this.scene.add(this.sheen, this.sheen.target);
 
     const geom = new THREE.BoxGeometry(0.98, 1.96, 0.98);
     this.block = new THREE.Mesh(geom, this.blockMat);
@@ -401,6 +411,11 @@ export class World {
     return ready.then(() => this.intro());
   }
 
+  /** Stand the three sample toys on the current floor, for `?sheet=toybox&toys`. */
+  showToySamples(): void {
+    this.layerGroups[0].add(makeToySamples(this.center));
+  }
+
   /** What the last frame cost, for the frame-rate readout. */
   get renderStats(): { calls: number; triangles: number } {
     return this.renderer.info.render;
@@ -429,9 +444,10 @@ export class World {
         g.add(edge);
       }
       // The slab's body is the rim: a darker shade of the group's color around a bright plate.
-      const slab = box(0.96, 0.16, 0.96, rimColor(color), { roughness: 0.7 });
+      const { plastic, switchBase } = this.theme.finish;
+      const slab = box(0.96, 0.16, 0.96, rimColor(color), { roughness: plastic ? 0.3 : 0.7 });
       slab.position.y = -0.08;
-      const plate = box(0.84, 0.01, 0.84, color, { roughness: 0.7 });
+      const plate = box(0.84, 0.01, 0.84, color, { roughness: plastic ? 0.5 : 0.7 });
       plate.position.y = 0.085;
       slab.add(plate);
       if (this.theme.finish.wood) {
@@ -451,6 +467,15 @@ export class World {
           slab.add(corner);
         }
       }
+      if (plastic && switchBase !== undefined) {
+        // Ivory pegs at the corners, snapping the slab to its neighbors.
+        const peg = new THREE.MeshStandardMaterial({ color: switchBase, roughness: 0.3 });
+        for (const [dx, dz] of [[-0.39, -0.39], [0.39, -0.39], [-0.39, 0.39], [0.39, 0.39]]) {
+          const stud = new THREE.Mesh(pegGeometry, peg);
+          stud.position.set(dx, 0.095, dz);
+          slab.add(stud);
+        }
+      }
       g.add(ghost, slab);
       this.bridges.push({ group, slab });
       return g;
@@ -458,6 +483,21 @@ export class World {
 
     if (tile === Tile.Fragile) {
       const { light, dark, weathered } = this.theme.fragile;
+      if (this.theme.finish.plastic) {
+        // Three thin slats on a flimsy frame: still planks, but molded and snapped together.
+        for (let p = -1; p <= 1; p++) {
+          const slat = rounded(0.31, 0.055, 0.96, p === 0 ? dark : light, 0.02, { roughness: 0.3 });
+          slat.position.set(p * 0.32, -0.03, 0);
+          g.add(slat);
+        }
+        const frame = rimColor(dark, 0.62);
+        for (const z of [-0.36, 0.36]) {
+          const bar = box(0.9, 0.03, 0.05, frame, { roughness: 0.35 });
+          bar.position.set(0, -0.07, z);
+          g.add(bar);
+        }
+        return g;
+      }
       for (let p = -1; p <= 1; p++) {
         const plank = box(0.3, 0.12, 0.96, p === 0 ? dark : light);
         plank.position.set(p * 0.32, -0.06, 0);
@@ -487,12 +527,12 @@ export class World {
       const pit = box(0.9, 0.5, 0.9, COLORS.hole);
       pit.position.y = -0.35;
       g.add(pit);
-      const wood = this.theme.finish.wood;
+      const { wood, plastic } = this.theme.finish;
       const rim = new THREE.MeshStandardMaterial({
         color: COLORS.goal,
         emissive: COLORS.goal,
-        emissiveIntensity: wood ? 0.3 : 0.6,
-        roughness: wood ? 0.8 : 1,
+        emissiveIntensity: wood ? 0.3 : plastic ? 0.2 : 0.6,
+        roughness: wood ? 0.8 : plastic ? 0.22 : 1,
       });
       for (const [dx, dz, w, d] of [[0, -0.44, 0.96, 0.08], [0, 0.44, 0.96, 0.08], [-0.44, 0, 0.08, 0.96], [0.44, 0, 0.08, 0.96]]) {
         const edge = new THREE.Mesh(new THREE.BoxGeometry(w, 0.2, d), rim);
@@ -515,7 +555,7 @@ export class World {
       if (group === 1 || group === 3) {
         const len = group === 1 ? 0.16 : 0.5;
         for (const side of [-1, 1]) {
-          const bar = box(len, 0.06, 0.12, COLORS.shapeBar, { roughness: 0.5 });
+          const bar = box(len, 0.06, 0.12, plastic ? rimColor(COLORS.goal, 0.5) : COLORS.shapeBar, { roughness: plastic ? 0.25 : 0.5 });
           bar.position.set(0, 0.03, side * 0.44);
           g.add(bar);
         }
@@ -576,16 +616,27 @@ export class World {
     }
 
     if (tile === Tile.Conveyor) {
-      const belt = box(0.98, 0.18, 0.98, COLORS.belt, { roughness: 0.9 });
+      const { plastic, switchBase } = this.theme.finish;
+      const belt = box(0.98, 0.18, 0.98, plastic ? COLORS.treadBody : COLORS.belt, { roughness: plastic ? 0.4 : 0.9 });
       belt.position.y = -0.09;
       g.add(belt, earth(jitter, this.theme));
       // Chevrons are built pointing +x (right), then the whole belt top turns to face its arrow.
       const dir = DIRS[group];
       const top = new THREE.Group();
       top.rotation.y = BELT_ROTATION[dir];
+      if (plastic) {
+        // Tank-tread links that scroll with the arrows, between ivory rails.
+        const tread = new THREE.Mesh(treadGeometry, treadMaterial());
+        tread.rotation.x = -Math.PI / 2;
+        tread.position.y = 0.006;
+        tread.receiveShadow = true;
+        top.add(tread);
+      }
       for (const side of [-1, 1]) {
         const { brass } = this.theme.finish;
-        const rail = box(0.98, 0.05, 0.08, brass ?? COLORS.rail, brass === undefined ? {} : { metalness: 0.15, roughness: 0.5 });
+        const rail = plastic && switchBase !== undefined
+          ? box(0.98, 0.05, 0.08, switchBase, { roughness: 0.3 })
+          : box(0.98, 0.05, 0.08, brass ?? COLORS.rail, brass === undefined ? {} : { metalness: 0.15, roughness: 0.5 });
         rail.position.set(0, 0.02, side * 0.44);
         top.add(rail);
         if (this.theme.finish.snow !== undefined) {
@@ -669,6 +720,29 @@ export class World {
       );
       disc.position.y = 0.03;
       disc.receiveShadow = true;
+      const { plastic, switchBase } = this.theme.finish;
+      if (plastic && switchBase !== undefined) {
+        // The same length-says-the-shape sign, as a small model of the block clipped onto a peg.
+        (disc.material as THREE.MeshStandardMaterial).color.set(switchBase);
+        (disc.material as THREE.MeshStandardMaterial).roughness = 0.3;
+        const peg = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.055, 0.055, 0.12, 14),
+          new THREE.MeshStandardMaterial({ color: rimColor(switchBase, 0.78), roughness: 0.3 }),
+        );
+        peg.position.y = 0.11;
+        const modelLen = [0, 0.22, 0.44, 0.66][group];
+        const model = rounded(modelLen, 0.15, 0.22, this.theme.block.color, 0.03, { roughness: 0.2 });
+        model.position.y = 0.235;
+        model.castShadow = true;
+        // A groove between each cube-sized part, so the model counts out its length.
+        for (let k = 1; k < group; k++) {
+          const groove = box(0.016, 0.154, 0.224, this.theme.block.edge, { roughness: 0.4 });
+          groove.position.x = -modelLen / 2 + (k * modelLen) / group;
+          model.add(groove);
+        }
+        g.add(floorTile(jitter, this.theme), earth(jitter, this.theme), disc, peg, model);
+        return g;
+      }
       const len = [0, 0.14, 0.3, 0.46][group];
       const bar = box(len, 0.07, 0.14, COLORS.shapeBar, { roughness: 0.5 });
       bar.position.y = 0.095;
@@ -683,7 +757,7 @@ export class World {
     if (isSwitch && this.theme.finish.switchBase !== undefined) {
       const base = new THREE.Mesh(
         new THREE.CylinderGeometry(0.43, 0.46, 0.04, 28),
-        new THREE.MeshStandardMaterial({ color: this.theme.finish.switchBase, roughness: 1 }),
+        new THREE.MeshStandardMaterial({ color: this.theme.finish.switchBase, roughness: this.theme.finish.plastic ? 0.3 : 1 }),
       );
       base.position.y = 0.02;
       base.receiveShadow = true;
@@ -1105,6 +1179,8 @@ export class World {
       c.obj.scale.setScalar(Math.max(Math.sin(p * Math.PI), 0.001) * (1 + c.boost * 0.35));
       c.mat.emissiveIntensity = 0.5 + c.boost * 2.2;
     }
+    // Every tread is turned to face its arrow, so one scroll moves them all the right way.
+    treadScroll.x = -((now / BELT_MS) % 1);
     for (const p of this.padArrows.values()) p.mat.emissiveIntensity = 0.35 + p.boost * 1.6;
     for (const g of this.gusts) {
       // Each streak drifts along the arrow, fading in at the back and out at the front.
@@ -1135,6 +1211,12 @@ export class World {
     this.camDist += (this.fitDist[this.camIndex] - this.camDist) * Math.min(1, dt * 6);
     this.placeCamera(this.camAngle, this.camDist);
 
+    if (this.sheen.visible) {
+      // Mirror the camera across the vertical through the board's center: its highlight lands mid-board.
+      const { x, y, z } = this.camera.position;
+      this.sheen.position.set(2 * this.center.x - x, y, 2 * this.center.z - z);
+      this.sheen.target.position.copy(this.center);
+    }
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -1336,6 +1418,11 @@ export class World {
     document.body.dataset.theme = theme.id;
     this.blockMat.color.set(theme.block.color);
     this.blockEdgeMat.color.set(theme.block.edge);
+    this.blockMat.roughness = theme.block.roughness ?? 0.55;
+    if (theme.finish.plastic && !this.plasticEnv) this.plasticEnv = plasticEnvironment(this.renderer);
+    this.scene.environment = theme.finish.plastic ? this.plasticEnv : null;
+    this.scene.environmentIntensity = 0.5;
+    this.sheen.visible = !!theme.finish.plastic;
     this.hemi.color.set(theme.hemi.sky);
     this.hemi.groundColor.set(theme.hemi.ground);
     this.hemi.intensity = theme.hemi.intensity;
@@ -1390,6 +1477,26 @@ function box(
   mesh.castShadow = !opts.transparent;
   return mesh;
 }
+
+/** A box with rounded edges, which catch the light the way molded plastic does. */
+function rounded(
+  w: number,
+  h: number,
+  d: number,
+  color: number,
+  radius: number,
+  opts: THREE.MeshStandardMaterialParameters = {},
+): THREE.Mesh {
+  const mesh = new THREE.Mesh(
+    new RoundedBoxGeometry(w, h, d, 3, radius),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.3, ...opts }),
+  );
+  mesh.receiveShadow = true;
+  mesh.castShadow = true;
+  return mesh;
+}
+
+const pegGeometry = new THREE.CylinderGeometry(0.05, 0.055, 0.03, 14);
 
 /** Turns a +x-pointing belt top to face each grid direction ("up" is -z). */
 const BELT_ROTATION: Record<Dir, number> = { right: 0, up: Math.PI / 2, left: Math.PI, down: -Math.PI / 2 };
@@ -1466,7 +1573,8 @@ function floorTile(jitter: number, theme: Theme): THREE.Mesh {
     return plain;
   }
   const mats = detailMaterials(theme.id, theme.floor.detail, theme.floor.style);
-  const mesh = new THREE.Mesh(floorGeometry(), mats[Math.floor(jitter * mats.length)]);
+  const geometry = theme.finish.plastic ? plasticFloorGeometry() : floorGeometry();
+  const mesh = new THREE.Mesh(geometry, mats[Math.floor(jitter * mats.length)]);
   mesh.position.y = -0.09;
   // A quarter turn per tile, so neighbors sharing a top don't look stamped.
   mesh.rotation.y = (Math.floor(jitter * 64) % 4) * (Math.PI / 2);
@@ -1489,18 +1597,72 @@ function floorGeometry(): THREE.BoxGeometry {
   return geom;
 }
 
+let sharedPlasticFloor: THREE.BufferGeometry | null = null;
+
+/** A rounded tile for a plastic floor: the detail texture on its flat top, one solid shade elsewhere. */
+function plasticFloorGeometry(): THREE.BufferGeometry {
+  if (sharedPlasticFloor) return sharedPlasticFloor;
+  const geom = new RoundedBoxGeometry(0.98, 0.18, 0.98, 3, 0.035);
+  const { position, normal, uv } = geom.attributes;
+  for (let v = 0; v < uv.count; v++) {
+    if (normal.getY(v) > 0.7) uv.setXY(v, position.getX(v) / 0.98 + 0.5, 0.5 - position.getZ(v) / 0.98);
+    else uv.setXY(v, 0.01, 0.01);
+  }
+  sharedPlasticFloor = geom;
+  return geom;
+}
+
 const detailCache = new Map<string, THREE.MeshStandardMaterial[]>();
 
 /** Materials for a theme's detailed floor, built once and shared by every tile. */
 function detailMaterials(id: string, shades: number[], style: Theme['floor']['style']): THREE.MeshStandardMaterial[] {
   const cached = detailCache.get(id);
   if (cached) return cached;
+  if (style === 'pegboard') {
+    // A regular grid, so every tile can share one texture.
+    const map = pegboardTexture(shades);
+    const mats = [new THREE.MeshStandardMaterial({ map, bumpMap: map, bumpScale: 0.4, roughness: 0.4 })];
+    detailCache.set(id, mats);
+    return mats;
+  }
   const mats = [1, 2, 3, 4].map((seed) => {
     const map = style === 'snow' ? snowTexture(shades, seed) : style === 'slate' ? slateTexture(shades, seed) : detailTexture(shades, seed);
     return new THREE.MeshStandardMaterial({ map, roughness: 1 });
   });
   detailCache.set(id, mats);
   return mats;
+}
+
+/** Holes per side of a pegboard tile: small and shallow, so they read as texture rather than openings. */
+const PEG_HOLES = 4;
+
+/** Small round dimples in a regular grid, each with a shaded top edge and a lit bottom lip. */
+function pegboardTexture(shades: number[]): THREE.CanvasTexture {
+  const size = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const [dark, base, lit] = shades.map(cssColor);
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, size, size);
+  const r = 8;
+  for (let i = 0; i < PEG_HOLES; i++) {
+    for (let j = 0; j < PEG_HOLES; j++) {
+      const [x, y] = [((i + 0.5) / PEG_HOLES) * size, ((j + 0.5) / PEG_HOLES) * size];
+      ctx.fillStyle = lit;
+      ctx.beginPath();
+      ctx.arc(x, y + 1.6, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = dark;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  const map = new THREE.CanvasTexture(canvas);
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.anisotropy = 8;
+  return map;
 }
 
 /** Soft overlapping blotches and fine specks in shades of one color, seeded so tiles never change. */
@@ -1694,11 +1856,72 @@ const shardGeometries = [0, 1, 2, 3].map((variant) => {
 });
 const brassRingGeometry = new THREE.TorusGeometry(0.44, 0.014, 6, 28);
 
+/** Dangling pegs and connector bars under a plastic tile, merged into one mesh per variant. */
+const hangingPegGeometries = [0, 1, 2, 3].map((variant) => {
+  const parts: THREE.BufferGeometry[] = [];
+  const count = 4 + variant;
+  const ends: [number, number, number][] = [];
+  for (let i = 0; i < count; i++) {
+    const a = (i / count) * Math.PI * 2 + variant * 1.1;
+    const len = 0.26 + ((i * 37 + variant * 13) % 10) * 0.065;
+    const radius = 0.04 + ((i * 11 + variant) % 3) * 0.012;
+    const ring = 0.12 + ((i * 5) % 3) * 0.11;
+    const [x, z] = [Math.cos(a) * ring, Math.sin(a) * ring];
+    const shaft = new THREE.CylinderGeometry(radius, radius, len, 10);
+    shaft.translate(x, -0.62 - len / 2, z);
+    const cap = new THREE.CylinderGeometry(radius * 1.7, radius * 1.7, 0.055, 12);
+    cap.translate(x, -0.62 - len, z);
+    parts.push(shaft, cap);
+    ends.push([x, -0.62 - len * 0.55, z]);
+  }
+  // A connector bar between two neighbors, so it reads as parts of a kit rather than spikes.
+  const [from, to] = [new THREE.Vector3(...ends[0]), new THREE.Vector3(...ends[1])];
+  const span = from.distanceTo(to);
+  const bar = new THREE.CylinderGeometry(0.03, 0.03, span, 8);
+  bar.rotateZ(Math.PI / 2);
+  bar.rotateY(-Math.atan2(to.z - from.z, to.x - from.x));
+  bar.translate((from.x + to.x) / 2, Math.max(from.y, to.y), (from.z + to.z) / 2);
+  parts.push(bar);
+  return mergeGeometries(parts.map((p) => p.toNonIndexed()))!;
+});
+
+/** One tile of tread, as a plane that sits between the belt's rails, with u running along the arrow. */
+const treadGeometry = new THREE.PlaneGeometry(0.98, 0.8);
+const treadScroll = new THREE.Vector2();
+let sharedTread: THREE.MeshStandardMaterial | null = null;
+
+/** Chunky tread links on one scrolling texture: every belt shares it, so it costs one update a frame. */
+function treadMaterial(): THREE.MeshStandardMaterial {
+  if (sharedTread) return sharedTread;
+  const [w, h] = [256, 128];
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d')!;
+  ctx.fillStyle = '#26242c';
+  ctx.fillRect(0, 0, w, h);
+  const links = 4;
+  for (let i = 0; i < links; i++) {
+    const x = (i / links) * w;
+    ctx.fillStyle = '#6d6974';
+    ctx.fillRect(x + 8, 4, w / links - 16, h - 8);
+    ctx.fillStyle = '#918d98';
+    ctx.fillRect(x + 8, 4, 10, h - 8);
+  }
+  const map = new THREE.CanvasTexture(canvas);
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.wrapS = THREE.RepeatWrapping;
+  map.anisotropy = 8;
+  map.offset = treadScroll;
+  sharedTread = new THREE.MeshStandardMaterial({ map, bumpMap: map, bumpScale: 1.5, roughness: 0.4 });
+  return sharedTread;
+}
+
 /** What's under a floating tile: soil, and either hanging rock or a clump with dangling roots. */
 function earth(jitter: number, theme: Theme): THREE.Object3D {
   const g = new THREE.Group();
   g.userData.earth = true;
-  const dirt = box(0.9, 0.45, 0.9, theme.earth.soil);
+  const dirt = box(0.9, 0.45, 0.9, theme.earth.soil, theme.finish.plastic ? { roughness: 0.35 } : {});
   dirt.position.y = -0.4;
   g.add(dirt);
   if (theme.earth.style === 'roots') {
@@ -1719,6 +1942,14 @@ function earth(jitter: number, theme: Theme): THREE.Object3D {
       new THREE.MeshStandardMaterial({ color: theme.earth.hanging, roughness: 1, flatShading: true }),
     );
     g.add(shards);
+    return g;
+  }
+  if (theme.earth.style === 'pegs') {
+    const pegs = new THREE.Mesh(
+      hangingPegGeometries[Math.floor(jitter * hangingPegGeometries.length)],
+      new THREE.MeshStandardMaterial({ color: theme.earth.hanging, roughness: 0.3 }),
+    );
+    g.add(pegs);
     return g;
   }
   if (theme.earth.style === 'icicles') {

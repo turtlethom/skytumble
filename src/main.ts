@@ -4,7 +4,7 @@ import { initialState, step } from './game/rules';
 import { solve } from './game/solver';
 import { DIRS, Dir, Level, State, TIERS, Tier } from './game/types';
 import { HANDMADE, chapterOf, findLevel } from './levels';
-import { tileSheet } from './levels/sheet';
+import { tileSheet, toySampleFloor } from './levels/sheet';
 import { NEUTRAL, THEMES, Theme, themeForLevel } from './render/themes';
 import { World } from './render/world';
 import { ChapterArrival } from './ui/arrival';
@@ -71,6 +71,10 @@ class Game {
     if (params.has('fps')) this.readout.toggle();
     // For approving a theme's readability without relying on color.
     if (params.has('gray')) document.documentElement.style.filter = 'grayscale(1)';
+    if (params.has('toys')) {
+      void this.start(toySampleFloor(), 0).then(() => this.world.showToySamples());
+      return;
+    }
     if (params.has('sheet')) {
       void this.start(tileSheet(Number(params.get('bridges') ?? 15)), 0);
       return;

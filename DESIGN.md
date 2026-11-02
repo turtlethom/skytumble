@@ -485,10 +485,10 @@ sunset, wallpaper and dust carry the nostalgia. The biggest worry is code-made t
 | Under the tiles | Dangling pegs and connector pieces |
 | Block | Sunny yellow, deeper than the goal, with a darker edge |
 | Fragile tiles | Thin, light grey snap-on plates with plank lines, keeping the "planks break" cue |
-| Shape switches | A model of the shape on a peg |
+| Shape switches | A small model of the block on a peg: one, two or three parts for cube, normal, tall |
 | Other switches, bridges | Ivory plastic bases, with colors unchanged |
 | Belts | Tank-tread links, with the same arrows |
-| Goal | A glossy yellow raised frame; marked goals still float their shape |
+| Goal | A glossy yellow raised frame; marked goals keep their bars on the rim |
 | Interface | Ivory panels with a brick-red highlight; the map island takes the same colors |
 | If it runs slowly | Cut dust first, then spinning tops, with the train last |
 
@@ -500,7 +500,10 @@ sunset, wallpaper and dust carry the nostalgia. The biggest worry is code-made t
   (the fallback is four holes per tile); the block, goal and up-pointing belts are all yellow; bright
   piles and moving toys could make gaps harder to read; fine wallpaper shapes may not read from far off.
 
-Status: settled; the tile sheet and sample toys are next.
+Status: the tile sheet and sample toys are built, awaiting approval (`?sheet=toybox`, `?sheet=toybox&toys`,
+or any level with `&theme=toybox`). The chapter itself keeps the neutral look until the world is done. A
+stronger shine on the floor washed out the red bridges and brought the floor close to the sky color at
+gaps, so the floor has a soft sheen and the block and toys carry the gloss.
 
 **Next, after Toybox:** Starfall. Follow *Each theme* above, and read the logged notes for what each
 world taught: keep scenery deep below the board at first, and check that a palette doesn't suggest a
