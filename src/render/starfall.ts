@@ -19,6 +19,24 @@ const MOON_TURN = 0.0012;
 const CITIES = 46;
 const LIGHTS_PER_CITY = 14;
 
+/** Motion, kept apart so it can be turned down. If it runs slowly, cut falling stars first, then the satellite, then the comet. */
+const COMET_GAP = [20, 30];
+const COMET_SECONDS = 5.5;
+const COMET_LENGTH = 62;
+const COMET_WIDTH = 5.5;
+const SHOOTING_GAP = [3.5, 8];
+const SHOOTING_SECONDS = 0.8;
+const SHOOTING_LENGTH = 30;
+const SHOOTING_WIDTH = 1.5;
+/** How far off streaks fly: past the planet's edge, which they pass behind, and short of the stars. */
+const STREAK_DISTANCE = 330;
+
+/** The orbit: level with the gap between the floors, beyond the board's corners, so it never crosses a gap. */
+const ORBIT_Y = 2;
+const ORBIT_MARGIN = 5;
+const ORBIT_TUBE = 0.045;
+const SATELLITE_SPEED = 1.1;
+
 /** Smooth random values over a plane. */
 function noise2(seed: number): (x: number, y: number) => number {
   const size = 256;
@@ -205,12 +223,168 @@ function glow(color: number, strength: number, side: 1 | -1): THREE.Mesh {
   return mesh;
 }
 
+/** A soft dot with a long fading tail, as one strip that faces the camera. Used for the comet and for falling stars. */
+class Streak {
+  readonly mesh: THREE.Mesh;
+  private start = new THREE.Vector3();
+  private end = new THREE.Vector3();
+  private born = -1000;
+  private duration = 1;
+  private head = new THREE.Vector3();
+  private dir = new THREE.Vector3();
+  private side = new THREE.Vector3();
+  private toCamera = new THREE.Vector3();
+
+  constructor(
+    private length: number,
+    private width: number,
+    color: number,
+  ) {
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(12), 3));
+    geom.setAttribute('uv', new THREE.BufferAttribute(new Float32Array([0, 0, 0, 1, 1, 0, 1, 1]), 2));
+    geom.setIndex([0, 1, 2, 2, 1, 3]);
+    this.mesh = new THREE.Mesh(
+      geom,
+      new THREE.MeshBasicMaterial({ color, map: streakTexture(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
+    );
+    this.mesh.frustumCulled = false;
+    this.mesh.visible = false;
+    // Over the far planet, under the board.
+    this.mesh.renderOrder = -1;
+  }
+
+  /** Fly from one screen spot to another as seen right now, at a fixed distance. The path stays put if the view turns. */
+  launch(seconds: number, duration: number, camera: THREE.Camera, from: [number, number], to: [number, number]): void {
+    const at = ([x, y]: [number, number], out: THREE.Vector3) => {
+      const ray = out.set(x, y, 0.5).unproject(camera).sub(camera.position).normalize();
+      return ray.multiplyScalar(STREAK_DISTANCE).add(camera.position);
+    };
+    at(from, this.start);
+    at(to, this.end);
+    this.born = seconds;
+    this.duration = duration;
+    this.mesh.visible = true;
+  }
+
+  update(seconds: number, camera: THREE.Camera): void {
+    if (!this.mesh.visible) return;
+    const t = (seconds - this.born) / this.duration;
+    if (t >= 1 || t < 0) {
+      this.mesh.visible = false;
+      return;
+    }
+    this.head.lerpVectors(this.start, this.end, t);
+    this.dir.subVectors(this.end, this.start).normalize();
+    this.toCamera.subVectors(camera.position, this.head);
+    this.side.crossVectors(this.dir, this.toCamera).normalize().multiplyScalar(this.width / 2);
+    // The tail grows in behind the head as it sets off.
+    const length = this.length * Math.min(t * 5, 1);
+    const position = this.mesh.geometry.attributes.position;
+    const tail = this.head.clone().addScaledVector(this.dir, -length);
+    const lead = this.head.clone().addScaledVector(this.dir, this.width / 2);
+    position.setXYZ(0, tail.x - this.side.x, tail.y - this.side.y, tail.z - this.side.z);
+    position.setXYZ(1, tail.x + this.side.x, tail.y + this.side.y, tail.z + this.side.z);
+    position.setXYZ(2, lead.x - this.side.x, lead.y - this.side.y, lead.z - this.side.z);
+    position.setXYZ(3, lead.x + this.side.x, lead.y + this.side.y, lead.z + this.side.z);
+    position.needsUpdate = true;
+    (this.mesh.material as THREE.MeshBasicMaterial).opacity = Math.min(t * 8, 1) * Math.min((1 - t) * 5, 1);
+  }
+}
+
+let sharedStreak: THREE.CanvasTexture | null = null;
+
+/** A tail fading in from nothing to a bright round head at the far end (u = 1). */
+function streakTexture(): THREE.CanvasTexture {
+  if (sharedStreak) return sharedStreak;
+  const [w, h] = [256, 64];
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  const ctx = c.getContext('2d')!;
+  // The tail narrows toward its end, so a soft wedge rather than a bar.
+  const fade = ctx.createLinearGradient(0, 0, w, 0);
+  fade.addColorStop(0, 'rgba(255, 255, 255, 0)');
+  fade.addColorStop(0.75, 'rgba(255, 255, 255, 0.55)');
+  fade.addColorStop(1, 'rgba(255, 255, 255, 0.95)');
+  ctx.fillStyle = fade;
+  ctx.filter = 'blur(3px)';
+  ctx.beginPath();
+  ctx.moveTo(0, h / 2);
+  ctx.lineTo(w - h / 2, h * 0.18);
+  ctx.lineTo(w - h / 2, h * 0.82);
+  ctx.closePath();
+  ctx.fill();
+  ctx.filter = 'none';
+  const glow = ctx.createRadialGradient(w - h / 2, h / 2, 0, w - h / 2, h / 2, h / 2);
+  glow.addColorStop(0, 'rgba(255, 255, 255, 1)');
+  glow.addColorStop(0.4, 'rgba(255, 255, 255, 0.9)');
+  glow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(w - h, 0, h, h);
+  sharedStreak = new THREE.CanvasTexture(c);
+  sharedStreak.colorSpace = THREE.SRGBColorSpace;
+  return sharedStreak;
+}
+
+/** A faint glowing line that fades out on the side nearest the camera, where it would loom over the corners of the screen. */
+function orbitMaterial(): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    uniforms: { uCenter: { value: new THREE.Vector3() } },
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    vertexShader: `
+      uniform vec3 uCenter;
+      varying float vFar;
+      void main() {
+        vec4 world = modelMatrix * vec4(position, 1.0);
+        // Positive past the middle of the ring, as seen from the camera.
+        vec2 toCamera = normalize(cameraPosition.xz - uCenter.xz);
+        vFar = -dot(world.xz - uCenter.xz, toCamera);
+        gl_Position = projectionMatrix * viewMatrix * world;
+      }`,
+    fragmentShader: `
+      varying float vFar;
+      void main() {
+        gl_FragColor = vec4(0.77, 0.82, 1.0, 0.42 * smoothstep(-3.0, 3.0, vFar));
+      }`,
+  });
+}
+
+/** A little storybook satellite: a gold body between two blue panels, on a short boom. */
+function makeSatellite(): THREE.Group {
+  const g = new THREE.Group();
+  const add = (geom: THREE.BufferGeometry, color: number, x = 0, y = 0, z = 0) => {
+    const mesh = new THREE.Mesh(geom, new THREE.MeshBasicMaterial({ color }));
+    mesh.position.set(x, y, z);
+    g.add(mesh);
+    return mesh;
+  };
+  add(new THREE.BoxGeometry(0.5, 0.42, 0.42), 0xe9c46a);
+  add(new THREE.BoxGeometry(1.5, 0.05, 0.05), 0xc9cee0);
+  for (const side of [-1, 1]) {
+    add(new THREE.BoxGeometry(0.62, 0.035, 0.44), 0x4f7fe8, side * 0.86);
+    add(new THREE.BoxGeometry(0.03, 0.04, 0.44), 0xa9c0f5, side * 0.86);
+  }
+  add(new THREE.ConeGeometry(0.16, 0.2, 14), 0xeef0f7, 0, 0.3);
+  return g;
+}
+
 /** Starfall's surroundings: the home world below you on the ground floor, the moon that pulls you up above you on the ceiling. */
 export class StarfallScenery implements Scenery {
   readonly group = new THREE.Group();
   private world: THREE.Mesh;
   private clouds: THREE.Mesh;
   private moon: THREE.Mesh;
+  private comet = new Streak(COMET_LENGTH, COMET_WIDTH, 0xdcecff);
+  private nextComet = 0;
+  private shooting = [0, 1, 2].map(() => new Streak(SHOOTING_LENGTH, SHOOTING_WIDTH, 0xffffff));
+  private nextShooting = 0;
+  private orbit: THREE.Mesh;
+  private orbitRadius = 16;
+  private satellite = makeSatellite();
+  private ready = false;
 
   constructor() {
     const worldAt = -(WORLD_DEPTH + RADIUS);
@@ -225,16 +399,57 @@ export class StarfallScenery implements Scenery {
     this.world.position.y = this.clouds.position.y = air.position.y = worldAt;
     this.moon.position.y = shine.position.y = moonAt;
     for (const mesh of [this.world, this.clouds, this.moon]) mesh.frustumCulled = false;
-    this.group.add(this.world, this.clouds, this.moon, air, shine);
+    this.orbit = new THREE.Mesh(new THREE.BufferGeometry(), orbitMaterial());
+    this.orbit.rotation.x = Math.PI / 2;
+    this.orbit.position.y = ORBIT_Y;
+    this.group.add(this.world, this.clouds, this.moon, air, shine, this.orbit, this.satellite, this.comet.mesh, ...this.shooting.map((s) => s.mesh));
   }
 
-  place(center: THREE.Vector3, _viewSize: number, _tiles: SceneryTiles): void {
+  place(center: THREE.Vector3, viewSize: number, _tiles: SceneryTiles): void {
     this.group.position.set(center.x, 0, center.z);
+    (this.orbit.material as THREE.ShaderMaterial).uniforms.uCenter.value.copy(center);
+    this.orbitRadius = viewSize / 2 + ORBIT_MARGIN;
+    this.orbit.geometry.dispose();
+    this.orbit.geometry = new THREE.TorusGeometry(this.orbitRadius, ORBIT_TUBE, 6, 160);
+    // A first comet soon after arriving, then one every so often. Falling stars stay where they were.
+    this.ready = false;
   }
 
-  update(seconds: number, _dt: number, _canvasHeight: number): void {
+  update(seconds: number, _dt: number, _canvasHeight: number, camera: THREE.Camera): void {
     this.world.rotation.y = seconds * WORLD_TURN;
     this.clouds.rotation.y = seconds * CLOUD_TURN;
     this.moon.rotation.y = seconds * MOON_TURN;
+
+    const a = (seconds * SATELLITE_SPEED) / this.orbitRadius;
+    this.satellite.position.set(Math.cos(a) * this.orbitRadius, ORBIT_Y, Math.sin(a) * this.orbitRadius);
+    this.satellite.rotation.y = -a;
+    // It shrinks away on the side nearest the camera, where it would loom over the corners of the screen.
+    const toCameraX = camera.position.x - this.group.position.x;
+    const toCameraZ = camera.position.z - this.group.position.z;
+    const far = -(this.satellite.position.x * toCameraX + this.satellite.position.z * toCameraZ) / Math.hypot(toCameraX, toCameraZ);
+    this.satellite.scale.setScalar(Math.max(THREE.MathUtils.smoothstep(far, -3, 3), 0.001));
+
+    if (!this.ready) {
+      this.ready = true;
+      this.nextComet = seconds + 6;
+      this.nextShooting = seconds + 2;
+    }
+    if (seconds >= this.nextComet) {
+      this.nextComet = seconds + COMET_GAP[0] + Math.random() * (COMET_GAP[1] - COMET_GAP[0]);
+      // Across the open sky above the planet's edge, from either side, sinking behind it.
+      const side = Math.random() < 0.5 ? 1 : -1;
+      this.comet.launch(seconds, COMET_SECONDS, camera, [side * 1.2, 0.92], [side * -0.75, 0.42]);
+    }
+    if (seconds >= this.nextShooting) {
+      this.nextShooting = seconds + SHOOTING_GAP[0] + Math.random() * (SHOOTING_GAP[1] - SHOOTING_GAP[0]);
+      const free = this.shooting.find((s) => !s.mesh.visible);
+      if (free) {
+        const [x, side] = [Math.random() * 1.6 - 0.8, Math.random() < 0.5 ? 1 : -1];
+        const y = 0.72 + Math.random() * 0.24;
+        free.launch(seconds, SHOOTING_SECONDS, camera, [x, y], [x + side * 0.3, y - 0.2]);
+      }
+    }
+    this.comet.update(seconds, camera);
+    for (const s of this.shooting) s.update(seconds, camera);
   }
 }

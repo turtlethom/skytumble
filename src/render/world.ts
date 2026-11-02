@@ -6,6 +6,7 @@ import { FrostScenery } from './frost';
 import { CONVEYOR_COLORS, cssColor } from './palette';
 import { PeaksScenery } from './peaks';
 import { Scenery, softDot } from './scenery';
+import { Stardust } from './stardust';
 import { StarfallScenery } from './starfall';
 import { NEUTRAL, Theme } from './themes';
 import { ToyboxScenery } from './toybox';
@@ -46,8 +47,18 @@ const COLORS = {
 
 /** Height of the ceiling layer's walking surface above the ground's. */
 const CEIL_H = 4;
-/** How long the camera takes to turn over (or swing for a peek), roughly. */
+/** How quickly the camera swings for a peek, roughly. */
 const TURN_RATE = 9;
+/** A flip: long enough to see the planet and moon trade places. */
+const FLIP_MS = 800;
+/** How close to a floor's own view the turn must be for that floor's soil and roots to show. */
+const FLIP_SOIL_BACK = 0.1;
+/** Stardust released per step along the flip's path (one step per 60th of its length), and sparks per ring. */
+const TRAIL_STEPS = 60;
+const TRAIL_MOTES = 2;
+const BURST_SPARKS = 16;
+const BURST_MS = 560;
+const LANDING_PULSE_MS = 650;
 /** The other floor's shadow: how far above your floor it lies, its darkness, and its softness. */
 const SHADOW_LIFT = 0.02;
 const SHADOW_OPACITY = 0.16;
@@ -183,6 +194,9 @@ export class World {
   private peekOutline: THREE.Group;
   /** Per layer, how far its ghost has moved onto the other floor: 0 in its own place, 1 lying flat on the other. */
   private ghostShift = [0, 0];
+  /** A flip turning the camera over: it sets the view itself, in step with the block. Cleared if a new level or state arrives. */
+  private flipTurn: symbol | null = null;
+  private stardust = new Stardust();
   /** 0 = camera above looking down, 1 = below looking up; eased toward its target. */
   private side = 0;
   private moonlight = new THREE.DirectionalLight(0xbcc8ff, 0);
@@ -262,6 +276,7 @@ export class World {
       new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false }),
     );
     this.peekOutline.visible = false;
+    this.scene.add(this.stardust.points);
 
     this.makeClouds();
     window.addEventListener('resize', () => this.resize());
@@ -342,6 +357,7 @@ export class World {
 
   /** Build a level. The island rises into place once `ready` resolves, so a title covering it can lift first. */
   setLevel(level: Level, state: State, theme: Theme, ready: Promise<void> = Promise.resolve()): Promise<void> {
+    this.flipTurn = null;
     this.layerGroups.forEach((g) => g.clear());
     this.tiles.clear();
     this.layerMats = [[], []];
@@ -899,6 +915,7 @@ export class World {
 
   /** Snap everything to a state with no animation (load, undo, restart). */
   syncState(state: State): void {
+    this.flipTurn = null;
     this.layer = state.layer ?? 0;
     this.buildBlueprints(state.bridges);
     this.frames[this.layer].add(this.block);
@@ -1021,13 +1038,15 @@ export class World {
   }
 
   /**
-   * Gravity flips: the block falls "up" to the other layer, turning over on the way, while the
-   * camera turns with it (in turn mode). Snappy, about half a second.
+   * Gravity flips: the block falls "up" to the other layer, turning over on the way, while the camera
+   * turns with it and the planet and moon trade places. The ring bursts, stardust marks the way, and
+   * a pulse on the tiles says where you landed.
    */
   private async flip(m: Motion): Promise<void> {
     const from = this.layer;
     this.layer = 1 - from;
     void this.tween(500, (t) => this.flipGlows.forEach((g) => (g.emissiveIntensity = 0.8 + 2 * Math.sin(t * Math.PI))));
+    this.flipBurst(m.from, from);
     // The landing spot in the old frame's coordinates: the frames mirror each other about CEIL_H / 2.
     const target = blockPosition(m.to);
     const start = this.block.position.clone();
@@ -1035,14 +1054,100 @@ export class World {
     const base = this.block.quaternion.clone();
     const turn = new THREE.Quaternion();
     const axis = new THREE.Vector3(1, 0, 0);
-    await this.tween(500, (t) => {
+    const token = Symbol('flip');
+    this.flipTurn = token;
+    const sideFrom = this.side;
+    const sideTo = this.peeking ? from : this.layer;
+    const worldY = (y: number) => (from ? CEIL_H - y : y);
+    const [spanX, spanZ] = [m.from.o === 'X' ? blockLength(m.from) : 1, m.from.o === 'Y' ? blockLength(m.from) : 1];
+    let emitted = 0;
+    await this.tween(FLIP_MS, (t) => {
       const e = easeInOut(t);
       this.block.position.lerpVectors(start, end, e);
       turn.setFromAxisAngle(axis, Math.PI * e);
       this.block.quaternion.copy(base).premultiply(turn);
+      // A trail along the path walked so far, however few frames there have been to draw it.
+      for (; emitted / TRAIL_STEPS <= t; emitted++) {
+        const s = easeInOut(emitted / TRAIL_STEPS);
+        const born = performance.now() / 1000 - (t - emitted / TRAIL_STEPS) * (FLIP_MS / 1000);
+        for (let i = 0; i < TRAIL_MOTES; i++) {
+          this.stardust.emit(
+            THREE.MathUtils.lerp(start.x, end.x, s) + (Math.random() - 0.5) * spanX,
+            worldY(THREE.MathUtils.lerp(start.y, end.y, s)) + (Math.random() - 0.5) * 0.9,
+            THREE.MathUtils.lerp(start.z, end.z, s) + (Math.random() - 0.5) * spanZ,
+            (Math.random() - 0.5) * 0.7,
+            (Math.random() - 0.5) * 0.7,
+            (Math.random() - 0.5) * 0.7,
+            born,
+          );
+        }
+      }
+      if (this.flipTurn !== token) return;
+      this.side = THREE.MathUtils.lerp(sideFrom, sideTo, e);
+      // The floors trade places as the view passes edge-on, when neither faces you.
+      const incoming = THREE.MathUtils.smoothstep(e, 0.38, 0.62);
+      this.layerAlpha[this.layer] = incoming;
+      this.layerAlpha[from] = 1 - incoming;
     });
+    if (this.flipTurn === token) this.flipTurn = null;
     this.frames[this.layer].add(this.block);
     this.placeBlock(m.to);
+    this.landingPulse(m.to);
+  }
+
+  /** A ring of light thrown out from each flip tile under the block, with a scatter of sparks. */
+  private flipBurst(block: Block, layer: number): void {
+    const now = performance.now() / 1000;
+    for (const [x, y] of blockCells(block)) {
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.34, 0.5, 40).rotateX(-Math.PI / 2),
+        new THREE.MeshBasicMaterial({ color: COLORS.flip, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
+      );
+      ring.position.set(x, 0.09, y);
+      this.frames[layer].add(ring);
+      void this.tween(BURST_MS, (t) => {
+        ring.scale.setScalar(1 + easeOut(t) * 2.6);
+        (ring.material as THREE.MeshBasicMaterial).opacity = 0.7 * (1 - t) * (1 - t);
+      }).then(() => {
+        ring.removeFromParent();
+        ring.geometry.dispose();
+        (ring.material as THREE.Material).dispose();
+      });
+      const planeY = layer ? CEIL_H - 0.1 : 0.1;
+      for (let i = 0; i < BURST_SPARKS; i++) {
+        const a = (i / BURST_SPARKS) * Math.PI * 2 + Math.random() * 0.4;
+        const speed = 1.6 + Math.random() * 1.6;
+        this.stardust.emit(x + Math.cos(a) * 0.3, planeY, y + Math.sin(a) * 0.3, Math.cos(a) * speed, (layer ? -1 : 1) * Math.random() * 0.9, Math.sin(a) * speed, now);
+      }
+    }
+  }
+
+  /** A soft violet flash spreading from under the block, so you see at once where you landed. */
+  private landingPulse(block: Block): void {
+    const level = this.level;
+    if (!level) return;
+    const { x, z } = blockPosition(block);
+    const n = blockLength(block);
+    const onTile = blockCells(block).some(([cx, cy]) => cx >= 0 && cy >= 0 && cx < level.width && cy < level.height && this.tiles.has(this.cellKey(this.layer, cx, cy, level.width, level.height)));
+    if (!onTile) return;
+    const material = () => new THREE.MeshBasicMaterial({ color: COLORS.flip, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+    const [fill, edge] = [material(), material()];
+    const pulse = makeFootprint(fill, edge);
+    const [w, d] = [block.o === 'X' ? n : 1, block.o === 'Y' ? n : 1];
+    setFootprint(pulse, w, d);
+    pulse.position.set(x, FOOTPRINT_LIFT, z);
+    this.frames[this.layer].add(pulse);
+    void this.tween(LANDING_PULSE_MS, (t) => {
+      // It grows outward past the block, which would otherwise hide most of it.
+      const spread = easeOut(t);
+      pulse.scale.set(1 + (spread * 1.3) / w, 1, 1 + (spread * 1.3) / d);
+      fill.opacity = 0.7 * (1 - t) * (1 - t);
+      edge.opacity = 1 - t;
+    }).then(() => {
+      pulse.removeFromParent();
+      fill.dispose();
+      edge.dispose();
+    });
   }
 
   /** Light up the whole belt run the block is on, rippling away from it in the push direction. */
@@ -1199,7 +1304,8 @@ export class World {
       c.position.x += c.userData.speed * dt;
       if (c.position.x > this.center.x + 30) c.position.x = this.center.x - 30;
     }
-    this.scenery?.update(now / 1000, dt, this.renderer.domElement.height);
+    this.scenery?.update(now / 1000, dt, this.renderer.domElement.height, this.camera);
+    this.stardust.update(now / 1000, this.renderer.domElement.height, this.camera.fov);
     for (const c of this.chevrons) {
       // Each chevron travels across the tile, growing in at the back and shrinking out at the front.
       const p = (now / BELT_MS + c.phase) % 1;
@@ -1223,8 +1329,10 @@ export class World {
 
     // Gravity: the camera turns over (or swings for a peek), and each layer fades as it gets in the way.
     const k = Math.min(1, dt * TURN_RATE);
-    this.side += (this.sideTarget() - this.side) * k;
-    this.layerAlpha = this.layerAlpha.map((a, l) => a + (this.alphaTarget(l) - a) * k);
+    if (!this.flipTurn) {
+      this.side += (this.sideTarget() - this.side) * k;
+      this.layerAlpha = this.layerAlpha.map((a, l) => a + (this.alphaTarget(l) - a) * k);
+    }
     this.applyLayerAlpha();
     this.updatePeekGhost(k);
     this.updatePeekOutline(now);
@@ -1281,7 +1389,7 @@ export class World {
 
   /** The blueprint shows on your own floor, and gives way to the real thing while you peek. */
   private bpTarget(): number {
-    return this.hasCeiling && !this.peeking ? 1 : 0;
+    return this.hasCeiling && !this.peeking && !this.flipTurn ? 1 : 0;
   }
 
   /**
@@ -1439,7 +1547,9 @@ export class World {
     const side = this.sideTarget();
     this.layerAlpha.forEach((a, layer) => {
       this.layerGroups[layer].visible = a > 0.01;
-      for (const e of this.earths[layer]) e.visible = layer === side;
+      // Mid-flip the view is nearly edge-on, where every root shows at full length, so soil shows only near either end of the turn.
+      const soil = this.flipTurn ? Math.abs(this.side - layer) < FLIP_SOIL_BACK : layer === side;
+      for (const e of this.earths[layer]) e.visible = soil;
       for (const e of this.layerMats[layer]) {
         const transparent = e.transparent || a < 0.995;
         if (transparent !== e.mat.transparent) {

@@ -10,7 +10,7 @@ export interface Scenery {
   readonly group: THREE.Group;
   /** Center it on a level. `tiles` lists tiles that scenery plays on or keeps clear of. */
   place(center: THREE.Vector3, viewSize: number, tiles: SceneryTiles): void;
-  update(seconds: number, dt: number, canvasHeight: number): void;
+  update(seconds: number, dt: number, canvasHeight: number, camera: THREE.Camera): void;
 }
 
 /**

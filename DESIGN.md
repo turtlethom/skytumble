@@ -560,8 +560,9 @@ level has two floors and the camera turns over, so everything must look right fr
   they show what a switch did without a peek.
 
 Status: the tiles and the calmer view are approved and committed. Landing marks on this grass use a darker violet,
-since the usual one nearly matched it. Earth, the moon and the better peek are built, awaiting approval; the comet, falling stars, orbit path and flip
-effects are next. Don't push until the world is done.
+since the usual one nearly matched it. Earth, the moon and the better peek are committed. The comet, falling stars, orbit path, the 0.8s flip and its
+effects followed, and the user sent it live 2026-11-02 with no further notes, so the sign-off questions (0.8s on long
+levels, sparkles over the block, the satellite, frame rate) stay open if they come up in play. Don't push until the world is done.
 
 **Planned with Starfall's theme: a better peek** (asked for by the user 2026-11-02; they love flip
 gravity, and this would help a lot). While holding Space to look at the other floor:
