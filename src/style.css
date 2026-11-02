@@ -318,6 +318,9 @@ kbd {
   font: 600 13px/1.4 ui-monospace, monospace;
   pointer-events: none;
 }
+.fps.hidden {
+  display: none;
+}
 
 .modal {
   position: fixed;
