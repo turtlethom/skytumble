@@ -10,19 +10,22 @@ export interface Theme {
   hemi: { sky: number; ground: number; intensity: number };
   sun: { color: number; intensity: number };
   block: { color: number; edge: number; roughness?: number };
-  /** Walkable ground. `detail` lists shades of one color, darkest first, painted over each tile: as soft blotches, as snow, as slate, or as holes in a pegboard. */
-  floor: { color: number; detail?: number[]; style?: 'snow' | 'slate' | 'pegboard' };
-  /** Under the tiles: a block of soil, and rock spikes, a clump with dangling roots, icicles, jagged shards, or dangling pegs. */
-  earth: { soil: number; hanging: number; style: 'rock' | 'roots' | 'icicles' | 'shards' | 'pegs' };
+  /** Walkable ground. `detail` lists shades of one color, darkest first, painted over each tile: as soft blotches, as snow, as slate, or as holes in a pegboard, or as meadow grass. */
+  floor: { color: number; detail?: number[]; style?: 'snow' | 'slate' | 'pegboard' | 'meadow' };
+  /** Under the tiles: a block of soil, and rock spikes, a clump with dangling roots, icicles, jagged shards, dangling pegs, or roots with glowing tips. */
+  earth: { soil: number; hanging: number; style: 'rock' | 'roots' | 'icicles' | 'shards' | 'pegs' | 'glowroots' };
   fragile: { light: number; dark: number; weathered?: boolean };
   /**
    * A finish for mechanics. Their shapes and color coding never change. `snow` is a color laid on
    * stone bases, belt rails and plank seams, never on a switch's or bridge's own color. `plastic` makes
-   * the board a shiny building set: reflections, rounded edges, snap-on plates and tread belts.
+   * the board a shiny building set: reflections, rounded edges, snap-on plates and tread belts. `rail`
+   * colors belt rails and bridge corners.
    */
-  finish: { switchBase?: number; wood?: boolean; snow?: number; iceSheen?: boolean; brass?: number; padVents?: boolean; plastic?: boolean };
+  finish: { switchBase?: number; wood?: boolean; snow?: number; iceSheen?: boolean; brass?: number; padVents?: boolean; plastic?: boolean; rail?: number };
   /** Where a pad flight lands, if this floor needs a color other than the usual deep blue. */
   landingMark?: number;
+  /** Where a flip lands, if this floor needs a color other than the usual violet. */
+  flipMark?: number;
 }
 
 /** The ground and block every world starts from until it restyles them. */
@@ -43,12 +46,19 @@ export const NEUTRAL: Theme = {
   sun: { color: 0xfff4e0, intensity: 2.2 },
 };
 
+/** Starfall: a tiny storybook meadow adrift in open space. The grass stays well above the sky's brightness, so gaps read. */
 const NIGHT: Theme = {
-  ...SKY_ISLAND,
   id: 'night',
   sky: 'stars',
-  hemi: { sky: 0xc2ccff, ground: 0x9a8cd0, intensity: 1.7 },
-  sun: { color: 0xeef0ff, intensity: 2 },
+  hemi: { sky: 0xd6dcf5, ground: 0x8f93bd, intensity: 1.7 },
+  sun: { color: 0xf1f2fb, intensity: 2 },
+  block: { color: 0xeceef4, edge: 0x5d6284, roughness: 0.4 },
+  floor: { color: 0x8e9ae0, detail: [0x7884d2, 0x8e9ae0, 0xa0acea, 0xb4bef2], style: 'meadow' },
+  earth: { soil: 0x2b2f66, hanging: 0x8fa6e8, style: 'glowroots' },
+  fragile: { light: 0x1f6f78, dark: 0x185a62, weathered: true },
+  finish: { switchBase: 0xd7dbea, rail: 0xd7dbea },
+  // The usual violet nearly matches this grass.
+  flipMark: 0x3c1a9e,
 };
 
 /** First Glade: a sunny storybook forest. */

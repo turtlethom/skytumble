@@ -259,7 +259,8 @@ links; stars; stats; snapping camera; undo; reference levels.
    shadow onto your own tiles** wherever it's directly over (or under) them, none over open sky,
    plus a **very faint outline** of the whole other floor (open sky included);
    **violet landing marks** (like the pads' blue ones) sit on each tile a flip lands on, so you see
-   them on your own floor and, holding **Space** to swing over, on the other floor. Flip tiles show
+   them on your own floor and, holding **Space** to swing over, on the other floor. (Changed 2026-11-02 in the
+   Starfall theme work: the shadow is softer and the outline is gone; see the Playtest log.) Flip tiles show
    nothing about safety. Night lightened. `gravlab-01` has a trap flip tile with nothing above it.
 2. **Gravity lab** (~6 levels, one per rule question): flip up/down, falling into the sky,
    lying flip, cross-layer switch, belt or pad onto a flip tile, a round-trip combo. One
@@ -552,7 +553,15 @@ level has two floors and the camera turns over, so everything must look right fr
   adding up on long levels (`star-07`); two of the four camera angles have no planet or moon (add small far
   landmarks if that causes trouble).
 
-Status: settled; the tile sheet is next.
+- **A calmer two-floor view (2026-11-02):** on floors that overlap, the shadow dimmed most of the board and the
+  outlines added lines over empty space. The shadow is now much softer (opacity 0.38 → 0.16) and the outline of the
+  other floor is gone, here and in Gravity Lab. The shadow stays because `star-01` teaches it: it shows which ring
+  has a floor above. Holding Space shows the other floor's shape. The other floor's bridge squares stay, since
+  they show what a switch did without a peek.
+
+Status: the tiles and the calmer view are approved and committed. Landing marks on this grass use a darker violet,
+since the usual one nearly matched it. Next: the planet, moon and sky. There's no planet, moon or comet yet, so don't
+push until the world is done.
 
 **Planned with Starfall's theme: a better peek** (asked for by the user 2026-11-02; they love flip
 gravity, and this would help a lot). While holding Space to look at the other floor:
@@ -788,6 +797,13 @@ here at the user's request; the Toybox grilling comes at another time.
 **2026-11-02 — Toybox.** "I really love with what you did with the toy theme, just wow!" The one nit: the
 light grey plates looked too light. Tried slate, teal, sage and tan on `toy-02`; the user chose tan. They
 feel Toybox's look is now well ahead of the other worlds in content.
+
+**2026-11-02 — Starfall tiles.** On the ceiling, "it should be more flush", and on `star-07` and `star-08`, "I
+don't understand why there is no grass": a bug in the new grass. Its material was reused between levels while
+still faded out, so after the first Starfall level in a session, ceilings showed only their dark undersides. Fixed.
+Checks that load each level fresh can't catch this, so also go from one level to the next. Separately, "with the
+outlines and the shadows, there is just too much going on", and it would confuse new users even more → softer
+shadow and no outline, chosen after trying four views.
 
 ## Architecture
 

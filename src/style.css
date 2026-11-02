@@ -118,9 +118,26 @@ body[data-theme='toybox'] {
   background: linear-gradient(180deg, #a999dc 0%, #c9aede 22%, #eebfd0 46%, #f9cfae 72%, #fbdcb6 100%);
 }
 
-/* Starfall plays under a night sky. */
+/* Starfall: deep indigo space, with dark glass panels and a violet highlight. */
 body[data-theme='night'] {
-  background: linear-gradient(180deg, #1f2a66 0%, #34418f 45%, #5560ad 78%, #7a6cb4 100%);
+  --ink: #eef0ff;
+  --ink-soft: #c3c7ea;
+  --accent: #8d6cf0;
+  --accent-ink: #ffffff;
+  --glass: rgba(26, 28, 72, 0.82);
+  --glass-border: rgba(150, 150, 225, 0.45);
+  --shadow: 0 6px 24px rgba(5, 6, 30, 0.5);
+  background: linear-gradient(180deg, #11163f 0%, #1a2157 45%, #232b6b 78%, #2c2f76 100%);
+}
+
+/* The map keeps its own light panels, whichever world it opens over. */
+body[data-theme='night'] .sky-map {
+  color: #23304a;
+  --ink: #23304a;
+  --ink-soft: #5b6884;
+  --glass: rgba(255, 255, 255, 0.78);
+  --glass-border: rgba(255, 255, 255, 0.9);
+  --shadow: 0 6px 24px rgba(35, 60, 110, 0.18);
 }
 
 body[data-theme='night'] .brand p,

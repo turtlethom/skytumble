@@ -33,8 +33,6 @@ const COLORS = {
   flip: 0xb48cff,
   /** Flip landing marks: the flip tiles' violet, deep enough to hold up on grass. */
   flipMark: 0x8a5cf0,
-  /** The faint outline of the other floor, over the shadow. */
-  outline: 0xe4dcff,
   /** The landing preview: a wireframe of the block where a flip would leave it. */
   preview: 0xcbb2ff,
   /** Shape switches: a stone disc like the other switches, with a bar in the block's own color. */
@@ -51,12 +49,9 @@ const CEIL_H = 4;
 const TURN_RATE = 9;
 /** The other floor's shadow: how far above your floor it lies, its darkness, and its softness. */
 const SHADOW_LIFT = 0.02;
-const SHADOW_OPACITY = 0.38;
+const SHADOW_OPACITY = 0.16;
 const SHADOW_PX = 32;
 const SHADOW_BLUR = 5;
-/** The other floor's outline: thin and faint, so it reads as a hint, not as tiles. */
-const OUTLINE_WIDTH = 0.04;
-const OUTLINE_OPACITY = 0.28;
 /** The other floor's bridges, as squares in their switch's color: extended, retracted, and the pulse on a change. */
 const BRIDGE_ON_OPACITY = 0.9;
 const BRIDGE_OFF_OPACITY = 0.35;
@@ -356,14 +351,18 @@ export class World {
       const view = layerView(level, layer);
       for (const { x, y } of flightLandings(view)) tileAt(layer, x, y)?.obj.add(makeLandingMark(theme.landingMark));
       view.tiles.forEach((t, i) => {
-        if (t === Tile.Flip) tileAt(1 - layer, i % level.width, Math.floor(i / level.width))?.obj.add(makeLandingMark(COLORS.flipMark));
+        if (t === Tile.Flip) tileAt(1 - layer, i % level.width, Math.floor(i / level.width))?.obj.add(makeLandingMark(theme.flipMark ?? COLORS.flipMark));
       });
     }
     for (const layer of layers) {
       this.layerGroups[layer].traverse((o) => {
         if (o.userData.earth) this.earths[layer].push(o);
         const mat = (o as THREE.Mesh).material as THREE.Material | undefined;
-        if (mat && !Array.isArray(mat)) this.layerMats[layer].push({ mat, opacity: mat.opacity, transparent: mat.transparent });
+        if (mat && !Array.isArray(mat)) {
+          // A material kept between levels may still be faded out from the last one: read its true values.
+          const kept = mat.userData.keptBetweenLevels;
+          this.layerMats[layer].push({ mat, opacity: kept ? 1 : mat.opacity, transparent: kept ? false : mat.transparent });
+        }
       });
     }
     this.layer = state.layer ?? 0;
@@ -460,9 +459,9 @@ export class World {
           slab.add(seam);
         }
       }
-      const { brass } = this.theme.finish;
+      const brass = this.theme.finish.brass ?? this.theme.finish.rail;
       if (brass !== undefined) {
-        // Small brass corners on the slab, clear of the group's color in the middle.
+        // Small brass or stone corners on the slab, clear of the group's color in the middle.
         for (const [dx, dz] of [[-0.42, -0.42], [0.42, -0.42], [-0.42, 0.42], [0.42, 0.42]]) {
           const corner = box(0.11, 0.008, 0.11, brass, { metalness: 0.15, roughness: 0.5 });
           corner.position.set(dx, 0.085, dz);
@@ -638,7 +637,7 @@ export class World {
         const { brass } = this.theme.finish;
         const rail = plastic && switchBase !== undefined
           ? box(0.98, 0.05, 0.08, switchBase, { roughness: 0.3 })
-          : box(0.98, 0.05, 0.08, brass ?? COLORS.rail, brass === undefined ? {} : { metalness: 0.15, roughness: 0.5 });
+          : box(0.98, 0.05, 0.08, brass ?? this.theme.finish.rail ?? COLORS.rail, brass === undefined ? {} : { metalness: 0.15, roughness: 0.5 });
         rail.position.set(0, 0.02, side * 0.44);
         top.add(rail);
         if (this.theme.finish.snow !== undefined) {
@@ -715,7 +714,7 @@ export class World {
       // Same language as the other switches: a grass tile with a low stone disc. On it, a raised bar
       // in the block's own color whose length says the shape: a nub for the cube, two for normal,
       // three for tall.
-      const grass = floorTile(jitter, this.theme);
+      const grass = floorTile(jitter, this.theme, layer);
       const disc = new THREE.Mesh(
         new THREE.CylinderGeometry(0.36, 0.4, 0.06, 28),
         new THREE.MeshStandardMaterial({ color: COLORS.shapeStone, roughness: 0.7 }),
@@ -742,7 +741,7 @@ export class World {
           groove.position.x = -modelLen / 2 + (k * modelLen) / group;
           model.add(groove);
         }
-        g.add(floorTile(jitter, this.theme), earth(jitter, this.theme), disc, peg, model);
+        g.add(floorTile(jitter, this.theme, layer), earth(jitter, this.theme), disc, peg, model);
         return g;
       }
       const len = [0, 0.14, 0.3, 0.46][group];
@@ -753,7 +752,7 @@ export class World {
       return g;
     }
 
-    g.add(floorTile(jitter, this.theme), earth(jitter, this.theme));
+    g.add(floorTile(jitter, this.theme, layer), earth(jitter, this.theme));
 
     const isSwitch = tile === Tile.ExtraHeavy || tile === Tile.SoftSwitch || tile === Tile.HeavySwitch;
     if (isSwitch && this.theme.finish.switchBase !== undefined) {
@@ -1269,7 +1268,6 @@ export class World {
    * Each floor's shadow of the other: the other floor's tiles (bridges as they stand now) painted
    * into a canvas, blurred soft, then clipped to this floor's own tiles, so it lands only where
    * there's ground to fall on, like a real shadow, and tints whatever tile is there without hiding it.
-   * Over it, a faint outline of the whole other floor, open sky included.
    */
   private buildBlueprints(bridges: number, pulse = 0): void {
     this.bridgeMask = bridges;
@@ -1323,30 +1321,6 @@ export class World {
       // Canvas row 0 is grid row 0 (the plane's top edge faces -z after the turn).
       plane.position.set((w - 1) / 2, SHADOW_LIFT, (h - 1) / 2);
       this.blueprints[layer].add(plane);
-
-      // A faint outline of the whole other floor, including where it hangs over open sky.
-      const edgeMat = new THREE.MeshBasicMaterial({
-        color: COLORS.outline,
-        transparent: true,
-        opacity: OUTLINE_OPACITY,
-        depthWrite: false,
-      });
-      edgeMat.userData.opacity = OUTLINE_OPACITY;
-      this.bpMats.push(edgeMat);
-      const inside = (x: number, y: number) => x >= 0 && y >= 0 && x < w && y < h && solid(there, y * w + x);
-      for (let i = 0; i < w * h; i++) {
-        const [x, y] = [i % w, Math.floor(i / w)];
-        if (!inside(x, y)) continue;
-        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-          if (inside(x + dx, y + dy)) continue;
-          const bar = new THREE.Mesh(
-            new THREE.BoxGeometry(dx ? OUTLINE_WIDTH : 1, 0.005, dy ? OUTLINE_WIDTH : 1),
-            edgeMat,
-          );
-          bar.position.set(x + dx * 0.5, SHADOW_LIFT + 0.005, y + dy * 0.5);
-          this.blueprints[layer].add(bar);
-        }
-      }
 
       // The other floor's bridges, as squares in their switch's color: bright when extended, faint
       // when retracted, and a pulse when a press just changed them, so a switch that reaches the
@@ -1568,13 +1542,14 @@ function rimColor(color: number, shade = 0.55): number {
 }
 
 /** One top tile of walkable ground: a plain box, or one of a few detailed tops in a theme's shades. */
-function floorTile(jitter: number, theme: Theme): THREE.Mesh {
+function floorTile(jitter: number, theme: Theme, layer: number): THREE.Mesh {
   if (!theme.floor.detail) {
     const plain = box(0.98, 0.18, 0.98, theme.floor.color);
     plain.position.y = -0.09;
     return plain;
   }
-  const mats = detailMaterials(theme.id, theme.floor.detail, theme.floor.style);
+  // Per layer: each floor fades on its own as the camera turns over, so they can't share materials.
+  const mats = detailMaterials(`${theme.id}-${layer}`, theme.floor.detail, theme.floor.style);
   const geometry = theme.finish.plastic ? plasticFloorGeometry() : floorGeometry();
   const mesh = new THREE.Mesh(geometry, mats[Math.floor(jitter * mats.length)]);
   mesh.position.y = -0.09;
@@ -1624,12 +1599,16 @@ function detailMaterials(id: string, shades: number[], style: Theme['floor']['st
     // A regular grid, so every tile can share one texture.
     const map = pegboardTexture(shades);
     const mats = [new THREE.MeshStandardMaterial({ map, bumpMap: map, bumpScale: 0.4, roughness: 0.4 })];
+    mats[0].userData.keptBetweenLevels = true;
     detailCache.set(id, mats);
     return mats;
   }
   const mats = [1, 2, 3, 4].map((seed) => {
-    const map = style === 'snow' ? snowTexture(shades, seed) : style === 'slate' ? slateTexture(shades, seed) : detailTexture(shades, seed);
-    return new THREE.MeshStandardMaterial({ map, roughness: 1 });
+    const map =
+      style === 'snow' ? snowTexture(shades, seed) : style === 'slate' ? slateTexture(shades, seed) : style === 'meadow' ? meadowTexture(shades, seed) : detailTexture(shades, seed);
+    const mat = new THREE.MeshStandardMaterial({ map, roughness: 1 });
+    mat.userData.keptBetweenLevels = true;
+    return mat;
   });
   detailCache.set(id, mats);
   return mats;
@@ -1688,6 +1667,50 @@ function detailTexture(shades: number[], seed: number): THREE.CanvasTexture {
   };
   dab(46, 8, 20, 0.4);
   dab(120, 1.5, 4, 0.55);
+  const map = new THREE.CanvasTexture(canvas);
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.anisotropy = 4;
+  return map;
+}
+
+/** Moonlit grass: soft patches under short blades leaning every way, with a few tiny pale flowers. */
+function meadowTexture(shades: number[], seed: number): THREE.CanvasTexture {
+  const size = 192;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  let s = seed * 104729;
+  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const [dark, base, lit, bright] = shades.map(cssColor);
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, size, size);
+  for (let i = 0; i < 14; i++) {
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle = i % 2 ? lit : dark;
+    ctx.beginPath();
+    ctx.arc(rnd() * size, rnd() * size, 14 + rnd() * 24, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.lineCap = 'round';
+  ctx.lineWidth = 3;
+  for (let i = 0; i < 150; i++) {
+    const pick = rnd();
+    ctx.globalAlpha = 0.9;
+    ctx.strokeStyle = pick < 0.4 ? dark : pick < 0.8 ? lit : bright;
+    const [x, y, a, len] = [rnd() * size, rnd() * size, -Math.PI / 2 + (rnd() - 0.5) * 1.3, 8 + rnd() * 9];
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 0.95;
+  ctx.fillStyle = '#f2f4ff';
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.arc(14 + rnd() * (size - 28), 14 + rnd() * (size - 28), 3.4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
   const map = new THREE.CanvasTexture(canvas);
   map.colorSpace = THREE.SRGBColorSpace;
   map.anisotropy = 4;
@@ -1818,6 +1841,22 @@ const rootGeometries = [0, 1, 2, 3].map((variant) => {
   }
   return mergeGeometries(roots)!;
 });
+/** The glowing ends of those same roots, one mesh per variant, so a tile's tips share one light color. */
+const rootTipGeometries = [0, 1, 2, 3].map((variant) => {
+  const tips: THREE.BufferGeometry[] = [];
+  const count = 3 + variant;
+  for (let i = 0; i < count; i++) {
+    const a = (i / count) * Math.PI * 2 + variant;
+    const len = 0.35 + ((i * 37 + variant * 13) % 10) * 0.05;
+    const tip = new THREE.SphereGeometry(0.045, 7, 5);
+    tip.translate(0, -len, 0);
+    tip.rotateX(0.14 * Math.sin(a * 3));
+    tip.rotateZ(0.14 * Math.cos(a * 2));
+    tip.translate(Math.cos(a) * 0.24, -0.72, Math.sin(a) * 0.24);
+    tips.push(tip);
+  }
+  return mergeGeometries(tips)!;
+});
 const clumpGeometry = new THREE.SphereGeometry(0.38, 14, 10);
 const driftGeometry = new THREE.SphereGeometry(1, 10, 6);
 
@@ -1916,6 +1955,7 @@ function treadMaterial(): THREE.MeshStandardMaterial {
   map.anisotropy = 8;
   map.offset = treadScroll;
   sharedTread = new THREE.MeshStandardMaterial({ map, bumpMap: map, bumpScale: 1.5, roughness: 0.4 });
+  sharedTread.userData.keptBetweenLevels = true;
   return sharedTread;
 }
 
@@ -1926,7 +1966,7 @@ function earth(jitter: number, theme: Theme): THREE.Object3D {
   const dirt = box(0.9, 0.45, 0.9, theme.earth.soil, theme.finish.plastic ? { roughness: 0.35 } : {});
   dirt.position.y = -0.4;
   g.add(dirt);
-  if (theme.earth.style === 'roots') {
+  if (theme.earth.style === 'roots' || theme.earth.style === 'glowroots') {
     const clump = new THREE.Mesh(clumpGeometry, new THREE.MeshStandardMaterial({ color: theme.earth.soil, roughness: 1 }));
     clump.position.y = -0.62;
     clump.scale.set(1, 0.55 + jitter * 0.3, 1);
@@ -1936,6 +1976,7 @@ function earth(jitter: number, theme: Theme): THREE.Object3D {
       new THREE.MeshStandardMaterial({ color: theme.earth.hanging, roughness: 1 }),
     );
     g.add(clump, roots);
+    if (theme.earth.style === 'glowroots') g.add(new THREE.Mesh(rootTipGeometries[variant], new THREE.MeshBasicMaterial({ color: 0xbfe2ff })));
     return g;
   }
   if (theme.earth.style === 'shards') {
