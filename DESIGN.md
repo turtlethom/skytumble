@@ -21,7 +21,7 @@ by side it feels better than the old games; the project keeps growing.
 
 | Area | Decision | Why |
 |---|---|---|
-| Identity | Original game, **Skytumble**, sky-islands theme | Own look and name; not a clone |
+| Identity | Original game, **Skytumble**; floating islands, in the sky at first and anywhere later | Own look and name; not a clone |
 | Visuals | 3D (Three.js). All art made in code, no model packs (decided 2026-11-01) | One consistent style, nothing to download |
 | Platform | Desktop only, keyboard | — |
 | Camera | Rotates in 90° snaps; controls are screen-relative (Up = away from you) | No ambiguous diagonals |
@@ -120,6 +120,7 @@ Wanted, not yet scheduled. Each becomes a biome's signature mechanic or a crossi
   layered sandstone spires (`0xe2bd85` / `0xa98a70`) in golden haze (`0xf5e0b2`), gold-lit cumulus,
   blowing golden grit, and a parchment ivory block (`0xe6cf9f`). These colors and `src/render/peaks.ts`'s
   spires are enough to rebuild it.
+- **Future worlds (from the user, 2026-11-02, for the late future):** ocean, desert, lava, dark abyss, factory, cave and others. These are why *Worlds* in the shared theme rules no longer requires a sky.
 - **Tiles:** teleporters, crumbling/timed tiles
 - **Momentum pads:** fling the block onward in the direction it rolled onto the pad (deferred
   from Windy Peaks to keep one pad kind per chapter)
@@ -239,7 +240,7 @@ links; stars; stats; snapping camera; undo; reference levels.
     lying flip, belt→flip, flight→flip, cross-layer press.
 - *Depth:* round trips (go up, change something, come back down), hole alignment, cross-layer
   switches, pose setup for the flip.
-- *Feel:* snappy flips (~0.5s). Controls stay screen-relative (as with Q/E rotation). A
+- *Feel:* flips of about 0.8s (changed from ~0.5s in the Starfall theme grilling, 2026-11-02). Controls stay screen-relative (as with Q/E rotation). A
   **hold-to-peek** key swings the camera over to look at the other layer.
 - *Pre-mortem:* "disorienting and unreadable". The turning camera mirrors the ceiling relative
   to the ground, which works against two-worlds mapping. Hence the prototype first.
@@ -361,7 +362,7 @@ solutions don't change.
 
 | Area | Rule |
 |---|---|
-| Worlds | Distinct palette, lighting, sky and materials per chapter, still floating in the sky |
+| Worlds | Distinct palette, lighting, surroundings and materials per chapter. A world can be any place (widened 2026-11-02, was "still floating in the sky"): the board's tiles still float over open space, so a gap always reads as a fall |
 | Scenery | Far backdrops, things hanging under tiles, flat tile details. No nearby islets |
 | Below the board | Treetops or summits may rise from below if they stop under board level and fade into haze, so gaps still read as empty |
 | Floor tiles | Same cubes, new color and material. Detail on most tiles, in shades of the floor's one color |
@@ -515,9 +516,43 @@ first build taught:
   First Glade. The sea uses a cheap highlight rather than true reflections. The user reported no slowdown,
   but the frame rate on their laptop hasn't been read off (F in the game).
 
-**Next, after Toybox:** Starfall. Follow *Each theme* above, and read the logged notes for what each
-world taught: keep scenery deep below the board at first, and check that a palette doesn't suggest a
-different biome.
+**Starfall**, settled in a grilling session 2026-11-02, built to the Toybox standard (a landmark, something
+moving with a purpose, something framing the board): a tiny storybook meadow adrift in open space. The
+moon's pull is why gravity flips here. The biggest worry is losing track of where the block landed. Every
+level has two floors and the camera turns over, so everything must look right from above and from below.
+
+| Area | Decision |
+|---|---|
+| Setting | Open cosmos as a tiny storybook world, so grass in space works |
+| Below the ground floor | A blue-green home world with swirling cloud and city lights; you see it when you're on the ground |
+| Above the ceiling floor | A huge silver moon; you see it when you're on the ceiling |
+| Where they sit | Off to one side and fixed in space, visible at a level's starting camera angle and one neighbor, so gaps mostly show plain space |
+| Sky | Deep indigo |
+| Motion | A comet far behind the board every 20 to 30 seconds, and falling stars |
+| Framing | A faint glowing orbit path around the board, with a small satellite on it |
+| Moon on the ground floor | Moonlight only, no visible moon |
+| Floor | Pale, moonlit periwinkle grass, the same on both floors, kept well above the sky's brightness so gaps read |
+| Under the tiles | Thin roots with faintly glowing tips |
+| Block | Moon silver, with a darker edge if it needs one beside the bases |
+| Fragile tiles | Deep teal planks |
+| Switches, bridges, belts | Moonstone bases and rails, with colors unchanged |
+| Flip tiles, goal, pads | Unchanged: violet rings, a clean yellow frame, the usual arrows |
+| Interface | Dark glass panels with a violet highlight |
+| If it runs slowly | Cut falling stars first, then the satellite, then the comet, with the flip effects last |
+
+- **Flips:** a camera turn of about 0.8s, so the planet and moon are seen trading places. A burst of light from
+  the flip tile, a trail of stardust, and a soft violet pulse on the landing tiles. The peek stays as quick as
+  today, with no effects. All of this also applies to Gravity Lab, which keeps its neutral look.
+- **Build order:** tile sheet for approval → planet, moon and sky → flip effects and the peek → sign-off → ask
+  before it goes live.
+- **Sign-off:** play `star-05` and `star-07`: you never hunt for the block after a flip, flips still feel good at
+  the end of a level, and no gap misreads.
+- **Risks to watch:** the moon showing bright behind gaps (dim it first); silver block near moonstone bases; teal
+  on periwinkle may need to go darker; violet on tiles, marks, pulse and interface may get samey; 0.8s flips
+  adding up on long levels (`star-07`); two of the four camera angles have no planet or moon (add small far
+  landmarks if that causes trouble).
+
+Status: settled; the tile sheet is next.
 
 **Planned with Starfall's theme: a better peek** (asked for by the user 2026-11-02; they love flip
 gravity, and this would help a lot). While holding Space to look at the other floor:
@@ -536,7 +571,18 @@ Gravity Lab. Still open: how faint the ghost can be while the floor you're viewi
 Toybox grilling are listed under *Kept for the split/paint biome* above; start with a short
 grilling session to fill the gaps (where split cubes appear, how many colors, the look).
 
-**After the Toybox and Starfall themes: 20 levels per biome** (decided by the user 2026-11-02). Levels
+**After Starfall's theme: a pass on the older worlds** (decided by the user 2026-11-02, who felt Toybox's
+look is well ahead of the others). Toybox has things they lack: objects you can name, something moving
+with a purpose, things close to the board that frame it, and a sense of place. So each world gets **one
+landmark, one thing that moves with a purpose, and something framing the board**, rather than more
+decoration. Starfall is built to this standard from the start, then the pass runs Windy Peaks → Frost
+Isle → First Glade, a quick grilling for each so the user picks the landmarks. Ideas to start from, none
+decided: Windy Peaks, windmills on the spires and a circling airship; Frost Isle, a lighthouse or cabin with
+a lit window and a cable car around the board; First Glade, a giant tree with a treehouse and circling birds.
+Each addition passes the usual checks (gaps stay readable, runs well on the user's laptop), and First Glade,
+which the user already loves, must not lose what works. The *Scenery* rule above widens to allow these framing pieces.
+
+**After that pass: 20 levels per biome** (decided by the user 2026-11-02). Levels
 come out in **batches of 5**, and each batch is playtested and tuned before the next one starts.
 
 | Chapter | Now | New levels | Batches |
