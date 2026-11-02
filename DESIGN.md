@@ -490,6 +490,24 @@ Gravity Lab. Still open: how faint the ghost can be while the floor you're viewi
 Toybox grilling are listed under *Kept for the split/paint biome* above; start with a short
 grilling session to fill the gaps (where split cubes appear, how many colors, the look).
 
+**After the Toybox and Starfall themes: 20 levels per biome** (decided by the user 2026-11-02). Levels
+come out in **batches of 5**, and each batch is playtested and tuned before the next one starts.
+
+| Chapter | Now | New levels | Batches |
+|---|---|---|---|
+| First Glade | 5 | 15 | 5, 5, 5 |
+| Frost Isle, Windy Peaks, Starfall, Toybox | 8 each | 12 each | 5, 5, 2 |
+
+That is 63 new levels in 15 batches, taking the campaign from 37 levels to 100. A new biome is built
+to 20 the same way, after its lab.
+
+- **Proposed, to confirm when this starts:** add new levels after the current ones (`frost-09` onward),
+  each batch harder than the last, with a new finale at 20. Existing ids and saved progress stay valid,
+  and the old finales become mid-chapter peaks.
+- **Still open:** whether First Glade goes to 20 too, since it's the teaching chapter, and whether this
+  comes before or after the split + paint biome.
+- **To check first:** the sky map has to fit 20 level stones on each island.
+
 **Later:** endless climb + daily seed, Frost in the generator, archipelago generation,
 more biomes from the backlog, visual level editor, full-level links (needed for handmade
 levels anyway), cosmetic rank & skins.
@@ -500,7 +518,7 @@ levels anyway), cosmetic rank & skins.
 
 Weekly. I play, then send level IDs (or seeds for generated levels) with notes on what
 works and what doesn't. Claude writes the code and designs handmade levels from that
-feedback; batches of ~8–10 levels per round.
+feedback; batches of 5 levels per round.
 
 ## Playtest log
 
