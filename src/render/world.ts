@@ -4,6 +4,7 @@ import { Block, DIR_DELTA, DIRS, Dir, Level, State, Tile } from '../game/types';
 import { ForestScenery } from './forest';
 import { FrostScenery } from './frost';
 import { CONVEYOR_COLORS, cssColor } from './palette';
+import { PeaksScenery } from './peaks';
 import { Scenery } from './scenery';
 import { NEUTRAL, Theme } from './themes';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -107,6 +108,13 @@ interface BridgeView {
   slab: THREE.Object3D;
 }
 
+/** The worlds with surroundings of their own, built the first time one opens. */
+const SCENERY: Partial<Record<Theme['sky'], () => Scenery>> = {
+  forest: () => new ForestScenery(),
+  frost: () => new FrostScenery(),
+  peaks: () => new PeaksScenery(),
+};
+
 /** Three.js view of a level. Holds no game rules: the controller tells it what happened. */
 export class World {
   private renderer: THREE.WebGLRenderer;
@@ -117,7 +125,7 @@ export class World {
   private sun = new THREE.DirectionalLight(0xfff4e0, 2.2);
   private levelGroup = new THREE.Group();
   private theme: Theme = NEUTRAL;
-  /** The current world's surroundings, and each world's once built: they're built the first time one opens. */
+  /** The current world's surroundings, and every world's built so far. */
   private scenery: Scenery | null = null;
   private sceneries = new Map<Theme['sky'], Scenery>();
   private blockMat = new THREE.MeshStandardMaterial({ color: NEUTRAL.block.color, roughness: 0.55 });
@@ -382,11 +390,9 @@ export class World {
         this.center.z + Math.sin(c.userData.angle) * r,
       );
     }
-    const ice: { x: number; z: number }[] = [];
-    level.tiles.forEach((t, i) => {
-      if (t === Tile.Ice) ice.push({ x: i % level.width, z: Math.floor(i / level.width) });
-    });
-    this.scenery?.place(this.center, this.viewSize, ice);
+    const cells = (tile: Tile) =>
+      level.tiles.flatMap((t, i) => (t === tile ? [{ x: i % level.width, z: Math.floor(i / level.width) }] : []));
+    this.scenery?.place(this.center, this.viewSize, { ice: cells(Tile.Ice), pads: cells(Tile.Pad) });
     this.stars.position.copy(this.center);
     this.moonlight.target.position.copy(this.center);
     this.moonlight.position.copy(this.center).add(new THREE.Vector3(-8, -30, 12));
@@ -1313,10 +1319,11 @@ export class World {
   }
 
   private sceneryFor(sky: Theme['sky']): Scenery | null {
-    if (sky !== 'forest' && sky !== 'frost') return null;
+    const build = SCENERY[sky];
+    if (!build) return null;
     let scenery = this.sceneries.get(sky);
     if (!scenery) {
-      scenery = sky === 'forest' ? new ForestScenery() : new FrostScenery();
+      scenery = build();
       this.sceneries.set(sky, scenery);
       this.scene.add(scenery.group);
     }

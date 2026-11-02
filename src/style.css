@@ -45,7 +45,8 @@ body[data-theme='forest'] {
 }
 
 body[data-theme='forest'] #sky,
-body[data-theme='frost'] #sky {
+body[data-theme='frost'] #sky,
+body[data-theme='peaks'] #sky {
   display: block;
 }
 
@@ -57,11 +58,11 @@ body[data-theme='frost'] #sky {
   height: calc(var(--w) * 0.46);
   opacity: var(--o);
   background:
-    radial-gradient(ellipse 25% 46% at 34% 42%, #fff 76%, rgba(255, 255, 255, 0) 100%),
-    radial-gradient(ellipse 20% 38% at 56% 36%, #fff 76%, rgba(255, 255, 255, 0) 100%),
-    radial-gradient(ellipse 18% 32% at 18% 60%, #fff 76%, rgba(255, 255, 255, 0) 100%),
-    radial-gradient(ellipse 21% 33% at 74% 56%, #fff 76%, rgba(255, 255, 255, 0) 100%),
-    radial-gradient(ellipse 46% 26% at 48% 72%, #fff 80%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(ellipse 25% 46% at 34% 42%, var(--cloud-puff, #fff) 76%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(ellipse 20% 38% at 56% 36%, var(--cloud-puff, #fff) 76%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(ellipse 18% 32% at 18% 60%, var(--cloud-puff, #fff) 76%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(ellipse 21% 33% at 74% 56%, var(--cloud-puff, #fff) 76%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(ellipse 46% 26% at 48% 72%, var(--cloud-puff, #fff) 80%, rgba(255, 255, 255, 0) 100%),
     radial-gradient(ellipse 47% 24% at 48% 82%, var(--cloud-under, #d5e6f2) 80%, var(--cloud-under-clear, rgba(213, 230, 242, 0)) 100%);
   filter: blur(3px);
   animation: sky-drift var(--t) linear var(--d) infinite;
@@ -85,9 +86,22 @@ body[data-theme='frost'] {
   background: linear-gradient(180deg, #7fb0e8 0%, #b6c7e6 16%, #f3d2c2 34%, #eccfd8 55%, #e3cde3 100%);
 }
 
-/* Windy Peaks: amber-blue sky over bright golden haze, kept light so the rock doesn't feel heavy. */
+/* Windy Peaks: open blue sky over bright pale haze, kept light so the grey rock doesn't feel heavy. */
 body[data-theme='peaks'] {
-  background: linear-gradient(180deg, #79aee0 0%, #bcd0d6 18%, #f1dcab 38%, #f6e2b6 62%, #f8e8c6 100%);
+  --accent: #b8862f;
+  --accent-ink: #fffaea;
+  --glass: rgba(252, 251, 247, 0.86);
+  --glass-border: rgba(250, 248, 242, 0.95);
+  --shadow: 0 6px 24px rgba(50, 55, 65, 0.22);
+  --cloud-under: #b4bfca;
+  --cloud-under-clear: rgba(180, 191, 202, 0);
+  background: linear-gradient(180deg, #6ea7e0 0%, #a4c6e3 16%, #d6e2e9 36%, #e2e7ea 62%, #e9ecee 100%);
+}
+
+/* Taller clouds, so they tower over the far spires. */
+body[data-theme='peaks'] #sky i {
+  height: calc(var(--w) * 0.72);
+  top: calc(var(--y) - 3vh);
 }
 
 /* Starfall plays under a night sky. */
@@ -323,8 +337,8 @@ kbd {
   background: #fbf3ea;
 }
 .arrival[data-theme='peaks'] {
-  color: #8c6a24;
-  background: #fbf3df;
+  color: #5c6675;
+  background: #eef1f3;
 }
 .arrival[data-theme='night'] {
   color: #e8ecff;
@@ -566,10 +580,10 @@ kbd {
 }
 
 .sm-island.peaks {
-  --top: linear-gradient(#eef2f6, #c9d3de);
-  --edge: #9aa8b8;
-  --cliff: #8d8f99;
-  --cliff-dark: #50535e;
+  --top: linear-gradient(#f0f2f4, #b4bdcb);
+  --edge: #d3a850;
+  --cliff: #85888e;
+  --cliff-dark: #4b4e55;
 }
 
 .sm-island.night {

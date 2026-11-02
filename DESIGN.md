@@ -116,6 +116,10 @@ always ends half on ice, so that alone doesn't count as an anchor.
 
 Wanted, not yet scheduled. Each becomes a biome's signature mechanic or a crossing.
 
+- **Desert biome look (from the first Windy Peaks build, which the user liked as a desert):** warm
+  layered sandstone spires (`0xe2bd85` / `0xa98a70`) in golden haze (`0xf5e0b2`), gold-lit cumulus,
+  blowing golden grit, and a parchment ivory block (`0xe6cf9f`). These colors and `src/render/peaks.ts`'s
+  spires are enough to rebuild it.
 - **Tiles:** teleporters, crumbling/timed tiles
 - **Momentum pads:** fling the block onward in the direction it rolled onto the pad (deferred
   from Windy Peaks to keep one pad kind per chapter)
@@ -438,30 +442,36 @@ chapter, players must always see where they'd slide.
 Status: live. The user sent it live without notes on the open questions (gold in the sky, flakes,
 sparkles), so those stay open if they come up in play.
 
-**Windy Peaks**, settled in a grilling session 2026-11-02. Golden late afternoon in a Laputa and
-Ghibli style, with bare rock and no snow. Its biggest risk is feeling too heavy, so the slate is
-sunlit rather than truly dark, the haze is bright and the planks are pale.
+**Windy Peaks**, settled in a grilling session 2026-11-02 and changed after playtest: grey stone in
+a strong wind, in a Laputa and Ghibli style, with bare rock and no snow. Its biggest risk is feeling
+too heavy, so the slate is sunlit rather than truly dark, the haze is bright and the planks are pale.
+The first look was golden, but sand-colored stone read as a desert (see *Idea backlog*).
 
 | Area | Decision |
 |---|---|
 | Floor | Mid-dark, sunlit blue-gray slate, with detail in shades of that color |
-| Below the board | Tall, softly eroded rock spires with layered bands, lit gold on one side and fading into bright haze |
+| Below the board | Tall, softly eroded grey stone spires with layered bands, fading into bright pale haze |
 | Under the tiles | Jagged rock shards |
-| Sky | Towering gold cumulus clouds |
-| Motion | Faint gold gust streaks that avoid pad tiles, far banners on spires, fast clouds in the depths, blowing golden grit |
-| Block | Warm parchment ivory, deeper than the pale pads |
+| Sky | Towering clouds with grey undersides, on open blue |
+| Motion | Clearly visible white gust streaks that fade near pads, far banners on spires, fast clouds in the depths, blowing pale grit |
+| Block | Stone grey, a touch warmer than the cool pale pads |
 | Launch pads | Pale stone with carved wind vents around the arrow; blue arrows and white wind streaks stay |
 | Landing marks | The pads' brighter wind blue, so they show up on slate |
 | Belts | Brass rails, with the same arrows |
 | Switches, bridges, goal | Worn stone bases and thin brass trim, with colors unchanged |
-| Fragile tiles | Pale sun-bleached planks |
-| Interface | Warm panels with a brass gold highlight; the title is brass-brown on cream; the map island shifts toward slate and gold |
+| Fragile tiles | Pale weathered grey planks |
+| Interface | Near-white panels with a brass gold highlight; the title is slate on pale stone; the map island is slate with a brass edge |
 | If it runs slowly | Cut grit first, then banners, then depth clouds, with gusts last |
 
 The vents and brighter marks apply only in this world, so Wind Lab keeps its current look. If brass
 overwhelms the amber bridges, pull back the trim first.
 
-Status: tile sheet built, awaiting approval.
+Status: live. The grey version went live with no further notes, so its open questions (how the
+wind feels in motion, the block's grey, neutral versus warm light) stay open if they come up in play.
+
+**Next, at a later session:** the Toybox grilling, then Starfall. Follow *Each theme* above, starting
+with a grilling on the toy island, and read the logged notes for what each world taught: keep scenery
+deep below the board at first, and check that a palette doesn't suggest a different biome.
 
 **After themes (not yet planned in detail):** the split + paint biome. Decisions already made in the
 Toybox grilling are listed under *Kept for the split/paint biome* above; start with a short
@@ -643,6 +653,14 @@ switches and the retracted bridge drew no complaints.
 
 **2026-11-02 — Frost Isle.** Reworked tiles approved, then the finished world was sent live with no
 notes. Windy Peaks is next.
+
+**2026-11-02 — Windy Peaks, first round.** Spires never made gaps hard to read, and everything was
+easy to read. But "the sand-colored blocks scream more desert" → stone, haze and block go grey, and
+the sand look is saved for a future desert biome. "I can barely see the wind" → white gusts, more of
+them and faster.
+
+**2026-11-02 — Windy Peaks, second round.** The grey version went live with no further notes. Paused
+here at the user's request; the Toybox grilling comes at another time.
 
 ## Architecture
 

@@ -77,17 +77,17 @@ const FROST: Theme = {
   finish: { switchBase: 0x8d95a6, snow: 0xf1eee8, iceSheen: true },
 };
 
-/** Windy Peaks: golden late afternoon on bare rock. The slate stays sunlit, so the world doesn't feel heavy. */
+/** Windy Peaks: bright grey stone in a strong wind. The slate stays sunlit, so the world doesn't feel heavy. */
 const PEAKS: Theme = {
   id: 'peaks',
   sky: 'peaks',
   hemi: { sky: 0xeef0f2, ground: 0x9a8f88, intensity: 1.6 },
   sun: { color: 0xfff0d6, intensity: 2.4 },
-  block: { color: 0xe6cf9f, edge: 0x7a6236 },
+  block: { color: 0xc8c5be, edge: 0x55534e },
   floor: { color: 0x6a7c98, detail: [0x5b6d89, 0x6a7c98, 0x7789a5, 0x8799b4], style: 'slate' },
   earth: { soil: 0x525a6b, hanging: 0x5f6778, style: 'shards' },
-  fragile: { light: 0xdccfb4, dark: 0xbdae92, weathered: true },
-  finish: { switchBase: 0x989283, brass: 0xdcae50, padVents: true },
+  fragile: { light: 0xd2cec4, dark: 0xaeaaa0, weathered: true },
+  finish: { switchBase: 0x94969a, brass: 0xdcae50, padVents: true },
   landingMark: 0x5cc8ff,
 };
 
