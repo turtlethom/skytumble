@@ -14,7 +14,10 @@ as decisions are made or levels change.
   log* → repeat. New mechanics get prototyped in throwaway "lab" levels first; rules freeze after
   the user signs off.
 - **Commits:** the user says "commit it" to approve. Conventional Commits, committed directly on
-  `main` (no remote yet). End each turn's summary by proposing the next commit message and step.
+  `main`. End each turn's summary by proposing the next commit message and step.
+- **Deploys:** every push to `main` runs the tests, then publishes the game to
+  <https://turtlethom.github.io/skytumble/> (`.github/workflows/deploy.yml`). The repo is public.
+  A commit stays private until pushed, so "commit it" does not mean "push it": ask before pushing.
 - **Feature decisions:** for anything big, grill the user first (they asked for `/grill-me` style
   sessions), then record the outcome in DESIGN.md before building.
 
