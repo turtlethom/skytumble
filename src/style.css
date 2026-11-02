@@ -85,6 +85,11 @@ body[data-theme='frost'] {
   background: linear-gradient(180deg, #7fb0e8 0%, #b6c7e6 16%, #f3d2c2 34%, #eccfd8 55%, #e3cde3 100%);
 }
 
+/* Windy Peaks: amber-blue sky over bright golden haze, kept light so the rock doesn't feel heavy. */
+body[data-theme='peaks'] {
+  background: linear-gradient(180deg, #79aee0 0%, #bcd0d6 18%, #f1dcab 38%, #f6e2b6 62%, #f8e8c6 100%);
+}
+
 /* Starfall plays under a night sky. */
 body[data-theme='night'] {
   background: linear-gradient(180deg, #1f2a66 0%, #34418f 45%, #5560ad 78%, #7a6cb4 100%);
@@ -316,6 +321,10 @@ kbd {
 .arrival[data-theme='frost'] {
   color: #a65f74;
   background: #fbf3ea;
+}
+.arrival[data-theme='peaks'] {
+  color: #8c6a24;
+  background: #fbf3df;
 }
 .arrival[data-theme='night'] {
   color: #e8ecff;

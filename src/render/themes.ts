@@ -4,22 +4,24 @@
  */
 export interface Theme {
   /** Also set as `data-theme` on the page body, where the sky gradient and text colors are styled. */
-  id: 'neutral' | 'night' | 'forest' | 'frost';
+  id: 'neutral' | 'night' | 'forest' | 'frost' | 'peaks';
   /** What surrounds the level. */
-  sky: 'clouds' | 'stars' | 'forest' | 'frost';
+  sky: 'clouds' | 'stars' | 'forest' | 'frost' | 'peaks';
   hemi: { sky: number; ground: number; intensity: number };
   sun: { color: number; intensity: number };
   block: { color: number; edge: number };
-  /** Walkable ground. `detail` lists shades of one color, darkest first, painted over each tile: as soft blotches, or as snow. */
-  floor: { color: number; detail?: number[]; style?: 'snow' };
-  /** Under the tiles: a block of soil, and rock spikes, a clump with dangling roots, or icicles. */
-  earth: { soil: number; hanging: number; style: 'rock' | 'roots' | 'icicles' };
+  /** Walkable ground. `detail` lists shades of one color, darkest first, painted over each tile: as soft blotches, as snow, or as slate. */
+  floor: { color: number; detail?: number[]; style?: 'snow' | 'slate' };
+  /** Under the tiles: a block of soil, and rock spikes, a clump with dangling roots, icicles, or jagged shards. */
+  earth: { soil: number; hanging: number; style: 'rock' | 'roots' | 'icicles' | 'shards' };
   fragile: { light: number; dark: number; weathered?: boolean };
   /**
    * A finish for mechanics. Their shapes and color coding never change. `snow` is a color laid on
    * stone bases, belt rails and plank seams, never on a switch's or bridge's own color.
    */
-  finish: { switchBase?: number; wood?: boolean; snow?: number; iceSheen?: boolean };
+  finish: { switchBase?: number; wood?: boolean; snow?: number; iceSheen?: boolean; brass?: number; padVents?: boolean };
+  /** Where a pad flight lands, if this floor needs a color other than the usual deep blue. */
+  landingMark?: number;
 }
 
 /** The ground and block every world starts from until it restyles them. */
@@ -75,15 +77,30 @@ const FROST: Theme = {
   finish: { switchBase: 0x8d95a6, snow: 0xf1eee8, iceSheen: true },
 };
 
+/** Windy Peaks: golden late afternoon on bare rock. The slate stays sunlit, so the world doesn't feel heavy. */
+const PEAKS: Theme = {
+  id: 'peaks',
+  sky: 'peaks',
+  hemi: { sky: 0xeef0f2, ground: 0x9a8f88, intensity: 1.6 },
+  sun: { color: 0xfff0d6, intensity: 2.4 },
+  block: { color: 0xe6cf9f, edge: 0x7a6236 },
+  floor: { color: 0x6a7c98, detail: [0x5b6d89, 0x6a7c98, 0x7789a5, 0x8799b4], style: 'slate' },
+  earth: { soil: 0x525a6b, hanging: 0x5f6778, style: 'shards' },
+  fragile: { light: 0xdccfb4, dark: 0xbdae92, weathered: true },
+  finish: { switchBase: 0x989283, brass: 0xdcae50, padVents: true },
+  landingMark: 0x5cc8ff,
+};
+
 /** Chapters with a world of their own; any other chapter uses NEUTRAL. */
 export const CHAPTER_THEMES: Record<string, Theme> = {
   tutorial: FOREST,
   frost: FROST,
+  wind: PEAKS,
   star: NIGHT,
 };
 
 /** Every theme by id, so `?theme=forest` can preview one on any level or on the tile sheet. */
-export const THEMES: Record<string, Theme> = { neutral: NEUTRAL, night: NIGHT, forest: FOREST, frost: FROST };
+export const THEMES: Record<string, Theme> = { neutral: NEUTRAL, night: NIGHT, forest: FOREST, frost: FROST, peaks: PEAKS };
 
 /** The theme for a handmade level, from the chapter in its id (`star-03` is in `star`). */
 export function themeForLevel(id: string): Theme {

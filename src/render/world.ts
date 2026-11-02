@@ -19,6 +19,7 @@ const COLORS = {
   rail: 0x8a93a8,
   padStone: 0xdfe5ec,
   padRim: 0xa9b4c2,
+  padVent: 0x7c8797,
   /** Pad arrows, gusts and landing marks share one colour so a mark reads as "a pad sends you here". */
   wind: 0x5cc8ff,
   /** Landing marks: a deeper blue of the same hue, so they hold up on grass. */
@@ -333,7 +334,7 @@ export class World {
     const tileAt = (layer: number, x: number, y: number) => this.tiles.get(this.cellKey(layer, x, y, level.width, level.height));
     for (const layer of layers) {
       const view = layerView(level, layer);
-      for (const { x, y } of flightLandings(view)) tileAt(layer, x, y)?.obj.add(makeLandingMark());
+      for (const { x, y } of flightLandings(view)) tileAt(layer, x, y)?.obj.add(makeLandingMark(theme.landingMark));
       view.tiles.forEach((t, i) => {
         if (t === Tile.Flip) tileAt(1 - layer, i % level.width, Math.floor(i / level.width))?.obj.add(makeLandingMark(COLORS.flipMark));
       });
@@ -435,6 +436,15 @@ export class World {
           slab.add(seam);
         }
       }
+      const { brass } = this.theme.finish;
+      if (brass !== undefined) {
+        // Small brass corners on the slab, clear of the group's color in the middle.
+        for (const [dx, dz] of [[-0.42, -0.42], [0.42, -0.42], [-0.42, 0.42], [0.42, 0.42]]) {
+          const corner = box(0.11, 0.008, 0.11, brass, { metalness: 0.15, roughness: 0.5 });
+          corner.position.set(dx, 0.085, dz);
+          slab.add(corner);
+        }
+      }
       g.add(ghost, slab);
       this.bridges.push({ group, slab });
       return g;
@@ -484,11 +494,11 @@ export class World {
         edge.receiveShadow = true;
         g.add(edge);
       }
-      if (wood) {
-        // Darker joints at the corners, so the bright rim reads as a framed wooden edge.
+      if (wood || this.theme.finish.brass !== undefined) {
+        // Darker joints at the corners: a framed wooden edge, or brass fittings.
         for (const dx of [-0.44, 0.44]) {
           for (const dz of [-0.44, 0.44]) {
-            const joint = box(0.09, 0.006, 0.09, rimColor(COLORS.goal, 0.62), { roughness: 0.9 });
+            const joint = box(0.09, 0.006, 0.09, this.theme.finish.brass ?? rimColor(COLORS.goal, 0.62), { roughness: 0.9 });
             joint.position.set(dx, 0.002, dz);
             g.add(joint);
           }
@@ -568,7 +578,8 @@ export class World {
       const top = new THREE.Group();
       top.rotation.y = BELT_ROTATION[dir];
       for (const side of [-1, 1]) {
-        const rail = box(0.98, 0.05, 0.08, COLORS.rail);
+        const { brass } = this.theme.finish;
+        const rail = box(0.98, 0.05, 0.08, brass ?? COLORS.rail, brass === undefined ? {} : { metalness: 0.15, roughness: 0.5 });
         rail.position.set(0, 0.02, side * 0.44);
         top.add(rail);
         if (this.theme.finish.snow !== undefined) {
@@ -600,6 +611,16 @@ export class World {
       arrow.position.y = 0.03;
       arrow.receiveShadow = true;
       top.add(arrow);
+      if (this.theme.finish.padVents) {
+        // Carved slots along the plate's edges, as if air rushes up through the stone.
+        for (const z of [-0.33, 0.33]) {
+          for (const x of [-0.25, 0, 0.25]) {
+            const vent = box(0.17, 0.006, 0.05, COLORS.padVent, { roughness: 1 });
+            vent.position.set(x, 0.03, z);
+            top.add(vent);
+          }
+        }
+      }
       // Two thin streaks drift over the pad along its arrow: wind you can see.
       for (const [phase, z] of [[0, -0.22], [0.5, 0.2]]) {
         const streak = new THREE.Mesh(
@@ -661,6 +682,12 @@ export class World {
       base.position.y = 0.02;
       base.receiveShadow = true;
       g.add(base);
+      if (this.theme.finish.brass !== undefined) {
+        const ring = new THREE.Mesh(brassRingGeometry, new THREE.MeshStandardMaterial({ color: this.theme.finish.brass, metalness: 0.15, roughness: 0.5 }));
+        ring.rotation.x = Math.PI / 2;
+        ring.position.y = 0.04;
+        g.add(ring);
+      }
       if (this.theme.finish.snow !== undefined) {
         // Small drifts on the stone's rim, clear of the switch's own color.
         const mat = new THREE.MeshStandardMaterial({ color: this.theme.finish.snow, roughness: 1 });
@@ -1431,7 +1458,7 @@ function floorTile(jitter: number, theme: Theme): THREE.Mesh {
     plain.position.y = -0.09;
     return plain;
   }
-  const mats = detailMaterials(theme.id, theme.floor.detail, theme.floor.style === 'snow');
+  const mats = detailMaterials(theme.id, theme.floor.detail, theme.floor.style);
   const mesh = new THREE.Mesh(floorGeometry(), mats[Math.floor(jitter * mats.length)]);
   mesh.position.y = -0.09;
   // A quarter turn per tile, so neighbors sharing a top don't look stamped.
@@ -1458,11 +1485,11 @@ function floorGeometry(): THREE.BoxGeometry {
 const detailCache = new Map<string, THREE.MeshStandardMaterial[]>();
 
 /** Materials for a theme's detailed floor, built once and shared by every tile. */
-function detailMaterials(id: string, shades: number[], snow: boolean): THREE.MeshStandardMaterial[] {
+function detailMaterials(id: string, shades: number[], style: Theme['floor']['style']): THREE.MeshStandardMaterial[] {
   const cached = detailCache.get(id);
   if (cached) return cached;
   const mats = [1, 2, 3, 4].map((seed) => {
-    const map = snow ? snowTexture(shades, seed) : detailTexture(shades, seed);
+    const map = style === 'snow' ? snowTexture(shades, seed) : style === 'slate' ? slateTexture(shades, seed) : detailTexture(shades, seed);
     return new THREE.MeshStandardMaterial({ map, roughness: 1 });
   });
   detailCache.set(id, mats);
@@ -1490,6 +1517,59 @@ function detailTexture(shades: number[], seed: number): THREE.CanvasTexture {
   };
   dab(46, 8, 20, 0.4);
   dab(120, 1.5, 4, 0.55);
+  const map = new THREE.CanvasTexture(canvas);
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.anisotropy = 4;
+  return map;
+}
+
+/** Layered slate: broad weathered bands, a few fine cracks, and pale flecks where the sun catches it. */
+function slateTexture(shades: number[], seed: number): THREE.CanvasTexture {
+  const size = 192;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  let s = seed * 15485863;
+  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const [dark, base, lit, bright] = shades.map(cssColor);
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, size, size);
+  // Broken facets at odd angles, as the rock split: long even bands would look like planks.
+  for (let i = 0; i < 12; i++) {
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = i % 2 ? lit : dark;
+    const [x, y, r] = [rnd() * size, rnd() * size, 14 + rnd() * 30];
+    const turn = rnd() * Math.PI * 2;
+    ctx.beginPath();
+    const corners = 4 + Math.floor(rnd() * 3);
+    for (let c = 0; c < corners; c++) {
+      const a = turn + (c / corners) * Math.PI * 2;
+      const reach = r * (0.6 + rnd() * 0.5);
+      ctx[c ? 'lineTo' : 'moveTo'](x + Math.cos(a) * reach, y + Math.sin(a) * reach);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+  // Fine cracks.
+  ctx.lineWidth = 1.4;
+  for (let i = 0; i < 5; i++) {
+    ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = dark;
+    let [x, y] = [rnd() * size, rnd() * size];
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    for (let step = 0; step < 4; step++) {
+      x += (rnd() - 0.35) * 26;
+      y += (rnd() - 0.5) * 26;
+      ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  ctx.fillStyle = bright;
+  for (let i = 0; i < 70; i++) {
+    ctx.globalAlpha = 0.5;
+    ctx.fillRect(rnd() * size, rnd() * size, 1.2 + rnd() * 2.2, 1 + rnd());
+  }
   const map = new THREE.CanvasTexture(canvas);
   map.colorSpace = THREE.SRGBColorSpace;
   map.anisotropy = 4;
@@ -1587,6 +1667,26 @@ const icicleGeometries = [0, 1, 2, 3].map((variant) => {
   return mergeGeometries(icicles)!;
 });
 
+/** Hard hanging splinters of rock, flat-shaded so they stay jagged, merged into one mesh per variant. */
+const shardGeometries = [0, 1, 2, 3].map((variant) => {
+  const shards: THREE.BufferGeometry[] = [];
+  const count = 3 + variant;
+  for (let i = 0; i < count; i++) {
+    const a = (i / count) * Math.PI * 2 + variant * 0.9;
+    const len = 0.32 + ((i * 29 + variant * 11) % 10) * 0.085;
+    const radius = 0.11 + ((i * 13 + variant) % 4) * 0.04;
+    const shard = new THREE.ConeGeometry(radius, len, 4);
+    shard.rotateX(Math.PI);
+    shard.rotateY(a * 2);
+    shard.rotateZ(0.14 * Math.sin(a * 3));
+    const ring = 0.1 + ((i * 5) % 3) * 0.11;
+    shard.translate(Math.cos(a) * ring, -0.62 - len / 2, Math.sin(a) * ring);
+    shards.push(shard);
+  }
+  return mergeGeometries(shards)!;
+});
+const brassRingGeometry = new THREE.TorusGeometry(0.44, 0.014, 6, 28);
+
 /** What's under a floating tile: soil, and either hanging rock or a clump with dangling roots. */
 function earth(jitter: number, theme: Theme): THREE.Object3D {
   const g = new THREE.Group();
@@ -1604,6 +1704,14 @@ function earth(jitter: number, theme: Theme): THREE.Object3D {
       new THREE.MeshStandardMaterial({ color: theme.earth.hanging, roughness: 1 }),
     );
     g.add(clump, roots);
+    return g;
+  }
+  if (theme.earth.style === 'shards') {
+    const shards = new THREE.Mesh(
+      shardGeometries[Math.floor(jitter * shardGeometries.length)],
+      new THREE.MeshStandardMaterial({ color: theme.earth.hanging, roughness: 1, flatShading: true }),
+    );
+    g.add(shards);
     return g;
   }
   if (theme.earth.style === 'icicles') {

@@ -438,6 +438,31 @@ chapter, players must always see where they'd slide.
 Status: live. The user sent it live without notes on the open questions (gold in the sky, flakes,
 sparkles), so those stay open if they come up in play.
 
+**Windy Peaks**, settled in a grilling session 2026-11-02. Golden late afternoon in a Laputa and
+Ghibli style, with bare rock and no snow. Its biggest risk is feeling too heavy, so the slate is
+sunlit rather than truly dark, the haze is bright and the planks are pale.
+
+| Area | Decision |
+|---|---|
+| Floor | Mid-dark, sunlit blue-gray slate, with detail in shades of that color |
+| Below the board | Tall, softly eroded rock spires with layered bands, lit gold on one side and fading into bright haze |
+| Under the tiles | Jagged rock shards |
+| Sky | Towering gold cumulus clouds |
+| Motion | Faint gold gust streaks that avoid pad tiles, far banners on spires, fast clouds in the depths, blowing golden grit |
+| Block | Warm parchment ivory, deeper than the pale pads |
+| Launch pads | Pale stone with carved wind vents around the arrow; blue arrows and white wind streaks stay |
+| Landing marks | The pads' brighter wind blue, so they show up on slate |
+| Belts | Brass rails, with the same arrows |
+| Switches, bridges, goal | Worn stone bases and thin brass trim, with colors unchanged |
+| Fragile tiles | Pale sun-bleached planks |
+| Interface | Warm panels with a brass gold highlight; the title is brass-brown on cream; the map island shifts toward slate and gold |
+| If it runs slowly | Cut grit first, then banners, then depth clouds, with gusts last |
+
+The vents and brighter marks apply only in this world, so Wind Lab keeps its current look. If brass
+overwhelms the amber bridges, pull back the trim first.
+
+Status: tile sheet built, awaiting approval.
+
 **After themes (not yet planned in detail):** the split + paint biome. Decisions already made in the
 Toybox grilling are listed under *Kept for the split/paint biome* above; start with a short
 grilling session to fill the gaps (where split cubes appear, how many colors, the look).
