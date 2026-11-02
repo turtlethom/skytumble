@@ -102,9 +102,53 @@ const keyFor = async (dir) => {
 const peekAt = process.env.PEEK_AT ? Number(process.env.PEEK_AT) : -1;
 await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
 let failed = 0;
+const titleUp = () => evalJs("document.getElementById('arrival').classList.contains('show')");
+const untilTitle = async () => {
+  for (let i = 0; i < 50 && !(await titleUp()); i++) await sleep(100);
+  return titleUp();
+};
+if (process.env.TITLE_CHECK === '1') {
+  // Walk through when the chapter title should and shouldn't show.
+  const check = (what, ok) => {
+    console.log(`${ok ? 'ok    ' : 'FAILED'} ${what}`);
+    if (!ok) failed++;
+  };
+  const settle = () => sleep(2200);
+  await send('Page.navigate', { url: `${base}/?level=tutorial-04` });
+  check('fresh page load shows the title', await untilTitle());
+  await shot('title-glade');
+  await key('ArrowUp');
+  await sleep(150);
+  check('a key skips it', !(await titleUp()));
+  check('and does not count as a move', (await evalJs("document.getElementById('moves').textContent")) === '0');
+  await settle();
+  await key('KeyN');
+  await sleep(600);
+  check('next level in the same chapter: no title', !(await titleUp()));
+  await settle();
+  await key('KeyN');
+  check('next level in a new chapter: title', await untilTitle());
+  check('it names the new chapter', (await evalJs("document.getElementById('arrival').textContent")) === 'Frost Isle');
+  await sleep(3200);
+  check('it lifts by itself', !(await titleUp()));
+  await evalJs("document.querySelector('[data-mode=easy]').click()");
+  await sleep(1500);
+  check('Easy has no title', !(await titleUp()));
+  await send('Page.navigate', { url: `${base}/?sheet=forest` });
+  await sleep(1500);
+  check('the tile sheet has no title', !(await titleUp()));
+  await send('Page.navigate', { url: `${base}/` });
+  await sleep(2500);
+  check('landing on the map: no title behind it', !(await titleUp()));
+  await key('Escape');
+  check('closing the map: title', await untilTitle());
+} else
 for (const [id, moves] of Object.entries(solutions)) {
   await send('Page.navigate', { url: `${base}/?level=${id}` });
-  await sleep(2500);
+  // A fresh load shows the chapter title, then the island rises.
+  await sleep(1500);
+  while (await titleUp()) await sleep(100);
+  await sleep(1300);
   for (let r = 0; r < Number(process.env.ROTATE ?? 0); r++) await key('KeyE');
   if (process.env.ROTATE) await sleep(800);
   await shot(`${id}-start`);

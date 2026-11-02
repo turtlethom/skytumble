@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { CHAPTERS } from '../src/levels';
+import { CHAPTERS, chapterOf } from '../src/levels';
 import { CHAPTER_THEMES, NEUTRAL, themeForLevel } from '../src/render/themes';
 
 describe('chapter themes', () => {
+  it('find a level\'s chapter for its arrival title', () => {
+    expect(chapterOf('tutorial-03')?.title).toBe('First Glade');
+    expect(chapterOf('frost-01')?.title).toBe('Frost Isle');
+    expect(chapterOf('nowhere-01')).toBeUndefined();
+  });
+
   it('give Starfall its night and every other two-floor level the neutral look', () => {
     expect(themeForLevel('star-03').id).toBe('night');
     expect(themeForLevel('gravlab-02')).toBe(NEUTRAL);

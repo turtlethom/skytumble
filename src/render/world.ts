@@ -293,7 +293,8 @@ export class World {
   // -------------------------------------------------------------------------
   // Level construction.
 
-  setLevel(level: Level, state: State, theme: Theme): Promise<void> {
+  /** Build a level. The island rises into place once `ready` resolves, so a title covering it can lift first. */
+  setLevel(level: Level, state: State, theme: Theme, ready: Promise<void> = Promise.resolve()): Promise<void> {
     this.layerGroups.forEach((g) => g.clear());
     this.tiles.clear();
     this.layerMats = [[], []];
@@ -382,7 +383,12 @@ export class World {
     this.moonlight.position.copy(this.center).add(new THREE.Vector3(-8, -30, 12));
     this.fitShadows(level);
     this.syncState(state);
-    return this.intro();
+    return ready.then(() => this.intro());
+  }
+
+  /** What the last frame cost, for the frame-rate readout. */
+  get renderStats(): { calls: number; triangles: number } {
+    return this.renderer.info.render;
   }
 
   /** Tile map key: one per layer cell. Switch, pad and belt maps use `layer * 1e8 + y * 10000 + x`. */

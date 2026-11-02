@@ -51,13 +51,15 @@ export class SkyMap {
   constructor(
     private root: HTMLElement,
     private onPlay: (id: string) => void,
+    /** The player closed the map and went back to the level behind it. */
+    private onClose: () => void,
   ) {
     root.addEventListener('click', (e) => {
       const el = e.target as HTMLElement;
       const node = el.closest<HTMLElement>('[data-level]');
       if (node) this.onPlay(node.dataset.level!);
       else if (el.closest('[data-play]')) this.onPlay(HANDMADE[this.selected].id);
-      else if (el.closest('[data-close]')) this.hide();
+      else if (el.closest('[data-close]')) this.close();
     });
     // Islands are sized in px for legible text; scale them with the map so they neither crowd
     // a small window nor float lost in a big one.
@@ -93,6 +95,11 @@ export class SkyMap {
     this.root.classList.add('hidden');
   }
 
+  close(): void {
+    this.hide();
+    this.onClose();
+  }
+
   /** Handle a key while the map is open. Returns true if the map used it. */
   key(e: KeyboardEvent): boolean {
     if (e.code in STEP) {
@@ -102,7 +109,7 @@ export class SkyMap {
     } else if (e.code === 'Enter' || e.code === 'Space') {
       this.onPlay(HANDMADE[this.selected].id);
     } else if (e.code === 'Escape' || e.code === 'KeyL') {
-      this.hide();
+      this.close();
     } else {
       return false;
     }

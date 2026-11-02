@@ -3,10 +3,12 @@ import { randomSeed } from './game/rng';
 import { initialState, step } from './game/rules';
 import { solve } from './game/solver';
 import { DIRS, Dir, Level, State, TIERS, Tier } from './game/types';
-import { HANDMADE, findLevel } from './levels';
+import { HANDMADE, chapterOf, findLevel } from './levels';
 import { tileSheet } from './levels/sheet';
 import { NEUTRAL, THEMES, Theme, themeForLevel } from './render/themes';
 import { World } from './render/world';
+import { ChapterArrival } from './ui/arrival';
+import { FrameReadout } from './ui/fps';
 import { SkyMap, suggestedLevel } from './ui/map';
 import { Progress, loadProgress, saveProgress, starsFor } from './ui/progress';
 import type { GenerateRequest, GenerateResponse } from './worker';
@@ -30,7 +32,15 @@ class Game {
   private world = new World($('stage'));
   private worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
   private progress = loadProgress();
-  private map = new SkyMap($('map'), (id) => this.load({ kind: 'hand', id }));
+  private map = new SkyMap(
+    $('map'),
+    (id) => this.load({ kind: 'hand', id }),
+    () => void this.playArrival(),
+  );
+  private arrival = new ChapterArrival($('arrival'));
+  /** The chapter last announced: entering a different one shows its title. */
+  private lastChapter: string | null = null;
+  private readout = new FrameReadout($('fps'), () => this.world.renderStats);
   private mode: Mode;
   private level: Level | null = null;
   private par = 0;
@@ -58,6 +68,7 @@ class Game {
       [0, 1, 2, 3].find((k) => this.world.gridDirForScreen(k) === d) ?? -1;
     const params = new URLSearchParams(location.search);
     this.themeOverride = THEMES[params.get('theme') ?? params.get('sheet') ?? ''] ?? null;
+    if (params.has('fps')) this.readout.toggle();
     if (params.has('sheet')) {
       void this.start(tileSheet(Number(params.get('bridges') ?? 15)), 0);
       return;
@@ -100,11 +111,25 @@ class Game {
     this.moves = 0;
     this.status = 'busy';
     this.renderChrome();
-    const theme = this.themeOverride ?? (this.mode.kind === 'hand' ? themeForLevel(this.mode.id) : NEUTRAL);
-    await this.world.setLevel(level, this.state, theme);
+    const arrival = this.playArrival();
+    if (arrival) await arrival.covered;
+    await this.world.setLevel(level, this.state, this.currentTheme(), arrival?.lifted);
     this.status = 'playing';
     this.updatePreviews();
     this.drainQueue();
+  }
+
+  private currentTheme(): Theme {
+    return this.themeOverride ?? (this.mode.kind === 'hand' ? themeForLevel(this.mode.id) : NEUTRAL);
+  }
+
+  /** Show the chapter's name if this is a new chapter. With the map open, it waits until the map closes. */
+  private playArrival(): ReturnType<ChapterArrival['play']> | null {
+    if (this.map.isOpen) return null;
+    const chapter = this.mode.kind === 'hand' ? chapterOf(this.mode.id) : undefined;
+    const entered = chapter && chapter.id !== this.lastChapter;
+    this.lastChapter = chapter?.id ?? null;
+    return entered ? this.arrival.play(chapter.title, this.currentTheme().id) : null;
   }
 
   private nextLevel(): void {
@@ -290,7 +315,7 @@ class Game {
 
   /** Esc: close the map or the stats panel. */
   private escape(): void {
-    if (this.map.isOpen) this.map.hide();
+    if (this.map.isOpen) this.map.close();
     else $('stats').classList.add('hidden');
   }
 
@@ -355,6 +380,11 @@ class Game {
 
     window.addEventListener('keydown', (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (this.arrival.active) {
+        e.preventDefault();
+        if (!e.repeat) this.arrival.dismiss();
+        return;
+      }
       if (this.map.isOpen) {
         if (this.map.key(e)) e.preventDefault();
         return;
@@ -392,6 +422,9 @@ class Game {
           break;
         case 'KeyL':
           this.showMap();
+          break;
+        case 'KeyF':
+          this.readout.toggle();
           break;
         case 'Escape':
           this.escape();

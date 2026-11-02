@@ -274,6 +274,51 @@ kbd {
   display: block;
 }
 
+/* Entering a chapter: the page fades to the world's color, with the chapter's name. */
+.arrival {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  text-align: center;
+  font-size: clamp(40px, 7vw, 84px);
+  font-weight: 800;
+  color: var(--ink);
+  background: #eef7fb;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease-out;
+}
+.arrival.show {
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0.3s ease-in;
+}
+.arrival[data-theme='forest'] {
+  color: #3f5b2f;
+  background: #e6f2dc;
+}
+.arrival[data-theme='night'] {
+  color: #e8ecff;
+  background: #1f2a66;
+}
+
+/* The hidden frame-rate readout. */
+.fps {
+  position: fixed;
+  left: 50%;
+  top: 72px;
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  border-radius: 8px;
+  background: rgba(20, 28, 48, 0.82);
+  color: #fff;
+  font: 600 13px/1.4 ui-monospace, monospace;
+  pointer-events: none;
+}
+
 .modal {
   position: fixed;
   inset: 0;

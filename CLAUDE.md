@@ -55,7 +55,8 @@ goal reachable only lying. **Dead ends** counts states you can reach but never w
 
 `/levels.html` is the level index (mini-maps, validation status, play links); `/?level=<id>` opens
 one level. `/?sheet=<theme>` shows every tile in a theme (`&bridges=0` retracts the bridges), for
-approving readability before scenery; `&theme=<theme>` previews a theme on any level.
+approving readability before scenery; `&theme=<theme>` previews a theme on any level. In the game,
+F (or `?fps`) toggles a hidden frame-rate readout, which also shows triangles and draw calls.
 
 ## Designing handmade levels
 
@@ -128,7 +129,7 @@ SHOTS=<scratch dir> npm run verify -- frost-
 It plays every optimal solution with real key events, reports WON/NOT WON at par, and saves start
 and end screenshots to read. Controls follow the screen, so the driver asks the game which arrow
 rolls which way (`window.skytumbleKeyFor`). Options for `verify`/`play.mjs`: `STEPS=1` (a shot
-after every move), `PEEK_AT=n` (hold Space after move n), `ROTATE=n` (quarter turns before playing). For the sky map (a DOM overlay), a plain headless screenshot of `/`
+after every move), `PEEK_AT=n` (hold Space after move n), `ROTATE=n` (quarter turns before playing), `TITLE_CHECK=1` (check when the chapter title shows, instead of playing). For the sky map (a DOM overlay), a plain headless screenshot of `/`
 with `--virtual-time-budget=20000` is enough. Gotchas:
 
 - `--virtual-time-budget` screenshots freeze CSS transitions mid-way; use the driver instead.

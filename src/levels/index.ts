@@ -36,6 +36,10 @@ export function isExtra(chapter: Chapter): boolean {
 /** Every handmade level in play order, across chapters. */
 export const HANDMADE: HandmadeLevel[] = CHAPTERS.flatMap((c) => c.levels);
 
+export function chapterOf(id: string): Chapter | undefined {
+  return CHAPTERS.find((c) => c.levels.some((l) => l.id === id));
+}
+
 export function findLevel(id: string): HandmadeLevel | undefined {
   return HANDMADE.find((h) => h.id === id);
 }

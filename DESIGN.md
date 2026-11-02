@@ -409,8 +409,8 @@ glade, in the spirit of Totoro and Ghibli films.
 | If it runs slowly | Cut canopy sway first, then leaves, then cloud shadows, with pollen last |
 
 Build order: tile sheet (every mechanic on moss, with the new rims) → the world → the shared
-chapter title and frame-rate readout. Status: the world is signed off and locked in; the chapter
-title and frame-rate readout are next, then Frost.
+chapter title and frame-rate readout. Status: the world is signed off and locked in. The chapter
+title and frame-rate readout (F, or `?fps`) are built; Frost is next.
 
 **After themes (not yet planned in detail):** the split + paint biome. Decisions already made in the
 Toybox grilling are listed under *Kept for the split/paint biome* above; start with a short
