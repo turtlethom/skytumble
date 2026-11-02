@@ -11,6 +11,7 @@ const COLORS = {
   goal: 0xffd36b,
   cloud: 0xffffff,
   ice: 0xbfe6ff,
+  iceEdge: 0x8fc1e6,
   glint: 0xffffff,
   belt: 0x4a5266,
   rail: 0x8a93a8,
@@ -447,6 +448,15 @@ export class World {
           }
         }
       }
+      const { snow } = this.theme.finish;
+      if (snow !== undefined) {
+        // A little snow caught in the seams between the planks.
+        for (const x of [-0.16, 0.16]) {
+          const seam = box(0.05, 0.006, 0.9, snow, { roughness: 1 });
+          seam.position.set(x, 0.002, 0);
+          g.add(seam);
+        }
+      }
       return g;
     }
 
@@ -509,14 +519,34 @@ export class World {
     }
 
     if (tile === Tile.Ice) {
-      const ice = box(0.98, 0.18, 0.98, COLORS.ice, { roughness: 0.08, metalness: 0.1 });
+      // A touch of its own light in a world with a sheen, so warm sun doesn't gray it.
+      const ice = box(0.98, 0.18, 0.98, COLORS.ice, {
+        roughness: 0.08,
+        metalness: 0.1,
+        ...(this.theme.finish.iceSheen ? { emissive: COLORS.ice, emissiveIntensity: 0.16 } : {}),
+      });
       ice.position.y = -0.09;
       g.add(ice, earth(jitter, this.theme));
-      // A couple of diagonal glints so ice reads as slick even without reflections.
-      for (const [off, len] of [[-0.18, 0.5], [0.16, 0.3]]) {
-        const glint = box(len, 0.01, 0.05, COLORS.glint, { transparent: true, opacity: 0.7, roughness: 0.1 });
-        glint.rotation.y = Math.PI / 4;
-        glint.position.set(off, 0.005, off * 0.6);
+      const sheen = this.theme.finish.iceSheen;
+      if (sheen) {
+        // A faint deeper edge, enough to set ice off from a pale floor without framing it like a window.
+        for (const [dx, dz, w, d] of [[0, -0.475, 0.98, 0.03], [0, 0.475, 0.98, 0.03], [-0.475, 0, 0.03, 0.92], [0.475, 0, 0.03, 0.92]]) {
+          const edge = box(w, 0.006, d, COLORS.iceEdge, { roughness: 0.2 });
+          edge.position.set(dx, 0.002, dz);
+          g.add(edge);
+        }
+      }
+      // Diagonal glints so ice reads as slick even without reflections.
+      // With a sheen, each tile gets its own glints, so a sheet of ice doesn't look like rows of windows.
+      const shift = sheen ? (jitter - 0.5) * 0.14 : 0;
+      const slant = sheen && Math.floor(jitter * 64) % 2 === 1 ? -1 : 1;
+      const glints = sheen
+        ? [[-0.2 + shift, 0.3 + jitter * 0.22], [0.03 + shift, 0.62 - jitter * 0.2], [0.23 + shift, 0.2 + jitter * 0.18]]
+        : [[-0.18, 0.5], [0.16, 0.3]];
+      for (const [off, len] of glints) {
+        const glint = box(len, 0.01, sheen ? 0.075 : 0.05, COLORS.glint, { transparent: true, opacity: sheen ? 0.95 : 0.7, roughness: 0.1 });
+        glint.rotation.y = (slant * Math.PI) / 4;
+        glint.position.set(off, 0.005, slant * off * (sheen ? 0.9 : 0.6));
         g.add(glint);
       }
       return g;
@@ -534,6 +564,11 @@ export class World {
         const rail = box(0.98, 0.05, 0.08, COLORS.rail);
         rail.position.set(0, 0.02, side * 0.44);
         top.add(rail);
+        if (this.theme.finish.snow !== undefined) {
+          const dust = box(0.98, 0.012, 0.055, this.theme.finish.snow, { roughness: 1 });
+          dust.position.set(0, 0.05, side * 0.44);
+          top.add(dust);
+        }
       }
       for (const phase of [0, 0.5]) {
         const chevron = makeChevron(CONVEYOR_COLORS[dir]);
@@ -619,6 +654,18 @@ export class World {
       base.position.y = 0.02;
       base.receiveShadow = true;
       g.add(base);
+      if (this.theme.finish.snow !== undefined) {
+        // Small drifts on the stone's rim, clear of the switch's own color.
+        const mat = new THREE.MeshStandardMaterial({ color: this.theme.finish.snow, roughness: 1 });
+        for (const a of [0.9, 3.4]) {
+          const drift = new THREE.Mesh(driftGeometry, mat);
+          drift.position.set(Math.cos(a + jitter * 6) * 0.385, 0.035, Math.sin(a + jitter * 6) * 0.385);
+          drift.rotation.y = -(a + jitter * 6);
+          // Long along the rim, so it reads as a drift and not a stud.
+          drift.scale.set(0.055, 0.03, 0.17);
+          g.add(drift);
+        }
+      }
     }
 
     if (tile === Tile.ExtraHeavy) {
@@ -1368,7 +1415,7 @@ function floorTile(jitter: number, theme: Theme): THREE.Mesh {
     plain.position.y = -0.09;
     return plain;
   }
-  const mats = detailMaterials(theme.id, theme.floor.detail);
+  const mats = detailMaterials(theme.id, theme.floor.detail, theme.floor.style === 'snow');
   const mesh = new THREE.Mesh(floorGeometry(), mats[Math.floor(jitter * mats.length)]);
   mesh.position.y = -0.09;
   // A quarter turn per tile, so neighbors sharing a top don't look stamped.
@@ -1395,11 +1442,11 @@ function floorGeometry(): THREE.BoxGeometry {
 const detailCache = new Map<string, THREE.MeshStandardMaterial[]>();
 
 /** Materials for a theme's detailed floor, built once and shared by every tile. */
-function detailMaterials(id: string, shades: number[]): THREE.MeshStandardMaterial[] {
+function detailMaterials(id: string, shades: number[], snow: boolean): THREE.MeshStandardMaterial[] {
   const cached = detailCache.get(id);
   if (cached) return cached;
   const mats = [1, 2, 3, 4].map((seed) => {
-    const map = detailTexture(shades, seed);
+    const map = snow ? snowTexture(shades, seed) : detailTexture(shades, seed);
     return new THREE.MeshStandardMaterial({ map, roughness: 1 });
   });
   detailCache.set(id, mats);
@@ -1433,6 +1480,61 @@ function detailTexture(shades: number[], seed: number): THREE.CanvasTexture {
   return map;
 }
 
+/** Wind-shaped snow: soft drifts, ripples with a lit and a shaded side, and a few bright sparkles. */
+function snowTexture(shades: number[], seed: number): THREE.CanvasTexture {
+  const size = 192;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  let s = seed * 104729;
+  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const [shade, base, lit, bright] = shades.map(cssColor);
+  /** The same color with no opacity: fading to plain `transparent` would fade through black. */
+  const clear = (hex: number) => `rgba(${hex >> 16}, ${(hex >> 8) & 255}, ${hex & 255}, 0)`;
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, size, size);
+  // Soft drifts: broad, faded pools of light and shade.
+  for (let i = 0; i < 7; i++) {
+    const [x, y, r] = [rnd() * size, rnd() * size, 40 + rnd() * 50];
+    const isShade = i % 3 === 0;
+    const pool = ctx.createRadialGradient(x, y, 0, x, y, r);
+    pool.addColorStop(0, isShade ? shade : lit);
+    pool.addColorStop(1, clear(isShade ? shades[0] : shades[2]));
+    ctx.globalAlpha = 0.6;
+    ctx.fillStyle = pool;
+    ctx.fillRect(0, 0, size, size);
+  }
+  // Ripples, all roughly along one wind direction, drawn shaded side first and lit side just above.
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 4; i++) {
+    const [x, y, len, bow] = [rnd() * size * 0.6, rnd() * size, 60 + rnd() * 70, (rnd() - 0.5) * 26];
+    const rise = -12 + rnd() * 8;
+    const stroke = (color: string, width: number, alpha: number, dy: number) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.moveTo(x, y + dy);
+      ctx.quadraticCurveTo(x + len / 2, y + bow + dy, x + len, y + rise + dy);
+      ctx.stroke();
+    };
+    stroke(shade, 3, 0.45, 2.5);
+    stroke(bright, 2.5, 0.7, 0);
+  }
+  // Sparkles: tiny bright crystals where the sun catches the snow.
+  ctx.fillStyle = '#ffffff';
+  for (let i = 0; i < 26; i++) {
+    ctx.globalAlpha = 0.6 + rnd() * 0.4;
+    ctx.beginPath();
+    ctx.arc(rnd() * size, rnd() * size, 0.7 + rnd() * 1.1, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  const map = new THREE.CanvasTexture(canvas);
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.anisotropy = 4;
+  return map;
+}
+
 /** Thin tapering roots around a soil clump, merged into one mesh per variant. */
 const rootGeometries = [0, 1, 2, 3].map((variant) => {
   const roots: THREE.BufferGeometry[] = [];
@@ -1450,6 +1552,24 @@ const rootGeometries = [0, 1, 2, 3].map((variant) => {
   return mergeGeometries(roots)!;
 });
 const clumpGeometry = new THREE.SphereGeometry(0.38, 14, 10);
+const driftGeometry = new THREE.SphereGeometry(1, 10, 6);
+
+/** Clusters of icicles hanging from the soil, merged into one mesh per variant. */
+const icicleGeometries = [0, 1, 2, 3].map((variant) => {
+  const icicles: THREE.BufferGeometry[] = [];
+  const count = 4 + variant;
+  for (let i = 0; i < count; i++) {
+    const a = (i / count) * Math.PI * 2 + variant * 1.3;
+    const len = 0.28 + ((i * 41 + variant * 17) % 10) * 0.075;
+    const radius = 0.045 + ((i * 23 + variant) % 4) * 0.012;
+    const spike = new THREE.ConeGeometry(radius, len, 7);
+    spike.rotateX(Math.PI);
+    const ring = 0.14 + ((i * 7) % 3) * 0.1;
+    spike.translate(Math.cos(a) * ring, -0.62 - len / 2, Math.sin(a) * ring);
+    icicles.push(spike);
+  }
+  return mergeGeometries(icicles)!;
+});
 
 /** What's under a floating tile: soil, and either hanging rock or a clump with dangling roots. */
 function earth(jitter: number, theme: Theme): THREE.Object3D {
@@ -1468,6 +1588,14 @@ function earth(jitter: number, theme: Theme): THREE.Object3D {
       new THREE.MeshStandardMaterial({ color: theme.earth.hanging, roughness: 1 }),
     );
     g.add(clump, roots);
+    return g;
+  }
+  if (theme.earth.style === 'icicles') {
+    const icicles = new THREE.Mesh(
+      icicleGeometries[Math.floor(jitter * icicleGeometries.length)],
+      new THREE.MeshStandardMaterial({ color: theme.earth.hanging, roughness: 0.25 }),
+    );
+    g.add(icicles);
     return g;
   }
   if (jitter > 0.35) {

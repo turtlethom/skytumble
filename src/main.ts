@@ -69,6 +69,8 @@ class Game {
     const params = new URLSearchParams(location.search);
     this.themeOverride = THEMES[params.get('theme') ?? params.get('sheet') ?? ''] ?? null;
     if (params.has('fps')) this.readout.toggle();
+    // For approving a theme's readability without relying on color.
+    if (params.has('gray')) document.documentElement.style.filter = 'grayscale(1)';
     if (params.has('sheet')) {
       void this.start(tileSheet(Number(params.get('bridges') ?? 15)), 0);
       return;

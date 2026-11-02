@@ -55,7 +55,8 @@ goal reachable only lying. **Dead ends** counts states you can reach but never w
 
 `/levels.html` is the level index (mini-maps, validation status, play links); `/?level=<id>` opens
 one level. `/?sheet=<theme>` shows every tile in a theme (`&bridges=0` retracts the bridges), for
-approving readability before scenery; `&theme=<theme>` previews a theme on any level. In the game,
+approving readability before scenery; `&theme=<theme>` previews a theme on any level; `&gray` shows
+the page in black and white, to check a tile reads without color. In the game,
 F (or `?fps`) toggles a hidden frame-rate readout, which also shows triangles and draw calls.
 
 ## Designing handmade levels

@@ -410,7 +410,32 @@ glade, in the spirit of Totoro and Ghibli films.
 
 Build order: tile sheet (every mechanic on moss, with the new rims) → the world → the shared
 chapter title and frame-rate readout. Status: the world is signed off and locked in. The chapter
-title and frame-rate readout (F, or `?fps`) are built; Frost is next.
+title and frame-rate readout (F, or `?fps`) are built.
+
+**Frost Isle**, settled in a grilling session 2026-11-01. A pink-gold alpine dawn in a soft Ghibli
+winter style. Its biggest risk is ice and snow blurring together: with 179 ice tiles in the
+chapter, players must always see where they'd slide.
+
+| Area | Decision |
+|---|---|
+| Floor | Warm white snow, with soft drifts, faint wind ripples and a few sparkles |
+| Ice tiles | Stay pale blue, with bolder glints that vary per tile, a faint deeper edge and a perfectly smooth surface |
+| Below the board | Soft, rounded ridges with snow caps, in cloud, sinking into rose-lilac haze |
+| Under the tiles | Icicles |
+| Sky | Soft clouds with gold-lit undersides, on a peach-to-blue sky |
+| Motion | 15 to 20 big, slow snowflakes, ice sparkles, drifting cloud, spindrift off distant summits |
+| Block | Rust red |
+| Mechanics | Snow on stone bases, belt rails and planks; switch and bridge colors stay clean |
+| Fragile tiles | Dark weathered planks with a little snow in the seams |
+| Interface | White panels with a dusty rose highlight; the title is dusty rose on cream; the map island keeps its icy look with rose added |
+| If it runs slowly | Cut spindrift first, then drifting cloud, then flakes, with sparkles last |
+
+- **Tile approval:** the sheet is approved in color and in black and white (`&gray`), so ice has to
+  read by sheen and texture alone. The glints carry this now; the user found a stronger edge looked
+  like window panes, so try bolder glints before a darker edge.
+- **Windy Peaks** becomes bare rock with no snow, so the two mountain worlds stay distinct.
+
+Status: tile sheet built, awaiting approval.
 
 **After themes (not yet planned in detail):** the split + paint biome. Decisions already made in the
 Toybox grilling are listed under *Kept for the split/paint biome* above; start with a short
@@ -584,6 +609,11 @@ the next release (split + paint) will be discussed another time.
 **2026-11-01 — First Glade.** "I love every detail of the forest level" → the world is locked in
 and goes live, with no changes after its first build. The chapter title and frame-rate readout
 still come next.
+
+**2026-11-02 — Frost tile sheet, first round.** Snow read as snow but "somewhat plain" → soft drifts,
+faint wind ripples and sparkles. The ice edge "does in fact look like panes" → a thinner, paler edge,
+and glints that vary per tile. Sliding on ice and the goal marker read fine in black and white;
+switches and the retracted bridge drew no complaints.
 
 ## Architecture
 

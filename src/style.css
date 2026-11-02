@@ -72,6 +72,11 @@ body[data-theme='forest'] #sky {
   }
 }
 
+/* Frost Isle: a peach-to-blue dawn over rose-lilac haze. */
+body[data-theme='frost'] {
+  background: linear-gradient(180deg, #8fb7e6 0%, #f2d2c4 26%, #e9cfdc 50%, #d9c8e4 100%);
+}
+
 /* Starfall plays under a night sky. */
 body[data-theme='night'] {
   background: linear-gradient(180deg, #1f2a66 0%, #34418f 45%, #5560ad 78%, #7a6cb4 100%);
@@ -299,6 +304,10 @@ kbd {
 .arrival[data-theme='forest'] {
   color: #3f5b2f;
   background: #e6f2dc;
+}
+.arrival[data-theme='frost'] {
+  color: #a65f74;
+  background: #fbf3ea;
 }
 .arrival[data-theme='night'] {
   color: #e8ecff;
