@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { Scenery, intoTheSky, seeded } from './scenery';
 
 /** The haze the treetops fade into, close to the page's sky gradient just above them. */
 const HAZE = 0xcfe8dc;
@@ -19,20 +20,10 @@ const CLOUD_SHADE = 0.16;
 const LEAVES = 3;
 const POLLEN = 80;
 
-/** Where on screen (0 bottom, 1 top) the canopy turns to haze, and where it thins out into the sky. */
-const HAZE_NEAR = 0.3;
-const HAZE_FAR = 0.92;
-const HAZE_TO = 0.76;
-const FADE_FROM = 0.7;
-const FADE_TO = 0.9;
 /** The shade in the gaps between crowns. */
 const FOREST_DEPTHS = 0x86b394;
 
-/** Up the screen means farther away: into the haze, then out into the sky behind the canvas. */
-const INTO_THE_SKY = `
-  float up = gl_FragCoord.y / uHeight;
-  gl_FragColor.rgb = mix(gl_FragColor.rgb, uHaze, mix(${HAZE_NEAR}, ${HAZE_FAR}, smoothstep(0.0, ${HAZE_TO}, up)));
-  gl_FragColor.a *= 1.0 - smoothstep(${FADE_FROM}, ${FADE_TO}, up);`;
+const INTO_THE_SKY = intoTheSky(0.3, 0.92);
 
 interface Leaf {
   mesh: THREE.Mesh;
@@ -44,7 +35,7 @@ interface Leaf {
  * First Glade's surroundings: a sea of treetops below the board, leaves and pollen around it.
  * The big clouds are behind the canvas, in the page (`#sky`), so they hold still when the view turns.
  */
-export class ForestScenery {
+export class ForestScenery implements Scenery {
   readonly group = new THREE.Group();
   private uniforms = {
     uTime: { value: 0 },
@@ -270,10 +261,4 @@ function crownGeometry(segments: number, rings: number): THREE.BufferGeometry {
     return dome;
   };
   return mergeGeometries([lobe(0.62, 0, 0, 1), lobe(0.5, 0.55, 0.1, 0.72), lobe(0.46, -0.32, 0.5, 0.66), lobe(0.48, -0.25, -0.5, 0.7)])!;
-}
-
-/** A small repeatable random sequence, so the forest looks the same on every visit. */
-function seeded(seed: number): () => number {
-  let s = seed * 7919;
-  return () => (s = (s * 16807) % 2147483647) / 2147483647;
 }

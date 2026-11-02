@@ -149,7 +149,8 @@ src/game/      pure rules: types, rules (step: roll → slide → push → slide
 src/levels/    chapter .txt files, format.ts (parser), validate.ts (checks + one-trick guard), index.ts
 src/render/    Three.js world (tiles, animations, push cue), palette.ts (belt colors by direction),
                themes.ts (each chapter's look; rules in DESIGN.md's *Chapter themes*),
-               forest.ts (First Glade's treetops, leaves and pollen; its clouds are `#sky` in the page)
+               scenery.ts (what a world's surroundings provide), forest.ts and frost.ts (each world's
+               scenery; the big clouds behind the game are `#sky` in the page)
 src/ui/        progress (localStorage), map (campaign sky map; island layout per chapter)
 src/main.ts    game controller: modes, HUD, splash, key focus sink (for Vimium)
 scripts/       check-levels.ts; design/ (lib, explore, analyze, sim, search, solutions, play, verify)

@@ -145,8 +145,9 @@ if (process.env.TITLE_CHECK === '1') {
 } else
 for (const [id, moves] of Object.entries(solutions)) {
   await send('Page.navigate', { url: `${base}/?level=${id}` });
-  // A fresh load shows the chapter title, then the island rises.
-  await sleep(1500);
+  // A fresh load shows the chapter title, then the island rises. On a slow load the title comes late,
+  // so wait for it to appear before waiting for it to go: any key sent during it would only skip it.
+  await untilTitle();
   while (await titleUp()) await sleep(100);
   await sleep(1300);
   for (let r = 0; r < Number(process.env.ROTATE ?? 0); r++) await key('KeyE');

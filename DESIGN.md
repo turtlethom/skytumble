@@ -435,7 +435,8 @@ chapter, players must always see where they'd slide.
   like window panes, so try bolder glints before a darker edge.
 - **Windy Peaks** becomes bare rock with no snow, so the two mountain worlds stay distinct.
 
-Status: tile sheet built, awaiting approval.
+Status: live. The user sent it live without notes on the open questions (gold in the sky, flakes,
+sparkles), so those stay open if they come up in play.
 
 **After themes (not yet planned in detail):** the split + paint biome. Decisions already made in the
 Toybox grilling are listed under *Kept for the split/paint biome* above; start with a short
@@ -614,6 +615,9 @@ still come next.
 faint wind ripples and sparkles. The ice edge "does in fact look like panes" → a thinner, paler edge,
 and glints that vary per tile. Sliding on ice and the goal marker read fine in black and white;
 switches and the retracted bridge drew no complaints.
+
+**2026-11-02 — Frost Isle.** Reworked tiles approved, then the finished world was sent live with no
+notes. Windy Peaks is next.
 
 ## Architecture
 

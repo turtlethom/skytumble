@@ -35,7 +35,7 @@ body[data-theme='forest'] {
   background: linear-gradient(180deg, #5fb2f0 0%, #9bd3f4 24%, #cde9e6 42%, #cfe8dc 100%);
 }
 
-/* Big soft summer clouds, far off behind the canvas. Only First Glade shows them. */
+/* Big soft clouds, far off behind the canvas: summer white in First Glade, gold-lit in Frost Isle. */
 #sky {
   display: none;
   position: fixed;
@@ -44,7 +44,8 @@ body[data-theme='forest'] {
   pointer-events: none;
 }
 
-body[data-theme='forest'] #sky {
+body[data-theme='forest'] #sky,
+body[data-theme='frost'] #sky {
   display: block;
 }
 
@@ -61,7 +62,7 @@ body[data-theme='forest'] #sky {
     radial-gradient(ellipse 18% 32% at 18% 60%, #fff 76%, rgba(255, 255, 255, 0) 100%),
     radial-gradient(ellipse 21% 33% at 74% 56%, #fff 76%, rgba(255, 255, 255, 0) 100%),
     radial-gradient(ellipse 46% 26% at 48% 72%, #fff 80%, rgba(255, 255, 255, 0) 100%),
-    radial-gradient(ellipse 47% 24% at 48% 82%, #d5e6f2 80%, rgba(213, 230, 242, 0) 100%);
+    radial-gradient(ellipse 47% 24% at 48% 82%, var(--cloud-under, #d5e6f2) 80%, var(--cloud-under-clear, rgba(213, 230, 242, 0)) 100%);
   filter: blur(3px);
   animation: sky-drift var(--t) linear var(--d) infinite;
 }
@@ -74,7 +75,14 @@ body[data-theme='forest'] #sky {
 
 /* Frost Isle: a peach-to-blue dawn over rose-lilac haze. */
 body[data-theme='frost'] {
-  background: linear-gradient(180deg, #8fb7e6 0%, #f2d2c4 26%, #e9cfdc 50%, #d9c8e4 100%);
+  --accent: #b1687e;
+  --accent-ink: #fff8f6;
+  --glass: rgba(255, 251, 250, 0.84);
+  --glass-border: rgba(255, 245, 244, 0.95);
+  --shadow: 0 6px 24px rgba(90, 60, 90, 0.2);
+  --cloud-under: #f4c489;
+  --cloud-under-clear: rgba(244, 196, 137, 0);
+  background: linear-gradient(180deg, #7fb0e8 0%, #b6c7e6 16%, #f3d2c2 34%, #eccfd8 55%, #e3cde3 100%);
 }
 
 /* Starfall plays under a night sky. */
@@ -535,10 +543,10 @@ kbd {
   text-shadow: 0 1px 2px rgba(25, 50, 20, 0.6);
 }
 .sm-island.frost {
-  --top: linear-gradient(#f6fcff, #cbe8ff);
-  --edge: #9cc8e8;
-  --cliff: #93abc6;
-  --cliff-dark: #566c88;
+  --top: linear-gradient(#fbfbff, #d9e6fb);
+  --edge: #dbb3c6;
+  --cliff: #a39bc2;
+  --cliff-dark: #6c6490;
 }
 
 .sm-island.lab {
