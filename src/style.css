@@ -46,7 +46,8 @@ body[data-theme='forest'] {
 
 body[data-theme='forest'] #sky,
 body[data-theme='frost'] #sky,
-body[data-theme='peaks'] #sky {
+body[data-theme='peaks'] #sky,
+body[data-theme='toybox'] #sky {
   display: block;
 }
 
@@ -111,6 +112,9 @@ body[data-theme='toybox'] {
   --glass: rgba(255, 249, 236, 0.86);
   --glass-border: rgba(255, 246, 228, 0.95);
   --shadow: 0 6px 24px rgba(80, 45, 70, 0.22);
+  --cloud-puff: #f7e2e6;
+  --cloud-under: #e9a9bd;
+  --cloud-under-clear: rgba(233, 169, 189, 0);
   background: linear-gradient(180deg, #a999dc 0%, #c9aede 22%, #eebfd0 46%, #f9cfae 72%, #fbdcb6 100%);
 }
 
@@ -615,10 +619,10 @@ kbd {
 
 /* Toybox: a playroom of primary colors. */
 .sm-island.toy {
-  --top: linear-gradient(#ffe7a3, #ffd166);
-  --edge: #e9a93a;
-  --cliff: #ef6f6c;
-  --cliff-dark: #a8403e;
+  --top: linear-gradient(#fbf2e0, #ead9bb);
+  --edge: #a8483f;
+  --cliff: #a04a46;
+  --cliff-dark: #5e2522;
 }
 
 /* Extras sit off the path, smaller, so a column of them fits beside the campaign. */

@@ -7,6 +7,7 @@ import { CONVEYOR_COLORS, cssColor } from './palette';
 import { PeaksScenery } from './peaks';
 import { Scenery } from './scenery';
 import { NEUTRAL, Theme } from './themes';
+import { ToyboxScenery } from './toybox';
 import { makeToySamples, plasticEnvironment } from './toys';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -117,6 +118,7 @@ const SCENERY: Partial<Record<Theme['sky'], () => Scenery>> = {
   forest: () => new ForestScenery(),
   frost: () => new FrostScenery(),
   peaks: () => new PeaksScenery(),
+  toybox: () => new ToyboxScenery(),
 };
 
 /** Three.js view of a level. Holds no game rules: the controller tells it what happened. */

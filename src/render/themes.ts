@@ -101,7 +101,7 @@ const TOYBOX: Theme = {
   block: { color: 0xf5c518, edge: 0x7f5a05, roughness: 0.2 },
   floor: { color: 0xa04a46, detail: [0x5e2522, 0xa04a46, 0xb86660], style: 'pegboard' },
   earth: { soil: 0x7c3733, hanging: 0xcfc2a6, style: 'pegs' },
-  fragile: { light: 0xb4b6bb, dark: 0x9b9ea4 },
+  fragile: { light: 0xa98a60, dark: 0x93754e },
   finish: { switchBase: 0xdcd1b8, plastic: true },
 };
 
@@ -111,6 +111,7 @@ export const CHAPTER_THEMES: Record<string, Theme> = {
   frost: FROST,
   wind: PEAKS,
   star: NIGHT,
+  toy: TOYBOX,
 };
 
 /** Every theme by id, so `?theme=forest` can preview one on any level or on the tile sheet. */

@@ -484,7 +484,7 @@ sunset, wallpaper and dust carry the nostalgia. The biggest worry is code-made t
 | Floor | Soft, dusty red glossy plastic with small, shallow pegboard holes |
 | Under the tiles | Dangling pegs and connector pieces |
 | Block | Sunny yellow, deeper than the goal, with a darker edge |
-| Fragile tiles | Thin, light grey snap-on plates with plank lines, keeping the "planks break" cue |
+| Fragile tiles | Thin, warm tan snap-on plates with plank lines, keeping the "planks break" cue (the first light grey read as too light) |
 | Shape switches | A small model of the block on a peg: one, two or three parts for cube, normal, tall |
 | Other switches, bridges | Ivory plastic bases, with colors unchanged |
 | Belts | Tank-tread links, with the same arrows |
@@ -500,10 +500,20 @@ sunset, wallpaper and dust carry the nostalgia. The biggest worry is code-made t
   (the fallback is four holes per tile); the block, goal and up-pointing belts are all yellow; bright
   piles and moving toys could make gaps harder to read; fine wallpaper shapes may not read from far off.
 
-Status: the tile sheet and sample toys are built, awaiting approval (`?sheet=toybox`, `?sheet=toybox&toys`,
-or any level with `&theme=toybox`). The chapter itself keeps the neutral look until the world is done. A
-stronger shine on the floor washed out the red bridges and brought the floor close to the sky color at
-gaps, so the floor has a soft sheen and the block and toys carry the gloss.
+Status: signed off by the user 2026-11-02; every Toybox solution still wins at par in headless
+Chrome. The tile sheet (`?sheet=toybox`) and sample toys (`?sheet=toybox&toys`) were approved. What the
+first build taught:
+
+- **Toy size and depth:** toys as near as the other worlds' scenery were huge and hurt reading, so the sea
+  starts about 50 units below the board. Near toys are still as large as a few tiles, and hazed.
+- **The track floats:** full-length posts cut across the board in perspective, so it has short stubs
+  instead, like the pegs under the board.
+- **Tower columns thin away** as they go down, for the same reason.
+- **Floor shine:** a stronger shine washed out the red bridges and brought the floor close to the sky color
+  at gaps, so the floor has a soft sheen and the block and toys carry the gloss.
+- **Cost:** about 320k to 355k triangles a frame, against 206k in Windy Peaks, 348k in Frost Isle and 582k in
+  First Glade. The sea uses a cheap highlight rather than true reflections. The user reported no slowdown,
+  but the frame rate on their laptop hasn't been read off (F in the game).
 
 **Next, after Toybox:** Starfall. Follow *Each theme* above, and read the logged notes for what each
 world taught: keep scenery deep below the board at first, and check that a palette doesn't suggest a
@@ -728,6 +738,10 @@ them and faster.
 
 **2026-11-02 — Windy Peaks, second round.** The grey version went live with no further notes. Paused
 here at the user's request; the Toybox grilling comes at another time.
+
+**2026-11-02 — Toybox.** "I really love with what you did with the toy theme, just wow!" The one nit: the
+light grey plates looked too light. Tried slate, teal, sage and tan on `toy-02`; the user chose tan. They
+feel Toybox's look is now well ahead of the other worlds in content.
 
 ## Architecture
 
