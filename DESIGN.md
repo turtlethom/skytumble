@@ -473,6 +473,19 @@ wind feels in motion, the block's grey, neutral versus warm light) stay open if 
 with a grilling on the toy island, and read the logged notes for what each world taught: keep scenery
 deep below the board at first, and check that a palette doesn't suggest a different biome.
 
+**Planned with Starfall's theme: a better peek** (asked for by the user 2026-11-02; they love flip
+gravity, and this would help a lot). While holding Space to look at the other floor:
+
+- **Blinking block outline:** an outline blinks on the floor you're looking at, showing where the
+  block would be if it were on that floor: directly across from the block, same cells and pose. It's
+  separate from the violet preview of where a flip would land, and both can show in one peek.
+- **Ghost of your floor:** the floor you're on stays visible as a very faint, transparent ghost.
+  Today it disappears completely during a peek.
+- **The real block hides** during a peek, and the outline stands in for it.
+
+This changes only the view, not the rules, so pars and solutions stay the same. It also applies to
+Gravity Lab. Still open: how faint the ghost can be while the floor you're viewing stays easy to read.
+
 **After themes (not yet planned in detail):** the split + paint biome. Decisions already made in the
 Toybox grilling are listed under *Kept for the split/paint biome* above; start with a short
 grilling session to fill the gaps (where split cubes appear, how many colors, the look).
