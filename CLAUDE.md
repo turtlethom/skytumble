@@ -55,7 +55,7 @@ goal reachable only lying. **Dead ends** counts states you can reach but never w
 
 `/levels.html` is the level index (mini-maps, validation status, play links); `/?level=<id>` opens
 one level. `/?sheet=<theme>` shows every tile in a theme (`&bridges=0` retracts the bridges), for
-approving readability before scenery; `/?sheet=toybox&toys` stands Toybox's sample toys on its floor; `/?sheet=peaks&aerie` shows Windy Peaks' rock structures and birds up close; `&theme=<theme>` previews a theme on any level; `&gray` shows
+approving readability before scenery; `/?sheet=toybox&toys` stands Toybox's sample toys on its floor; `/?sheet=peaks&aerie` shows Windy Peaks' rock structures and birds up close; `/?sheet=frost&summit` shows Frost Isle's reindeer up close; `&theme=<theme>` previews a theme on any level; `&gray` shows
 the page in black and white, to check a tile reads without color. In the game,
 F (or `?fps`) toggles a hidden frame-rate readout, which also shows triangles and draw calls.
 
@@ -151,7 +151,7 @@ src/render/    Three.js world (tiles, animations, push cue), palette.ts (belt co
                themes.ts (each chapter's look; rules in DESIGN.md's *Chapter themes*),
                scenery.ts (what a world's surroundings provide), forest.ts, frost.ts and peaks.ts (each world's
                scenery; the big clouds behind the game are `#sky` in the page), toybox.ts (Toybox's scenery), toys.ts
-               (its toys and plastic reflections), starfall.ts (Starfall's scenery), stardust.ts (flip sparkles), aerie.ts (Windy Peaks' arches, nests and birds)
+               (its toys and plastic reflections), starfall.ts (Starfall's scenery), stardust.ts (flip sparkles), aerie.ts (Windy Peaks' arches, nests and birds), ridge.ts (Frost Isle's ridge, reindeer and cable towers)
 src/ui/        progress (localStorage), map (campaign sky map; island layout per chapter)
 src/main.ts    game controller: modes, HUD, splash, key focus sink (for Vimium)
 scripts/       check-levels.ts; design/ (lib, explore, analyze, sim, search, solutions, play, verify)

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { FrostRidge } from './ridge';
 import { Scenery, SceneryTiles, canvas, cloudTexture, intoTheSky, seeded, softDot } from './scenery';
 
 /** The rose-lilac haze everything far below sinks into. */
@@ -16,7 +17,7 @@ const SUMMIT_TOP_NEAR = -40;
 const SUMMIT_TOP_FAR = -24;
 const CLOUD_LEVELS = [-56, -51];
 
-/** Motion, kept apart so it can be turned down. If it runs slowly, cut spindrift, then cloud, then flakes, then sparkles. */
+/** Motion, kept apart so it can be turned down. If it runs slowly, cut spindrift, then cloud, then flakes, with reindeer and sparkles last. */
 const SPINDRIFT = 8;
 const CLOUD_SPEED = 0.0035;
 const FLAKES = 18;
@@ -37,7 +38,7 @@ interface Veil {
   phase: number;
 }
 
-/** Frost Isle's surroundings: soft snow-capped ridges in a sea of cloud, with flakes, sparkles and spindrift. */
+/** Frost Isle's surroundings: soft snow-capped ridges in a sea of cloud, reindeer on a long ridge behind the board, flakes, sparkles and spindrift. */
 export class FrostScenery implements Scenery {
   readonly group = new THREE.Group();
   private uniforms = {
@@ -54,17 +55,21 @@ export class FrostScenery implements Scenery {
   private ice: { x: number; z: number }[] = [];
   private spread = 6;
   private seconds = 0;
+  readonly ridge: FrostRidge;
 
   constructor() {
     this.group.add(this.makeHazeFloor(), ...this.makeSummits(), ...this.makeClouds());
     this.flakes = this.makeFlakes();
     this.group.add(this.flakes);
     this.makeSparkles();
+    this.ridge = new FrostRidge(this.uniforms);
+    this.group.add(this.ridge.group);
   }
 
   place(center: THREE.Vector3, viewSize: number, { ice }: SceneryTiles): void {
     this.group.position.set(center.x, 0, center.z);
     this.spread = viewSize * 0.7;
+    this.ridge.place(center, viewSize);
     this.ice = ice.map((c) => ({ x: c.x - center.x, z: c.z - center.z }));
     // Sparkles wait for the island to finish rising.
     this.sparkles.forEach((s, i) => {
@@ -82,6 +87,7 @@ export class FrostScenery implements Scenery {
   update(seconds: number, dt: number, canvasHeight: number): void {
     this.seconds = seconds;
     this.uniforms.uHeight.value = canvasHeight;
+    this.ridge.update(seconds);
 
     // Two layers crossing slowly in different directions, so the cloud seems to churn.
     this.clouds.forEach((tex, i) => {

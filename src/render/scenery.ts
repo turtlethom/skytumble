@@ -70,3 +70,31 @@ export function softDot(): THREE.CanvasTexture {
   ctx.fillRect(0, 0, size, size);
   return new THREE.CanvasTexture(c);
 }
+
+/** Smooth random values over a plane. */
+export function noise2(seed: number): (x: number, y: number) => number {
+  const size = 256;
+  const rnd = seeded(seed);
+  const table = Float32Array.from({ length: size * size }, () => rnd());
+  const at = (x: number, y: number) => table[((y & 255) << 8) | (x & 255)];
+  const ease = (t: number) => t * t * (3 - 2 * t);
+  return (x, y) => {
+    const [ix, iy] = [Math.floor(x), Math.floor(y)];
+    const [u, v] = [ease(x - ix), ease(y - iy)];
+    const top = at(ix, iy) + (at(ix + 1, iy) - at(ix, iy)) * u;
+    const bottom = at(ix, iy + 1) + (at(ix + 1, iy + 1) - at(ix, iy + 1)) * u;
+    return top + (bottom - top) * v;
+  };
+}
+
+export function fbm(n: (x: number, y: number) => number, x: number, y: number, octaves: number): number {
+  let [sum, amp, total] = [0, 0.5, 0];
+  for (let i = 0; i < octaves; i++) {
+    sum += n(x, y) * amp;
+    total += amp;
+    amp *= 0.5;
+    x = x * 2.03 + 17;
+    y = y * 2.03 + 9;
+  }
+  return sum / total;
+}

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Scenery, SceneryTiles, canvas, seeded, softDot } from './scenery';
+import { Scenery, SceneryTiles, canvas, fbm, noise2, seeded, softDot } from './scenery';
 
 /**
  * Starfall's two landmarks fill the space behind the board, as every world's surroundings do: the
@@ -36,34 +36,6 @@ const ORBIT_Y = 2;
 const ORBIT_MARGIN = 5;
 const ORBIT_TUBE = 0.045;
 const SATELLITE_SPEED = 1.1;
-
-/** Smooth random values over a plane. */
-function noise2(seed: number): (x: number, y: number) => number {
-  const size = 256;
-  const rnd = seeded(seed);
-  const table = Float32Array.from({ length: size * size }, () => rnd());
-  const at = (x: number, y: number) => table[((y & 255) << 8) | (x & 255)];
-  const ease = (t: number) => t * t * (3 - 2 * t);
-  return (x, y) => {
-    const [ix, iy] = [Math.floor(x), Math.floor(y)];
-    const [u, v] = [ease(x - ix), ease(y - iy)];
-    const top = at(ix, iy) + (at(ix + 1, iy) - at(ix, iy)) * u;
-    const bottom = at(ix, iy + 1) + (at(ix + 1, iy + 1) - at(ix, iy + 1)) * u;
-    return top + (bottom - top) * v;
-  };
-}
-
-function fbm(n: (x: number, y: number) => number, x: number, y: number, octaves: number): number {
-  let [sum, amp, total] = [0, 0.5, 0];
-  for (let i = 0; i < octaves; i++) {
-    sum += n(x, y) * amp;
-    total += amp;
-    amp *= 0.5;
-    x = x * 2.03 + 17;
-    y = y * 2.03 + 9;
-  }
-  return sum / total;
-}
 
 const step = (t: number, lo: number, hi: number) => THREE.MathUtils.smoothstep(t, lo, hi);
 const blend = (a: number[], b: number[], t: number) => a.map((v, i) => v + (b[i] - v) * t);

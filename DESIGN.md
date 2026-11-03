@@ -622,28 +622,26 @@ Status: live 2026-11-02; the user sent it live without notes on the sign-off que
 the structure behind the board, and the others fade out as the view turns, since at the screen's edges they were cut-off
 pieces, nearer and so larger.
 
-**Frost Isle pass**, settled in a grilling session 2026-11-02: a wild frozen range at dawn, centered on one great jagged peak
-beneath the board. Long ago someone mined here, which explains the belts, and now only reindeer walk these ridges. What the
-world lacked most: a sense of life. The biggest fear: ice getting harder to read (179 ice tiles). The pre-mortem: fake-looking reindeer.
+**Frost Isle pass**, settled in a grilling session 2026-11-02 and changed after the samples: the live dawn backdrop stays, with reindeer
+walking one long snowy ridge behind the board. Long ago someone mined here, which explains the belts, and now only reindeer walk these
+ridges. What the world lacked most: a sense of life. The biggest fear: ice getting harder to read (179 ice tiles).
 
 | Area | Decision |
 |---|---|
-| Landmark | One great jagged summit well below the board, seen from all four camera angles, so no sharp point shows through gaps |
-| Under the gaps | Deep turquoise glacier faces, strongest in shadowed cracks, with a rosy haze on sunlit faces and further out, clearly deeper than the ice tiles |
-| Moving piece | Two small groups of reindeer (about four or five each) always walking a ridge loop around the summit, on opposite sides, as dark silhouettes with a warm dawn rim |
-| Framing | A ring of far ice spires in haze, below board level |
-| The old mine | Leaning rusted cable towers with slack cable along two opposite ridges |
-| Unchanged | Tiles, snow, sky, flakes, sparkles, interface. The existing ridges stay as the wider range, thinned where the summit needs room. Ice Lab keeps its neutral look |
+| Backdrop | The live ridges, sky and haze are unchanged. A great summit in a turquoise bowl was tried and dropped: the user preferred the old backdrop, and the turquoise read as a color rather than a mountain |
+| The ridge | One long snowy ridge around the board, painted like the ridges around it. Only the far part shows; the rest fades out, so it follows the camera |
+| Moving piece | Four small groups of reindeer (three each) always walking the crest, evenly spaced, as dark silhouettes with a warm dawn rim. The camera only sees the far part, so four keep one in view |
+| The old mine | Rusted cable towers with slack cable just behind the path, along the whole ridge |
+| Dropped | The far ice spires: the live ridges already frame the board |
+| Unchanged | Tiles, snow, sky, flakes, sparkles, interface. Ice Lab keeps its neutral look |
 | If it runs slowly | Cut spindrift first, then drifting cloud, then flakes, with reindeer and sparkles last |
 
 - **Sign-off:** does it feel alive? And a replay of `frost-04` and `frost-08` has no misread ice or gaps.
-- **Build order:** one reindeer walking, a piece of the turquoise face and one cable tower up close for approval → the full peak,
-  spires and herd → sign-off → ask before it goes live.
-- **If reindeer fail twice:** move them to a far skyline as small, plain silhouettes. If walking feels mechanical, add pauses first.
-- **Risks to watch:** turquoise clashing with the pink sky (lean on the haze first); glacier blue near ice tiles, especially in black
-  and white; reindeer pulling the eye (slow them or push them out); echoes of Starfall's Earth and Windy Peaks' structures.
+- **Risks to watch:** reindeer pulling the eye (slow them or push them out); the ridge crowding the top of the screen.
 
-Status: settled; the samples are next.
+Status: reindeer approved in the samples ("they look fantastic"; "very convincing"); the ridge and towers went live 2026-11-02. The user sent them live without notes on the sign-off
+questions (does it feel alive? ridge contrast behind the top of big boards, the towers, frame rate), so those stay open if they come up in play.
+On the largest levels the reindeer walk close to the top buttons, which the user is fine with for now.
 
 **After that pass: 20 levels per biome** (decided by the user 2026-11-02). Levels
 come out in **batches of 5**, and each batch is playtested and tuned before the next one starts.
@@ -875,6 +873,10 @@ variations on it; the horn "looks really funky" → replaced, and the buttress b
 **2026-11-02 — Windy Peaks flock.** "It looks weird for them to converge on the nest and disappear"; "them disappearing just
 kills the vibe" → every flight crosses the whole backdrop instead. The user's other option, if nests ever come back into it:
 birds gather at a nest, stay a while, then leave.
+
+**2026-11-02 — Frost Isle samples.** Reindeer "look fantastic", "very convincing". The summit "looks strange"; "the older backdrop
+looked nice"; the turquoise is "a bit too strong, i had to know ahead of time that it was a summit to see it" → summit and bowl removed,
+reindeer moved to a soft ridge in the old style.
 
 **2026-11-02 — The better peek.** The full 3D outline was more than needed: "the outline of the face of the block
 is fine... it should be flush with the tile" → flat footprints for both the block outline and the flip landing preview.

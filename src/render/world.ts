@@ -8,6 +8,7 @@ import { PeaksScenery } from './peaks';
 import { Scenery, softDot } from './scenery';
 import { makeAerieCloseUp } from './aerie';
 import { Stardust } from './stardust';
+import { ReindeerCloseUp } from './ridge';
 import { StarfallScenery } from './starfall';
 import { NEUTRAL, Theme } from './themes';
 import { ToyboxScenery } from './toybox';
@@ -199,6 +200,7 @@ export class World {
   private flipTurn: symbol | null = null;
   private stardust = new Stardust();
   private sampleBirds: THREE.Group[] = [];
+  private sampleUpdate: ((seconds: number) => void) | null = null;
   /** 0 = camera above looking down, 1 = below looking up; eased toward its target. */
   private side = 0;
   private moonlight = new THREE.DirectionalLight(0xbcc8ff, 0);
@@ -468,6 +470,14 @@ export class World {
     this.layerGroups[0].add(group);
     this.sampleBirds = birds;
     if (this.scenery instanceof PeaksScenery) this.scenery.aerie.group.visible = false;
+  }
+
+  /** Frost Isle's reindeer up close on a strip of floor, for `?sheet=frost&summit`, without the ridge. */
+  showReindeer(): void {
+    const sample = new ReindeerCloseUp(this.center);
+    this.layerGroups[0].add(sample.group);
+    this.sampleUpdate = (s) => sample.update(s);
+    if (this.scenery instanceof FrostScenery) this.scenery.ridge.group.visible = false;
   }
 
   /** What the last frame cost, for the frame-rate readout. */
@@ -1315,6 +1325,7 @@ export class World {
       if (c.position.x > this.center.x + 30) c.position.x = this.center.x - 30;
     }
     this.scenery?.update(now / 1000, dt, this.renderer.domElement.height, this.camera);
+    this.sampleUpdate?.(now / 1000);
     for (const bird of this.sampleBirds) (bird.userData.flap as (s: number) => void)(now / 1000);
     this.stardust.update(now / 1000, this.renderer.domElement.height, this.camera.fov);
     for (const c of this.chevrons) {

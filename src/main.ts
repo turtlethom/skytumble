@@ -71,6 +71,10 @@ class Game {
     if (params.has('fps')) this.readout.toggle();
     // For approving a theme's readability without relying on color.
     if (params.has('gray')) document.documentElement.style.filter = 'grayscale(1)';
+    if (params.has('summit') && params.has('sheet')) {
+      void this.start(toySampleFloor(), 0).then(() => this.world.showReindeer());
+      return;
+    }
     if (params.has('aerie') && params.has('sheet')) {
       void this.start(toySampleFloor(), 0).then(() => this.world.showAerie());
       return;
