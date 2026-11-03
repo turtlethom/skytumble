@@ -643,6 +643,25 @@ Status: reindeer approved in the samples ("they look fantastic"; "very convincin
 questions (does it feel alive? ridge contrast behind the top of big boards, the towers, frame rate), so those stay open if they come up in play.
 On the largest levels the reindeer walk close to the top buttons, which the user is fine with for now.
 
+**First Glade pass**, settled in a grilling session 2026-11-02: the glade stays as it is, with one giant old tree rising behind the
+board and a few butterflies in the air. The biggest fear: spoiling the calm of a world the user loves, which also teaches new players.
+
+| Area | Decision |
+|---|---|
+| Landmark | One giant, gnarled old tree: twisting bark, big branches, layered leaf clusters. Near the top of the screen, never covering a tile |
+| Tree position | Fixed in one place, directly behind the board at each level's starting camera angle. Other angles keep the plain canopy |
+| Moving piece | About three orange-and-black butterflies, a redder orange than the amber bridges, wandering beyond the board's edges and never crossing a tile |
+| Unchanged | Treetops, sky, leaves, pollen, tiles, interface. Labs and generated levels keep their neutral look |
+| If it runs slowly | Cut canopy sway first, then leaves, then cloud shadows, then pollen, with butterflies last |
+
+- **Sign-off:** replay `tutorial-03` and `tutorial-05`: is it still as calm as before, and does the tree make you want to look at it?
+- **Build order:** one tree and one butterfly on a real level for approval → the rest of the butterflies → sign-off → ask before it goes live.
+- **If the tree misses after two tries:** drop it and keep the butterflies, since the user loves the backdrop without it.
+- **Risks to watch:** the tree looking fake or pasted on; a busier first screen; butterflies seeming to avoid the board; orange near the amber
+  bridges; staying our own design rather than a copy of a famous film's tree.
+
+Status: settled; the samples are next.
+
 **After that pass: 20 levels per biome** (decided by the user 2026-11-02). Levels
 come out in **batches of 5**, and each batch is playtested and tuned before the next one starts.
 
