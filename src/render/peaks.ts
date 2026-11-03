@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { AerieRing } from './aerie';
 import { Scenery, SceneryTiles, cloudTexture, intoTheSky, seeded, softDot } from './scenery';
 
 /** The bright pale haze everything far below sinks into: it's what keeps this world of grey stone from feeling heavy. */
@@ -6,7 +7,6 @@ const HAZE = 0xe2e7ea;
 const ROCK_LIGHT = 0xa9adb3;
 const ROCK_DARK = 0x6a6f77;
 const CLOUD = 0xffffff;
-const BANNER_COLORS = [0xc4503c, 0xf6f2e8, 0x3f78ab];
 
 /** Spires: how many, how far out, and where they stand. Their tops stop far under the board. */
 const SPIRES = 150;
@@ -17,9 +17,10 @@ const SPIRE_TOP_NEAR = -40;
 const SPIRE_TOP_FAR = -24;
 const CLOUD_LEVELS = [-62, -50];
 
-/** Motion, kept apart so it can be turned down. If it runs slowly, cut grit, then banners, then depth clouds, then gusts. */
+/** Motion, kept apart so it can be turned down. If it runs slowly, cut grit, then cloud streamers, then depth clouds, with gusts and birds last. */
 const GRIT = 90;
-const BANNERS = 10;
+const STREAMERS = 14;
+const STREAMER_SPEED = 0.1;
 const CLOUD_SPEED = 0.04;
 const GUSTS = 12;
 const GUST_SECONDS = 1.7;
@@ -38,7 +39,7 @@ interface Gust {
   length: number;
 }
 
-/** Windy Peaks' surroundings: weathered grey spires in pale haze, racing cloud below, gusts, banners and grit. */
+/** Windy Peaks' surroundings: weathered grey spires in pale haze, wind-carved rock with nests and birds, racing cloud, streamers off the peaks, gusts and grit. */
 export class PeaksScenery implements Scenery {
   readonly group = new THREE.Group();
   private uniforms = {
@@ -54,9 +55,12 @@ export class PeaksScenery implements Scenery {
   private gusts: Gust[] = [];
   private pads: { x: number; z: number }[] = [];
   private spread = 6;
+  private streamerMap: THREE.CanvasTexture;
+  readonly aerie = new AerieRing();
 
   constructor() {
-    this.group.add(this.makeHazeFloor(), ...this.makeSpires(), ...this.makeClouds());
+    this.streamerMap = cloudTexture(83);
+    this.group.add(this.makeHazeFloor(), ...this.makeSpires(), ...this.makeClouds(), this.aerie.group);
     this.grit = this.makeGrit();
     this.group.add(this.grit);
     this.makeGusts();
@@ -66,6 +70,7 @@ export class PeaksScenery implements Scenery {
     this.group.position.set(center.x, 0, center.z);
     this.spread = viewSize * 0.7;
     this.pads = pads.map((c) => ({ x: c.x - center.x, z: c.z - center.z }));
+    this.aerie.place(center, viewSize);
     const pos = this.grit.geometry.attributes.position;
     const rnd = seeded(17);
     for (let i = 0; i < pos.count; i++) {
@@ -78,9 +83,11 @@ export class PeaksScenery implements Scenery {
     });
   }
 
-  update(seconds: number, dt: number, canvasHeight: number): void {
+  update(seconds: number, dt: number, canvasHeight: number, camera: THREE.Camera): void {
     this.uniforms.uTime.value = seconds;
     this.uniforms.uHeight.value = canvasHeight;
+    this.aerie.update(seconds, camera);
+    this.streamerMap.offset.x = -seconds * STREAMER_SPEED;
 
     // Racing along the wind, the nearer sheet faster.
     this.clouds.forEach((tex, i) => {
@@ -189,7 +196,7 @@ export class PeaksScenery implements Scenery {
     const up = new THREE.Vector3(0, 1, 0);
     const GOLDEN = Math.PI * (3 - Math.sqrt(5));
     const count = perShape * SPIRE_SHAPES;
-    const bannerTops: THREE.Vector3[] = [];
+    const peakTops: THREE.Vector3[] = [];
     for (let i = 0; i < count; i++) {
       // None directly under the board's middle, where a pillar would sit behind the gaps at its largest.
       const r = 12 + (FIELD_RADIUS - 12) * ((i + 0.5) / count) ** 0.7;
@@ -204,9 +211,9 @@ export class PeaksScenery implements Scenery {
         new THREE.Vector3(width, top - SPIRE_BASE, width * (0.75 + rnd() * 0.4)),
       );
       meshes[i % SPIRE_SHAPES].setMatrixAt(Math.floor(i / SPIRE_SHAPES), m);
-      if (bannerTops.length < BANNERS && reach > 0.32 && reach < 0.72 && i % 3 === 0) bannerTops.push(new THREE.Vector3(x, top, z));
+      if (peakTops.length < STREAMERS && reach > 0.03 && reach < 0.4 && i % 2 === 0) peakTops.push(new THREE.Vector3(x, top, z));
     }
-    const parts: THREE.Object3D[] = this.makeBanners(bannerTops);
+    const parts: THREE.Object3D[] = [this.makeStreamers(peakTops)];
     for (const mesh of meshes) {
       const depth = new THREE.InstancedMesh(mesh.geometry, depthOnly, mesh.count);
       depth.instanceMatrix = mesh.instanceMatrix;
@@ -218,52 +225,46 @@ export class PeaksScenery implements Scenery {
     return parts;
   }
 
-  /** Long pennants on poles atop far spires, streaming along the wind. They ripple in the shader. */
-  private makeBanners(tops: THREE.Vector3[]): THREE.Object3D[] {
-    const cloth = new THREE.PlaneGeometry(1, 1, 10, 1);
-    cloth.translate(0.5, 0, 0);
-    const mat = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
+  /** Long tails of white cloud pouring off the peak tops, downwind: the wind you can see from far away. */
+  private makeStreamers(tops: THREE.Vector3[]): THREE.InstancedMesh {
+    const sheet = new THREE.PlaneGeometry(1, 1);
+    sheet.rotateX(-Math.PI / 2);
+    sheet.translate(0.5, 0, 0);
+    this.streamerMap.repeat.set(1.4, 0.5);
+    const mat = new THREE.MeshBasicMaterial({ color: CLOUD, map: this.streamerMap, transparent: true, depthWrite: false, side: THREE.DoubleSide });
     mat.onBeforeCompile = (shader) => {
       Object.assign(shader.uniforms, this.uniforms);
       shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', '#include <common>\nuniform float uTime;')
+        .replace('#include <common>', '#include <common>\nvarying vec2 vSheet;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSheet = uv;');
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform float uHeight;\nuniform vec3 uHaze;\nvarying vec2 vSheet;')
         .replace(
-          '#include <begin_vertex>',
-          `#include <begin_vertex>
-          // Tapers to a point, and the ripple grows toward the free end.
-          transformed.y *= 1.0 - position.x * 0.85;
-          float ripple = sin(position.x * 9.0 - uTime * 3.0 + instanceMatrix[3].x) * position.x;
-          transformed.y += ripple * 0.12;
-          transformed.z += ripple * 0.3;`,
+          '#include <opaque_fragment>',
+          `#include <opaque_fragment>
+          // Thick at the peak, thinning downwind and toward its edges. The puffs alone are too faint to read this far off.
+          float across = 1.0 - abs(vSheet.y - 0.5) * 2.0;
+          float tail = smoothstep(0.0, 0.05, vSheet.x) * pow(1.0 - vSheet.x, 1.3);
+          gl_FragColor.a = min(gl_FragColor.a * 3.4, 0.95) * tail * smoothstep(0.0, 0.5, across);
+          ${intoTheSky(0.1, 0.8)}`,
         );
-      shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nuniform float uHeight;\nuniform vec3 uHaze;')
-        .replace('#include <opaque_fragment>', `#include <opaque_fragment>\n${intoTheSky(0.1, 0.8)}`);
     };
-    const banners = new THREE.InstancedMesh(cloth, mat, tops.length);
-    const poleGeometry = new THREE.CylinderGeometry(0.1, 0.16, 1, 5);
-    const poleMat = new THREE.MeshBasicMaterial({ color: 0x8c7660, transparent: true });
-    poleMat.onBeforeCompile = (shader) => {
-      Object.assign(shader.uniforms, this.uniforms);
-      shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nuniform float uHeight;\nuniform vec3 uHaze;')
-        .replace('#include <opaque_fragment>', `#include <opaque_fragment>\n${intoTheSky(0.1, 0.8)}`);
-    };
-    const poles = new THREE.InstancedMesh(poleGeometry, poleMat, tops.length);
+    const streamers = new THREE.InstancedMesh(sheet, mat, tops.length);
     const m = new THREE.Matrix4();
     const q = new THREE.Quaternion();
-    const color = new THREE.Color();
+    const up = new THREE.Vector3(0, 1, 0);
+    const rnd = seeded(47);
     tops.forEach((top, i) => {
-      const height = 7;
-      m.compose(new THREE.Vector3(top.x, top.y + height / 2 - 0.5, top.z), q, new THREE.Vector3(1, height, 1));
-      poles.setMatrixAt(i, m);
-      m.compose(new THREE.Vector3(top.x, top.y + height - 1.2, top.z), q, new THREE.Vector3(12, 2.8, 1));
-      banners.setMatrixAt(i, m);
-      banners.setColorAt(i, color.set(BANNER_COLORS[i % BANNER_COLORS.length]));
+      m.compose(
+        new THREE.Vector3(top.x, top.y + 1.5, top.z),
+        q.setFromAxisAngle(up, (rnd() - 0.5) * 0.24),
+        new THREE.Vector3(30 + rnd() * 22, 1, 6 + rnd() * 4),
+      );
+      streamers.setMatrixAt(i, m);
     });
-    banners.frustumCulled = poles.frustumCulled = false;
-    banners.renderOrder = poles.renderOrder = -3;
-    return [poles, banners];
+    streamers.frustumCulled = false;
+    streamers.renderOrder = -3;
+    return streamers;
   }
 
   /** Two sheets of streaked cloud racing between the spires. */

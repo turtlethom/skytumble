@@ -203,24 +203,25 @@ function nestGeometry(seed: number): THREE.BufferGeometry {
   return mergeGeometries(parts)!;
 }
 
-/** Whichever parts are in haze, a little of the world's bright haze over everything; `fade` thins it away between two world heights. */
-function rockMaterial(haze: number, fade: [number, number] | null): THREE.MeshLambertMaterial {
-  const mat = new THREE.MeshLambertMaterial({ vertexColors: true, transparent: fade !== null });
+/** A little of the world's bright haze over everything. `uFade` thins it away between two heights, sinking its legs out of sight. */
+function rockMaterial(haze: number, fade: THREE.Vector2): THREE.MeshLambertMaterial {
+  const mat = new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true });
   const tint = new THREE.Color(HAZE);
   mat.onBeforeCompile = (shader) => {
-    // `opacity` also fades the whole structure out as the camera turns it toward the side.
+    shader.uniforms.uFade = { value: fade };
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying float vWorldY;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWorldY = (modelMatrix * vec4(transformed, 1.0)).y;');
-    const thin = fade ? `gl_FragColor.a *= 1.0 - smoothstep(${(-fade[0]).toFixed(2)}, ${(-fade[1]).toFixed(2)}, -vWorldY);` : '';
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying float vWorldY;')
+      .replace('#include <common>', '#include <common>\nvarying float vWorldY;\nuniform vec2 uFade;')
       .replace(
         '#include <opaque_fragment>',
-        `#include <opaque_fragment>\ngl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(${tint.r.toFixed(3)}, ${tint.g.toFixed(3)}, ${tint.b.toFixed(3)}), ${haze.toFixed(3)});\n${thin}`,
+        `#include <opaque_fragment>
+        gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(${tint.r.toFixed(3)}, ${tint.g.toFixed(3)}, ${tint.b.toFixed(3)}), ${haze.toFixed(3)});
+        gl_FragColor.a *= 1.0 - smoothstep(uFade.x, uFade.y, -vWorldY);`,
       );
   };
-  mat.customProgramCacheKey = () => `aerie-${haze}-${fade}`;
+  mat.customProgramCacheKey = () => `aerie-${haze}`;
   return mat;
 }
 
@@ -268,9 +269,10 @@ function structureParts(kind: StructureKind, seed: number): { rock: THREE.Buffer
   }
 }
 
-/** One rock structure with its heather and any nest. `fade` thins its legs away between two world heights. */
-export function makeStructure(kind: StructureKind, seed: number, haze = 0, fade: [number, number] | null = null): THREE.Group {
+/** One rock structure with its heather and any nest. `userData.fade` sets the two depths its legs thin away between. */
+export function makeStructure(kind: StructureKind, seed: number, haze = 0): THREE.Group {
   const g = new THREE.Group();
+  const fade = new THREE.Vector2(1e4, 2e4);
   const material = rockMaterial(haze, fade);
   const { rock, nests } = structureParts(kind, seed);
   const merged = mergeGeometries(rock.map((p) => (p.index ? p.toNonIndexed() : p)))!;
@@ -281,7 +283,7 @@ export function makeStructure(kind: StructureKind, seed: number, haze = 0, fade:
     const nest = new THREE.Mesh(nestGeometry(seed + 11 + i), material);
     nest.position.set(at.x, at.y - 0.12, at.z);
     nest.castShadow = nest.receiveShadow = true;
-    const eggMaterial = new THREE.MeshLambertMaterial({ color: 0xe6e3d8 });
+    const eggMaterial = new THREE.MeshLambertMaterial({ color: 0xe6e3d8, transparent: true });
     // Big enough to fill the hollow, leaning together: three in one nest, two in the other.
     const clutch = EGG_SPOTS.slice(0, i === 0 && kind === 'arch' ? 3 : 2);
     for (const [x, z, turn] of clutch) {
@@ -295,12 +297,24 @@ export function makeStructure(kind: StructureKind, seed: number, haze = 0, fade:
   });
   merged.computeBoundingBox();
   g.userData.top = merged.boundingBox!.max.y;
-  g.userData.nests = nests;
+  g.userData.fade = fade;
   return g;
+}
+
+const sharedParts = new Map<string, unknown>();
+
+/** One copy of a part for every bird, so a flock costs little more than one. */
+function shared<T>(key: string, make: () => T): T {
+  if (!sharedParts.has(key)) sharedParts.set(key, make());
+  return sharedParts.get(key) as T;
 }
 
 /** A flat wing panel with its span along +z from the origin: `sweep` carries its tip backward. One-sided shapes, shown from both sides. */
 function wingPanel(rootChord: number, tipChord: number, length: number, sweep: number, pointed: boolean): THREE.BufferGeometry {
+  return shared(`wing-${rootChord}-${tipChord}-${length}-${sweep}-${pointed}`, () => buildWingPanel(rootChord, tipChord, length, sweep, pointed));
+}
+
+function buildWingPanel(rootChord: number, tipChord: number, length: number, sweep: number, pointed: boolean): THREE.BufferGeometry {
   const s = new THREE.Shape();
   s.moveTo(rootChord * 0.45, 0);
   s.bezierCurveTo(rootChord * 0.5, length * 0.5, tipChord * 0.5 - sweep, length * 0.8, tipChord * 0.4 - sweep, length);
@@ -318,22 +332,25 @@ const BIRD = { body: 0xf3f3ef, wing: 0xbfc4cc, tip: 0xc9683c, beak: 0xe9a23b, ey
 /** A storybook seabird, long and slim, flying along +x. Call `flap(seconds)` to beat its wings. About 1.7 from wing tip to wing tip. */
 export function makeBird(): THREE.Group {
   const g = new THREE.Group();
-  const soft = (color: number) => new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide });
+  const soft = (color: number) => shared(`soft-${color}`, () => new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide }));
   // One smooth shape from tail to head, turned on a lathe along the bird's length.
-  const profile = [[0, -0.5], [0.03, -0.42], [0.075, -0.26], [0.125, -0.08], [0.14, 0.06], [0.115, 0.2], [0.095, 0.28], [0.098, 0.36], [0.07, 0.44], [0, 0.48]]
-    .map(([r, y]) => new THREE.Vector3(r, y, 0));
-  const outline = new THREE.CatmullRomCurve3(profile).getPoints(40).map((p) => new THREE.Vector2(Math.max(p.x, 0), p.y));
-  const shape = new THREE.LatheGeometry(outline, 24);
-  shape.rotateZ(-Math.PI / 2);
-  shape.scale(1, 0.92, 0.9);
-  shape.computeVertexNormals();
-  g.add(new THREE.Mesh(shape, new THREE.MeshLambertMaterial({ color: BIRD.body })));
-  const beak = new THREE.Mesh(new THREE.ConeGeometry(0.032, 0.14, 10), soft(BIRD.beak));
+  const shape = shared('body', () => {
+    const profile = [[0, -0.5], [0.03, -0.42], [0.075, -0.26], [0.125, -0.08], [0.14, 0.06], [0.115, 0.2], [0.095, 0.28], [0.098, 0.36], [0.07, 0.44], [0, 0.48]]
+      .map(([r, y]) => new THREE.Vector3(r, y, 0));
+    const outline = new THREE.CatmullRomCurve3(profile).getPoints(40).map((p) => new THREE.Vector2(Math.max(p.x, 0), p.y));
+    const geom = new THREE.LatheGeometry(outline, 24);
+    geom.rotateZ(-Math.PI / 2);
+    geom.scale(1, 0.92, 0.9);
+    geom.computeVertexNormals();
+    return geom;
+  });
+  g.add(new THREE.Mesh(shape, shared('bodyMat', () => new THREE.MeshLambertMaterial({ color: BIRD.body }))));
+  const beak = new THREE.Mesh(shared('beak', () => new THREE.ConeGeometry(0.032, 0.14, 10)), soft(BIRD.beak));
   beak.rotation.z = -Math.PI / 2;
   beak.position.set(0.53, -0.004, 0);
   g.add(beak);
   for (const side of [-1, 1]) {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.015, 10, 8), soft(BIRD.eye));
+    const eye = new THREE.Mesh(shared('eye', () => new THREE.SphereGeometry(0.015, 10, 8)), soft(BIRD.eye));
     eye.position.set(0.39, 0.03, side * 0.08);
     g.add(eye);
   }
@@ -400,44 +417,142 @@ export function makeAerieCloseUp(center: THREE.Vector3): { group: THREE.Group; b
   return { group, birds: [big, real] };
 }
 
-/** `?level=wind-06&aerie`: all four structures where they'd stand, to judge size and distance. */
-export function makeAerieRing(center: THREE.Vector3, viewSize: number): THREE.Group {
-  const group = new THREE.Group();
-  const shown: THREE.Group[] = [];
-  // Directly behind the board in each camera view, with the top near the top of the screen.
-  const out = viewSize * 1.3;
-  const SCALE = viewSize * 0.13;
-  const CROWN = -7.5;
-  SIDES.forEach((kind, i) => {
-    const a = (i * Math.PI) / 2;
-    const probe = makeStructure(kind, 3 + i * 9);
-    const y = CROWN - (probe.userData.top as number) * SCALE;
-    // Its legs thin away well before they'd reach the corners of the screen.
-    const feet = y;
-    const s = makeStructure(kind, 3 + i * 9, 0.24, [feet + 4, feet - 4]);
-    s.scale.setScalar(SCALE);
-    s.position.set(center.x + Math.sin(a) * out, y, center.z + Math.cos(a) * out);
-    s.rotation.y = a;
-    group.add(s);
-    shown.push(s);
-  });
-  // Only the one behind the board shows: at the screen's edges they'd be cut-off pieces, and nearer, so larger.
-  const away = new THREE.Vector2();
-  const out2 = new THREE.Vector2();
-  group.userData.update = (camera: THREE.Camera) => {
-    away.set(center.x - camera.position.x, center.z - camera.position.z).normalize();
-    for (const s of shown) {
-      const facing = out2.set(s.position.x - center.x, s.position.z - center.z).normalize().dot(away);
-      const alpha = THREE.MathUtils.smoothstep(facing, 0.3, 0.85);
-      s.visible = alpha > 0.005;
+/**
+ * Flock timing: how long between flights, and how long a crossing takes. A flight runs from past one screen edge to past
+ * the other, far enough that even the last bird is off screen at both ends, since a bird vanishing in view kills the mood.
+ * `FLIGHT_BAND` is how high up the screen it crosses, as a share of the distance from the middle to the top.
+ */
+const FLIGHT_GAP = [20, 30];
+const FIRST_FLIGHT = 5;
+const CROSSING_SECONDS = [9, 12];
+const OFF_SCREEN = 1.6;
+const FLIGHT_BAND = [0.42, 0.72];
+const FLOCK = 5;
+const FLOCK_BIRD_SIZE = 1.1;
+/** Birds fly under the board's level, so they never cover a tile. */
+const FLIGHT_Y = -5.5;
+
+/**
+ * The four structures around the board, and the flock. Only the structure behind the board shows: at the
+ * screen's edges the others would be cut-off pieces, and nearer, so larger. They fade as the view turns.
+ */
+export class AerieRing {
+  readonly group = new THREE.Group();
+  private structures: { group: THREE.Group; mats: THREE.Material[]; alpha: number }[] = [];
+  private center = new THREE.Vector3();
+  private birds: THREE.Group[] = [];
+  private flockGroup = new THREE.Group();
+  private path: [THREE.Vector3, THREE.Vector3, THREE.Vector3] | null = null;
+  private pathStart = 0;
+  private pathSeconds = 1;
+  private nextFlight = 0;
+  private fresh = true;
+  private away = new THREE.Vector2();
+  private out = new THREE.Vector2();
+
+  constructor() {
+    SIDES.forEach((kind, i) => {
+      const s = makeStructure(kind, 3 + i * 9, 0.24);
+      s.rotation.y = (i * Math.PI) / 2;
+      const mats: THREE.Material[] = [];
       s.traverse((o) => {
         const mat = (o as THREE.Mesh).material as THREE.Material | undefined;
-        if (mat) {
-          mat.transparent = true;
-          mat.opacity = alpha;
-        }
+        if (mat && !mats.includes(mat)) mats.push(mat);
       });
+      this.structures.push({ group: s, mats, alpha: 1 });
+      this.group.add(s);
+    });
+    for (let i = 0; i < FLOCK; i++) {
+      const bird = makeBird();
+      bird.scale.setScalar(FLOCK_BIRD_SIZE);
+      bird.traverse((o) => (o.castShadow = false));
+      this.birds.push(bird);
+      this.flockGroup.add(bird);
     }
-  };
-  return group;
+    this.flockGroup.visible = false;
+    this.group.add(this.flockGroup);
+  }
+
+  /** Stand them around a level: directly behind the board in each camera view, the top near the top of the screen. */
+  place(center: THREE.Vector3, viewSize: number): void {
+    this.center.copy(center);
+    const out = viewSize * 1.3;
+    const scale = viewSize * 0.13;
+    const crown = -7.5;
+    this.structures.forEach(({ group: s }, i) => {
+      const a = (i * Math.PI) / 2;
+      const y = crown - (s.userData.top as number) * scale;
+      s.scale.setScalar(scale);
+      s.position.set(Math.sin(a) * out, y, Math.cos(a) * out);
+      // Its legs thin away well before they'd reach the corners of the screen.
+      (s.userData.fade as THREE.Vector2).set(-(y + 4), -(y - 4));
+    });
+    this.flockGroup.visible = false;
+    this.path = null;
+    this.fresh = true;
+  }
+
+  update(seconds: number, camera: THREE.Camera): void {
+    this.away.set(this.center.x - camera.position.x, this.center.z - camera.position.z).normalize();
+    for (const s of this.structures) {
+      const facing = this.out.set(s.group.position.x, s.group.position.z).normalize().dot(this.away);
+      const alpha = THREE.MathUtils.smoothstep(facing, 0.3, 0.85);
+      s.group.visible = alpha > 0.005;
+      if (alpha !== s.alpha) {
+        s.alpha = alpha;
+        for (const mat of s.mats) mat.opacity = alpha;
+      }
+    }
+    if (this.fresh) {
+      this.fresh = false;
+      this.nextFlight = seconds + FIRST_FLIGHT;
+    }
+    if (!this.path && seconds >= this.nextFlight) this.launch(seconds, camera);
+    if (this.path) this.fly(seconds);
+  }
+
+  /** Cross the whole backdrop behind the board as the view stands now, from either side, drifting up or down a little on the way. */
+  private launch(seconds: number, camera: THREE.Camera): void {
+    const side = Math.random() < 0.5 ? 1 : -1;
+    const [lo, hi] = FLIGHT_BAND;
+    const [startY, endY] = [lo + Math.random() * (hi - lo), lo + Math.random() * (hi - lo)];
+    const at = (x: number, y: number) => {
+      // Where this spot on the screen meets the height the birds fly at, relative to the board.
+      const ray = new THREE.Vector3(x, y, 0.5).unproject(camera).sub(camera.position);
+      const point = camera.position.clone().addScaledVector(ray, (FLIGHT_Y - camera.position.y) / ray.y);
+      return point.sub(this.center).setY(FLIGHT_Y);
+    };
+    this.path = [at(side * OFF_SCREEN, startY), at(0, (startY + endY) / 2 + 0.08), at(-side * OFF_SCREEN, endY)];
+    this.pathStart = seconds;
+    this.pathSeconds = CROSSING_SECONDS[0] + Math.random() * (CROSSING_SECONDS[1] - CROSSING_SECONDS[0]);
+    this.flockGroup.visible = true;
+  }
+
+  private fly(seconds: number): void {
+    const [a, b, c] = this.path!;
+    const t = (seconds - this.pathStart) / this.pathSeconds;
+    if (t >= 1) {
+      this.path = null;
+      this.flockGroup.visible = false;
+      this.nextFlight = seconds + FLIGHT_GAP[0] + Math.random() * (FLIGHT_GAP[1] - FLIGHT_GAP[0]);
+      return;
+    }
+    const [u, v, w] = [(1 - t) * (1 - t), 2 * (1 - t) * t, t * t];
+    const [px, py, pz] = [u * a.x + v * b.x + w * c.x, u * a.y + v * b.y + w * c.y, u * a.z + v * b.z + w * c.z];
+    let [dx, dz] = [2 * (1 - t) * (b.x - a.x) + 2 * t * (c.x - b.x), 2 * (1 - t) * (b.z - a.z) + 2 * t * (c.z - b.z)];
+    const len = Math.hypot(dx, dz) || 1;
+    dx /= len;
+    dz /= len;
+    this.birds.forEach((bird, i) => {
+      const rank = Math.ceil(i / 2);
+      const wing = i % 2 ? 1 : -1;
+      const back = rank * 1.7;
+      const across = rank * wing * 1.9;
+      // Each drifts a little in place, so it isn't a rigid stamp.
+      const drift = Math.sin(seconds * 0.9 + i * 2.1) * 0.22;
+      bird.position.set(px - dx * back - dz * across + drift * dz, py - rank * 0.25 + drift * 0.6, pz - dz * back + dx * across - drift * dx);
+      bird.rotation.y = -Math.atan2(dz, dx);
+      (bird.userData.flap as (s: number) => void)(seconds + i * 0.73);
+    });
+  }
 }

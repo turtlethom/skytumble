@@ -604,7 +604,7 @@ which is why pads fling you. What the world lacked most: a sense of place. The b
 |---|---|
 | Landmark and framing | Four different wind-carved rock structures, one per side of the board at middle distance in light haze: three arches of different proportions (lopsided with a nest on its shoulder, low and wide, tall and narrow) and a family of pillars. They stop below board level, so nothing covers a tile |
 | Nests | At most two, on opposite sides (the lopsided arch and the pillars), small and sunk into rock ledges, in weathered sticks, with two or three large eggs and heather only outside the rim, so they belong to the stone (changed after the samples: a nest on each side looked strange and too dominant) |
-| Moving piece | A flock of medium storybook birds, mostly soft grey and white with a small warm accent, flying in formation from one nest to another every 20 to 30 seconds |
+| Moving piece | A flock of medium storybook birds, mostly soft grey and white with a small warm accent, crossing the whole backdrop in a V every 20 to 30 seconds, off screen at both ends (changed after playtest: flying into a nest and vanishing killed the mood) |
 | Color | Pink-violet mountain heather on the arches and nest ledges |
 | Banners | Removed, since they imply people; long white streamers of cloud pour off the peak tops instead |
 | Unchanged | Tiles, grey stone, sky, gusts, pads, interface. Wind Lab keeps its neutral look |
@@ -618,9 +618,9 @@ which is why pads fling you. What the world lacked most: a sense of place. The b
   (if they fail twice, smaller silhouettes); the arches crowding the airy feel (push back or add haze first); rock arches
   suggesting a desert; streamers echoing Frost's spindrift; white birds blurring with the gust streaks.
 
-Status: the samples are built, awaiting approval (`?sheet=peaks&aerie` up close, `?level=wind-06&aerie` with all four
-arches in place). Each view shows only the structure directly behind the board, with its top near the top of the screen. The others
-fade out as the view turns, since at the screen's edges they were cut-off pieces, nearer and so larger.
+Status: live 2026-11-02; the user sent it live without notes on the sign-off questions (still behind Toybox? misread gaps? the fade on rotate, streamer strength, frame rate), so those stay open if they come up in play. Each view shows only
+the structure behind the board, and the others fade out as the view turns, since at the screen's edges they were cut-off
+pieces, nearer and so larger.
 
 **After that pass: 20 levels per biome** (decided by the user 2026-11-02). Levels
 come out in **batches of 5**, and each batch is playtested and tuned before the next one starts.
@@ -848,6 +848,10 @@ naturally". Still airy; "really like the pink", so more of it. No desert feel.
 **2026-11-02 — Windy Peaks samples, second round.** Arches a bit thicker; at most three eggs, larger, filling the nest; "just a
 little too much pink, especially within the nest". Loves the lopsided arch with its nest and wants the other arches to be
 variations on it; the horn "looks really funky" → replaced, and the buttress became a low, wide arch.
+
+**2026-11-02 — Windy Peaks flock.** "It looks weird for them to converge on the nest and disappear"; "them disappearing just
+kills the vibe" → every flight crosses the whole backdrop instead. The user's other option, if nests ever come back into it:
+birds gather at a nest, stay a while, then leave.
 
 **2026-11-02 — The better peek.** The full 3D outline was more than needed: "the outline of the face of the block
 is fine... it should be flush with the tile" → flat footprints for both the block outline and the flip landing preview.

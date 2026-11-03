@@ -6,7 +6,7 @@ import { FrostScenery } from './frost';
 import { CONVEYOR_COLORS, cssColor } from './palette';
 import { PeaksScenery } from './peaks';
 import { Scenery, softDot } from './scenery';
-import { makeAerieCloseUp, makeAerieRing } from './aerie';
+import { makeAerieCloseUp } from './aerie';
 import { Stardust } from './stardust';
 import { StarfallScenery } from './starfall';
 import { NEUTRAL, Theme } from './themes';
@@ -199,7 +199,6 @@ export class World {
   private flipTurn: symbol | null = null;
   private stardust = new Stardust();
   private sampleBirds: THREE.Group[] = [];
-  private sampleRing: THREE.Group | null = null;
   /** 0 = camera above looking down, 1 = below looking up; eased toward its target. */
   private side = 0;
   private moonlight = new THREE.DirectionalLight(0xbcc8ff, 0);
@@ -463,16 +462,12 @@ export class World {
     this.layerGroups[0].add(makeToySamples(this.center));
   }
 
-  /** Windy Peaks' samples, for approval: up close on a strip of floor, or all four arches around a real level. */
-  showAerie(closeUp: boolean): void {
-    if (closeUp) {
-      const { group, birds } = makeAerieCloseUp(this.center);
-      this.layerGroups[0].add(group);
-      this.sampleBirds = birds;
-    } else {
-      this.sampleRing = makeAerieRing(this.center, this.viewSize);
-      this.layerGroups[0].add(this.sampleRing);
-    }
+  /** Windy Peaks' structures and birds close up on a strip of floor, for `?sheet=peaks&aerie`, without the ones around the board. */
+  showAerie(): void {
+    const { group, birds } = makeAerieCloseUp(this.center);
+    this.layerGroups[0].add(group);
+    this.sampleBirds = birds;
+    if (this.scenery instanceof PeaksScenery) this.scenery.aerie.group.visible = false;
   }
 
   /** What the last frame cost, for the frame-rate readout. */
@@ -1321,7 +1316,6 @@ export class World {
     }
     this.scenery?.update(now / 1000, dt, this.renderer.domElement.height, this.camera);
     for (const bird of this.sampleBirds) (bird.userData.flap as (s: number) => void)(now / 1000);
-    (this.sampleRing?.userData.update as ((c: THREE.Camera) => void) | undefined)?.(this.camera);
     this.stardust.update(now / 1000, this.renderer.domElement.height, this.camera.fov);
     for (const c of this.chevrons) {
       // Each chevron travels across the tile, growing in at the back and shrinking out at the front.
