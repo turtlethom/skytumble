@@ -663,24 +663,47 @@ Status: live 2026-11-02, sent live without notes on the sign-off questions (stil
 near the top and bottom of the screen). Only the great tree is built finely, and groves out of view aren't drawn, but at about 830k triangles this is the
 heaviest world, and its frame rate on the user's laptop hasn't been read off (F in the game). If it suffers, reduce the crowns' detail first, then drop the far four groves.
 
-That finishes the older worlds' pass. Next: 20 levels per biome, once the user settles whether First Glade goes to 20 and whether split + paint comes first.
+That finishes the older worlds' pass. Next: see *Start menu, tutorial section and a new First Glade* below.
 
-**After that pass: 20 levels per biome** (decided by the user 2026-11-02). Levels
+**Next, at a later session: start menu, tutorial section and a new First Glade** (the user's idea, 2026-11-02; nothing built yet).
+
+- **Start menu:** a menu for choosing game modes. The main campaign, the tutorial and the labs are each their own standalone option (decided by the user),
+  alongside Easy and Medium, and later the endless climb and daily seed. The labs leave the campaign's sky map. Start with a grilling session with the user
+  (the `grilling` skill) to design it, before anything is built.
+- **Tutorial section:** its own place in that menu, going over every mechanic in the game. The current First Glade levels (`tutorial-01`…`05`) move here.
+  It gets scaffolded and pieced together at a later time, not all at once.
+- **First Glade becomes a real biome:** with its own signature mechanic, to be decided, and all new levels.
+- **Every biome's shape:** 20 levels, the first few introductory and the last 15 ramping up in difficulty, so each biome can focus on its own creativity
+  rather than on teaching the base rules.
+
+Proposed order, to confirm when this starts: menu and tutorial grilling → build them → First Glade's grilling, with a lab for its new mechanic and a
+rules freeze as usual → the 20-level batches.
+
+To settle in those grillings:
+
+- **Menu:** does a bare URL open the menu, or still the sky map? Do Easy and Medium stay as top tabs? Does a returning player skip the menu?
+- **Tutorial:** one path, or one short lesson per mechanic chosen from a list? The labs (`lab`, `windlab`, `gravlab`, `shapelab`) are raw material for it, and
+  stay available from the menu. It shouldn't duplicate each biome's introductory levels: a lesson teaches the rule, and a biome's first levels explore it.
+  Everything at once could overwhelm a new player, which is a reason to favor short lessons.
+- **Look:** does the tutorial keep a neutral look, or stay in the forest? Today the theme follows the `tutorial` chapter id.
+- **First Glade:** which mechanic (see *Idea backlog*: teleporters, crumbling tiles, tilting islands, or something forest-born such as vines). It stays first on the
+  map, so its mechanic should be gentle. New ids such as `glade-01`, keeping `tutorial-` ids for the moved levels, so saved progress and links stay valid.
+- **Still open:** whether split + paint comes before or after the 20-level batches.
+
+**After that: 20 levels per biome** (decided by the user 2026-11-02). Levels
 come out in **batches of 5**, and each batch is playtested and tuned before the next one starts.
 
 | Chapter | Now | New levels | Batches |
 |---|---|---|---|
-| First Glade | 5 | 15 | 5, 5, 5 |
+| First Glade (a new chapter) | 0 | 20 | 5, 5, 5, 5 |
 | Frost Isle, Windy Peaks, Starfall, Toybox | 8 each | 12 each | 5, 5, 2 |
 
-That is 63 new levels in 15 batches, taking the campaign from 37 levels to 100. A new biome is built
+That is 68 new levels in 16 batches, for 100 levels across these five biomes, with the five old First Glade levels moving to the tutorial. A new biome is built
 to 20 the same way, after its lab.
 
 - **Proposed, to confirm when this starts:** add new levels after the current ones (`frost-09` onward),
   each batch harder than the last, with a new finale at 20. Existing ids and saved progress stay valid,
-  and the old finales become mid-chapter peaks.
-- **Still open:** whether First Glade goes to 20 too, since it's the teaching chapter, and whether this
-  comes before or after the split + paint biome.
+  and the old finales become mid-chapter peaks. The first few levels of a chapter stay introductory, with the last 15 ramping up.
 - **To check first:** the sky map has to fit 20 level stones on each island.
 
 **Later:** endless climb + daily seed, Frost in the generator, archipelago generation,
