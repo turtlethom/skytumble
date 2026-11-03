@@ -3,22 +3,38 @@ import { randomSeed } from './game/rng';
 import { initialState, step } from './game/rules';
 import { solve } from './game/solver';
 import { DIRS, Dir, Level, State, TIERS, Tier } from './game/types';
-import { HANDMADE, chapterOf, findLevel } from './levels';
+import { CAMPAIGN, LABS, TUTORIAL, chapterOf, findLevel, nextOnTrack, trackOf } from './levels';
+import { MENU_LEVEL } from './levels/menuScene';
 import { tileSheet, toySampleFloor } from './levels/sheet';
 import { NEUTRAL, THEMES, Theme, themeForLevel } from './render/themes';
 import { World } from './render/world';
 import { ChapterArrival } from './ui/arrival';
 import { FrameReadout } from './ui/fps';
-import { SkyMap, suggestedLevel } from './ui/map';
-import { Progress, loadProgress, saveProgress, starsFor } from './ui/progress';
+import { SkyMap, firstUnsolved, signatureBadge } from './ui/map';
+import { Menu } from './ui/menu';
+import { loadProgress, resetProgress, saveProgress, starsFor } from './ui/progress';
 import type { GenerateRequest, GenerateResponse } from './worker';
 
-type Mode = { kind: 'gen'; tier: Tier; seed: string } | { kind: 'hand'; id: string };
+type Mode = { kind: 'menu' } | { kind: 'gen'; tier: Tier; seed: string } | { kind: 'hand'; id: string };
 type Status = 'loading' | 'playing' | 'busy' | 'fallen' | 'won';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
 const CHAIN_BEAT_MS = 110;
+/** The menu's block rests this long between rolls, and this long after sinking into the goal. */
+const MENU_ROLL_GAP_MS = 90;
+const MENU_REST_MS = 450;
+/** How far the menu's island sits right of center, as a share of the screen's width. */
+const MENU_VIEW_SHIFT = 0.17;
+/** An extension's Esc can arrive as both a key and a lost focus: count them once. */
+const ESC_REPEAT_MS = 200;
+
+/** A screen over the game. The top one takes the keys, and Esc returns to the one below. */
+interface Panel {
+  show(): void;
+  hide(): void;
+  key(e: KeyboardEvent): boolean;
+}
 
 /** Screen directions: 0 up, 1 right, 2 down, 3 left; the world maps them to grid directions. */
 const KEY_DIRS: Record<string, number> = {
@@ -32,11 +48,34 @@ class Game {
   private world = new World($('stage'));
   private worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
   private progress = loadProgress();
-  private map = new SkyMap(
-    $('map'),
-    (id) => this.load({ kind: 'hand', id }),
-    () => void this.playArrival(),
+  private map = new SkyMap($('map'), CAMPAIGN, signatureBadge, true, (id) => this.load({ kind: 'hand', id }), () => this.back());
+  private labs = new SkyMap($('labs'), LABS, () => null, false, (id) => this.load({ kind: 'hand', id }), () => this.back());
+  private mapPanel: Panel = {
+    show: () => this.map.show(this.progress, this.playingId(), this.backLabel()),
+    hide: () => this.map.hide(),
+    key: (e) => this.map.key(e),
+  };
+  private labsPanel: Panel = {
+    show: () => this.labs.show(this.progress, this.playingId(), this.backLabel()),
+    hide: () => this.labs.hide(),
+    key: (e) => this.labs.key(e),
+  };
+  private mainMenu = new Menu(
+    $('main-menu'),
+    (action) => this.mainMenuAction(action),
+    (root) => {
+      // The Tutorial stands out until a lesson has been solved.
+      const fresh = !TUTORIAL.levels.some((l) => this.progress.best[`level:${l.id}`] !== undefined);
+      root.querySelector('[data-action=tutorial]')!.classList.toggle('suggested', fresh);
+      root.querySelector('[data-action=campaign]')!.classList.toggle('suggested', !fresh);
+    },
   );
+  private pause = new Menu($('pause'), (action) => this.pauseAction(action));
+  private settings = new Menu($('settings'), (action) => (action === 'reset' ? this.open(this.confirmReset) : this.back()));
+  private confirmReset = new Menu($('confirm-reset'), (action) => this.confirmResetAction(action));
+  /** The open screens, bottom first; empty during play. */
+  private panels: Panel[] = [];
+  private lastEscape = -Infinity;
   private arrival = new ChapterArrival($('arrival'));
   /** The chapter last announced: entering a different one shows its title. */
   private lastChapter: string | null = null;
@@ -51,13 +90,15 @@ class Game {
   private queued: Dir | null = null;
   private requestId = 0;
   private toastTimer = 0;
+  /** Counts what the world has been asked to show, so work overtaken by a newer request can stop. */
+  private scene = 0;
+  /** The block's animation in progress, which must finish before the world is rebuilt. */
+  private animating: Promise<unknown> = Promise.resolve();
   /** A theme forced from the URL, to preview it on any level. */
   private themeOverride: Theme | null = null;
 
   constructor() {
-    // A bare URL lands on the map, with the suggested level waiting behind it.
-    const landing = !location.search;
-    this.mode = modeFromUrl(this.progress);
+    this.mode = modeFromUrl();
     this.worker.onmessage = (e: MessageEvent<GenerateResponse>) => {
       if (e.data.id === this.requestId) void this.start(e.data.level, e.data.par);
     };
@@ -88,26 +129,34 @@ class Game {
       return;
     }
     this.load(this.mode);
-    if (landing) this.showMap();
   }
 
   // -------------------------------------------------------------------------
   // Loading levels.
 
   private load(mode: Mode): void {
+    this.scene++;
+    this.world.finishAnimations();
+    const id = ++this.requestId;
     this.mode = mode;
     this.status = 'loading';
     this.queued = null;
     this.hideModals();
+    document.body.classList.toggle('at-menu', mode.kind === 'menu');
     this.renderChrome();
     history.replaceState(null, '', modeToQuery(mode));
 
+    if (mode.kind === 'menu') {
+      this.level = null;
+      this.open(this.mainMenu);
+      void this.playMenuScene();
+      return;
+    }
     if (mode.kind === 'hand') {
       const level = findLevel(mode.id)!.level;
       void this.start(level, solve(level)!.moves.length);
       return;
     }
-    const id = ++this.requestId;
     const loading = window.setTimeout(() => $('loading').classList.add('show'), 150);
     const clear = () => window.clearTimeout(loading);
     this.worker.addEventListener('message', clear, { once: true });
@@ -116,7 +165,10 @@ class Game {
   }
 
   private async start(level: Level, par: number): Promise<void> {
+    const scene = this.scene;
+    await this.animating;
     await revealPage();
+    if (scene !== this.scene) return;
     $('loading').classList.remove('show');
     this.level = level;
     this.par = par;
@@ -127,7 +179,10 @@ class Game {
     this.renderChrome();
     const arrival = this.playArrival();
     if (arrival) await arrival.covered;
+    if (scene !== this.scene) return;
+    this.world.setViewShift(0);
     await this.world.setLevel(level, this.state, this.currentTheme(), arrival?.lifted);
+    if (scene !== this.scene) return;
     this.status = 'playing';
     this.updatePreviews();
     this.drainQueue();
@@ -137,9 +192,46 @@ class Game {
     return this.themeOverride ?? (this.mode.kind === 'hand' ? themeForLevel(this.mode.id) : NEUTRAL);
   }
 
-  /** Show the chapter's name if this is a new chapter. With the map open, it waits until the map closes. */
+  /** The main menu's island: the block drops in and solves its puzzle on the real rules, over and over. */
+  private async playMenuScene(): Promise<void> {
+    const scene = this.scene;
+    await this.animating;
+    await revealPage();
+    if (scene !== this.scene) return;
+    const start = initialState(MENU_LEVEL);
+    const solution = solve(MENU_LEVEL)!.moves;
+    const pause = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
+    this.lastChapter = null;
+    this.world.setViewShift(MENU_VIEW_SHIFT);
+    await this.world.setLevel(MENU_LEVEL, start, NEUTRAL);
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    for (;;) {
+      let state = start;
+      for (const dir of solution) {
+        await pause(MENU_ROLL_GAP_MS);
+        if (scene !== this.scene) return;
+        const result = step(MENU_LEVEL, state, dir);
+        this.animating = this.animateStep(state, result, dir, scene);
+        await this.animating;
+        if (scene !== this.scene) return;
+        state = result.state;
+      }
+      this.animating = this.world.win();
+      await this.animating;
+      await pause(MENU_REST_MS);
+      if (scene !== this.scene) return;
+      this.animating = this.world.setBridges(start.bridges);
+      await this.animating;
+      if (scene !== this.scene) return;
+      this.world.syncState(start);
+      this.animating = this.world.dropBlock();
+      await this.animating;
+      if (scene !== this.scene) return;
+    }
+  }
+
+  /** Show the chapter's name if this is a new chapter. */
   private playArrival(): ReturnType<ChapterArrival['play']> | null {
-    if (this.map.isOpen) return null;
     const chapter = this.mode.kind === 'hand' ? chapterOf(this.mode.id) : undefined;
     const entered = chapter && chapter.id !== this.lastChapter;
     this.lastChapter = chapter?.id ?? null;
@@ -147,6 +239,7 @@ class Game {
   }
 
   private nextLevel(): void {
+    if (this.mode.kind === 'menu') return;
     const prevKey = this.levelKey();
     if (this.status !== 'won' && this.progress.best[prevKey] === undefined) {
       // Skipping an unsolved level ends the streak.
@@ -154,9 +247,10 @@ class Game {
       saveProgress(this.progress);
     }
     if (this.mode.kind === 'hand') {
-      const id = this.mode.id;
-      const next = HANDMADE[(HANDMADE.findIndex((h) => h.id === id) + 1) % HANDMADE.length];
-      this.load({ kind: 'hand', id: next.id });
+      const next = nextOnTrack(this.mode.id);
+      if (next) this.load({ kind: 'hand', id: next.id });
+      // The end of the track: the Tutorial leads on to the campaign's map.
+      else this.open(trackOf(this.mode.id) === LABS ? this.labsPanel : this.mapPanel);
     } else {
       this.load({ kind: 'gen', tier: this.mode.tier, seed: randomSeed() });
     }
@@ -165,15 +259,18 @@ class Game {
   // -------------------------------------------------------------------------
   // Playing.
 
-  private async move(dir: Dir): Promise<void> {
+  private move(dir: Dir): void {
     if (!this.level) return;
     if (this.status === 'busy') {
       this.queued = dir;
       return;
     }
     if (this.status !== 'playing') return;
+    this.animating = this.playMove(this.level, dir);
+  }
 
-    const level = this.level;
+  private async playMove(level: Level, dir: Dir): Promise<void> {
+    const scene = this.scene;
     const from = this.state;
     const result = step(level, from, dir);
     this.history.push(from);
@@ -182,23 +279,14 @@ class Game {
     this.world.showFlipPreviews([]);
     this.renderChrome();
 
-    await this.world.roll(from.block, result.rolled, dir);
-    for (const [i, motion] of result.motions.entries()) {
-      // A short beat between chained motions so slide → push → slide reads as three events.
-      if (i > 0) await new Promise((r) => window.setTimeout(r, CHAIN_BEAT_MS));
-      await this.world.move(motion);
-    }
-    this.world.pressSwitches(result.pressed);
-    if (result.reshaped) {
-      const before = result.motions.length ? result.motions[result.motions.length - 1].to : result.rolled;
-      await this.world.reshape(before, result.state.block);
-    }
-    if (result.toggled) await this.world.setBridges(result.state.bridges);
+    await this.animateStep(from, result, dir, scene);
+    if (scene !== this.scene) return;
     this.state = result.state;
 
     if (result.outcome === 'fall') {
       this.queued = null;
       await this.world.fall(level, result.state.block, result.broke);
+      if (scene !== this.scene) return;
       this.status = 'fallen';
       $('fell').classList.remove('hidden');
       return;
@@ -206,6 +294,7 @@ class Game {
     if (result.outcome === 'win') {
       this.queued = null;
       await this.world.win();
+      if (scene !== this.scene) return;
       this.status = 'won';
       this.recordWin();
       return;
@@ -213,6 +302,24 @@ class Game {
     this.status = 'playing';
     this.updatePreviews();
     this.drainQueue();
+  }
+
+  /** Show one move: the roll, whatever carries the block after it, and the switches it presses. */
+  private async animateStep(from: State, result: ReturnType<typeof step>, dir: Dir, scene: number): Promise<void> {
+    await this.world.roll(from.block, result.rolled, dir);
+    for (const [i, motion] of result.motions.entries()) {
+      // A short beat between chained motions so slide → push → slide reads as three events.
+      if (i > 0) await new Promise((r) => window.setTimeout(r, CHAIN_BEAT_MS));
+      await this.world.move(motion);
+      if (scene !== this.scene) return;
+    }
+    if (scene !== this.scene) return;
+    this.world.pressSwitches(result.pressed);
+    if (result.reshaped) {
+      const before = result.motions.length ? result.motions[result.motions.length - 1].to : result.rolled;
+      await this.world.reshape(before, result.state.block);
+    }
+    if (result.toggled) await this.world.setBridges(result.state.bridges);
   }
 
   /**
@@ -232,7 +339,7 @@ class Game {
   private drainQueue(): void {
     const next = this.queued;
     this.queued = null;
-    if (next) void this.move(next);
+    if (next) this.move(next);
   }
 
   private undo(): void {
@@ -278,6 +385,7 @@ class Game {
     $('win-stars').innerHTML = [1, 2, 3].map((n) => `<span class="${n <= stars ? 'on' : 'off'}">★</span>`).join('');
     const verdict = this.moves <= this.par ? 'Perfect: you matched par!' : `Par is ${this.par}. Can you find a shorter way?`;
     $('win-detail').textContent = `${this.moves} moves. ${verdict}`;
+    $('win-next-label').textContent = this.nextLabel();
     $('win').classList.remove('hidden');
     this.renderChrome();
   }
@@ -286,14 +394,24 @@ class Game {
   // UI.
 
   private levelKey(): string {
+    if (this.mode.kind === 'menu') return '';
     return this.mode.kind === 'hand' ? `level:${this.mode.id}` : `${this.mode.tier}:${this.mode.seed}`;
   }
 
+  private playingId(): string | null {
+    return this.mode.kind === 'hand' ? this.mode.id : null;
+  }
+
+  /** What the win panel's main button leads to. */
+  private nextLabel(): string {
+    const id = this.playingId();
+    if (!id || nextOnTrack(id)) return 'Next level';
+    const track = trackOf(id);
+    return track === LABS ? 'Back to the Labs' : track === CAMPAIGN ? 'Sky map' : 'Start the Campaign';
+  }
+
   private renderChrome(): void {
-    const tabKey = this.mode.kind === 'hand' ? 'hand' : this.mode.tier;
-    document.querySelectorAll<HTMLButtonElement>('#tabs button').forEach((b) => {
-      b.classList.toggle('active', b.dataset.mode === tabKey);
-    });
+    if (this.mode.kind === 'menu') return;
     $('moves').textContent = String(this.moves);
     $('par').textContent = this.level && this.status !== 'loading' ? String(this.par) : '–';
     const best = this.progress.best[this.levelKey()];
@@ -322,32 +440,87 @@ class Game {
   private hideModals(): void {
     $('win').classList.add('hidden');
     $('fell').classList.add('hidden');
-    $('stats').classList.add('hidden');
-    this.map.hide();
+    for (const panel of this.panels) panel.hide();
+    this.panels = [];
     this.hideToast();
   }
 
-  /** Esc: close the map or the stats panel. */
+  // -------------------------------------------------------------------------
+  // Menus.
+
+  private get topPanel(): Panel | undefined {
+    return this.panels[this.panels.length - 1];
+  }
+
+  private open(panel: Panel): void {
+    this.topPanel?.hide();
+    this.panels.push(panel);
+    panel.show();
+  }
+
+  /** Close the top screen and return to the one below, or to the level. */
+  private back(): void {
+    this.panels.pop()?.hide();
+    this.topPanel?.show();
+  }
+
+  /** What leaving the screen now being opened returns to. */
+  private backLabel(): string {
+    const below = this.panels[this.panels.length - 2];
+    if (!below) return 'Back to the level';
+    return below === this.mainMenu ? 'Back to the menu' : 'Back';
+  }
+
+  /** Esc: back one screen; during a level, the Esc menu; on the main menu, nothing. */
   private escape(): void {
-    if (this.map.isOpen) this.map.close();
-    else $('stats').classList.add('hidden');
+    const now = performance.now();
+    if (now - this.lastEscape < ESC_REPEAT_MS) return;
+    this.lastEscape = now;
+    if (this.arrival.active) this.arrival.dismiss();
+    else if (!this.topPanel) this.openPause();
+    else if (this.topPanel !== this.mainMenu) this.back();
   }
 
-  private showMap(): void {
-    this.map.show(this.progress, this.mode.kind === 'hand' ? this.mode.id : null);
+  private openPause(): void {
+    this.queued = null;
+    this.world.setPeek(false);
+    this.pause.forget();
+    this.open(this.pause);
   }
 
-  private showStats(): void {
-    const p = this.progress;
-    const rows = TIERS.map((t) => {
-      const s = p.tiers[t];
-      const avg = s.solved ? (s.stars / s.solved).toFixed(1) : '–';
-      return `<tr><td>${capitalize(t)}</td><td>${s.solved}</td><td>${avg}</td></tr>`;
-    }).join('');
-    $('stats-table').innerHTML =
-      `<tr><th>Tier</th><th>Solved</th><th>Avg ★</th></tr>${rows}` +
-      `<tr><td colspan="3">Current streak: <b>${p.streak}</b> · Best streak: <b>${p.bestStreak}</b></td></tr>`;
-    $('stats').classList.remove('hidden');
+  private openSettings(): void {
+    this.settings.forget();
+    this.open(this.settings);
+  }
+
+  private mainMenuAction(action: string): void {
+    if (action === 'campaign') this.open(this.mapPanel);
+    else if (action === 'tutorial') {
+      const lesson = firstUnsolved([TUTORIAL], this.progress) ?? TUTORIAL.levels[0];
+      this.load({ kind: 'hand', id: lesson.id });
+    } else if (action === 'labs') this.open(this.labsPanel);
+    else if (action === 'settings') this.openSettings();
+  }
+
+  private pauseAction(action: string): void {
+    if (action === 'resume') this.back();
+    else if (action === 'map') this.open(this.mapPanel);
+    else if (action === 'settings') this.openSettings();
+    else if (action === 'exit') this.load({ kind: 'menu' });
+    else if (action === 'restart') {
+      this.back();
+      this.restart();
+    }
+  }
+
+  private confirmResetAction(action: string): void {
+    if (action === 'confirm') {
+      this.progress = resetProgress();
+      this.renderChrome();
+      this.toast('All progress reset');
+    }
+    this.confirmReset.forget();
+    this.back();
   }
 
   private async copyLink(): Promise<void> {
@@ -366,26 +539,17 @@ class Game {
         fn();
       });
 
-    document.querySelectorAll<HTMLButtonElement>('#tabs button').forEach((b) => {
-      b.addEventListener('click', () => {
-        b.blur();
-        const m = b.dataset.mode!;
-        if (m === 'hand') this.showMap();
-        else this.load({ kind: 'gen', tier: m as Tier, seed: randomSeed() });
-      });
-    });
+    click('btn-menu', () => this.openPause());
     click('btn-new', () => this.nextLevel());
     click('btn-restart', () => this.restart());
     click('btn-undo', () => this.undo());
     click('btn-link', () => void this.copyLink());
-    click('btn-stats', () => this.showStats());
     click('win-next', () => this.nextLevel());
     click('win-retry', () => this.restart());
     click('fell-undo', () => this.undo());
     click('fell-retry', () => this.restart());
     click('fell-next', () => this.nextLevel());
-    click('stats-close', () => $('stats').classList.add('hidden'));
-    click('btn-map', () => this.showMap());
+    click('btn-map', () => this.open(this.mapPanel));
     focusKeys(() => this.escape());
 
     // Peeking lasts while Space is held; losing focus ends it too.
@@ -399,14 +563,22 @@ class Game {
         if (!e.repeat) this.arrival.dismiss();
         return;
       }
-      if (this.map.isOpen) {
-        if (this.map.key(e)) e.preventDefault();
+      if (e.code === 'Escape') {
+        if (!e.repeat) this.escape();
+        return;
+      }
+      if (e.code === 'KeyF') {
+        this.readout.toggle();
+        return;
+      }
+      if (this.topPanel) {
+        if (this.topPanel.key(e)) e.preventDefault();
         return;
       }
       if (e.code in KEY_DIRS) {
         e.preventDefault();
         if (e.repeat) return;
-        void this.move(this.world.gridDirForScreen(KEY_DIRS[e.code]));
+        this.move(this.world.gridDirForScreen(KEY_DIRS[e.code]));
         return;
       }
       if (e.code === 'Space' && this.world.twoLayers) {
@@ -434,23 +606,14 @@ class Game {
           if (this.status === 'won') this.nextLevel();
           else if (this.status === 'fallen') this.restart();
           break;
-        case 'KeyL':
-          this.showMap();
-          break;
-        case 'KeyF':
-          this.readout.toggle();
-          break;
-        case 'Escape':
-          this.escape();
-          break;
       }
     });
   }
 }
 
-function modeFromUrl(progress: Progress): Mode {
+function modeFromUrl(): Mode {
   const params = new URLSearchParams(location.search);
-  if (!location.search) return { kind: 'hand', id: (suggestedLevel(progress) ?? HANDMADE[0]).id };
+  if (!location.search) return { kind: 'menu' };
   const id = params.get('level');
   if (id && findLevel(id)) return { kind: 'hand', id };
   // Links from v1 numbered the reference levels, which are now the tutorial chapter.
@@ -465,6 +628,7 @@ function modeFromUrl(progress: Progress): Mode {
 }
 
 function modeToQuery(mode: Mode): string {
+  if (mode.kind === 'menu') return location.pathname;
   return mode.kind === 'hand' ? `?level=${mode.id}` : `?tier=${mode.tier}&seed=${encodeURIComponent(mode.seed)}`;
 }
 

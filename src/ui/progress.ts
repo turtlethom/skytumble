@@ -45,6 +45,13 @@ export function saveProgress(p: Progress): void {
   }
 }
 
+/** Forget everything: stars, solved levels, streaks and tier counts. */
+export function resetProgress(): Progress {
+  const fresh = empty();
+  saveProgress(fresh);
+  return fresh;
+}
+
 /** 3 stars at par, 2 within a small margin, 1 for any solve. */
 export function starsFor(moves: number, par: number): number {
   if (moves <= par) return 3;

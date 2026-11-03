@@ -1,6 +1,6 @@
-// The campaign sky map: one floating island per chapter, joined by a dashed suggested path.
-// Every level is open (soft order); the path and the "up next" marker only suggest an order.
-import { CHAPTERS, HANDMADE, isExtra } from '../levels';
+// A screen of floating islands, one per chapter: the campaign's sky map, joined by a dashed
+// suggested path, and the Labs. Every level is open (soft order); the path and the "up next"
+// marker only suggest an order.
 import { Chapter, HandmadeLevel } from '../levels/format';
 import { miniMap } from '../render/minimap';
 import { esc } from './html';
@@ -11,16 +11,16 @@ import { Progress } from './progress';
 const NATURAL_WIDTH = 1000;
 const W = 160;
 const H = 90;
+// The first slot on the campaign's path waits for First Glade's new chapter.
 const LAYOUT: Record<string, { x: number; y: number; theme: string }> = {
-  tutorial: { x: 16, y: 27, theme: 'glade' },
-  frost: { x: 40, y: 62, theme: 'frost' },
-  wind: { x: 64, y: 27, theme: 'peaks' },
-  star: { x: 88, y: 62, theme: 'night' },
-  toy: { x: 110, y: 27, theme: 'toy' },
-  lab: { x: 143, y: 11, theme: 'lab' },
-  windlab: { x: 143, y: 33, theme: 'lab' },
-  gravlab: { x: 143, y: 55, theme: 'lab' },
-  shapelab: { x: 143, y: 77, theme: 'lab' },
+  frost: { x: 50, y: 62, theme: 'frost' },
+  wind: { x: 80, y: 27, theme: 'peaks' },
+  star: { x: 110, y: 62, theme: 'night' },
+  toy: { x: 140, y: 27, theme: 'toy' },
+  lab: { x: 50, y: 20, theme: 'lab' },
+  windlab: { x: 110, y: 20, theme: 'lab' },
+  gravlab: { x: 50, y: 62, theme: 'lab' },
+  shapelab: { x: 110, y: 62, theme: 'lab' },
 };
 
 const SIGNATURE_LABEL: Record<string, string> = { ice: 'Ice & belts', pads: 'Launch pads', gravity: 'Gravity', shapes: 'Shapes' };
@@ -36,10 +36,9 @@ function layoutOf(c: Chapter, i: number) {
 
 const solved = (p: Progress, h: HandmadeLevel) => p.best[`level:${h.id}`] !== undefined;
 
-/** The first unsolved level on the suggested path, then in the extras; null once all are solved. */
-export function suggestedLevel(p: Progress): HandmadeLevel | null {
-  const ordered = [...CHAPTERS.filter((c) => !isExtra(c)), ...CHAPTERS.filter(isExtra)];
-  return ordered.flatMap((c) => c.levels).find((h) => !solved(p, h)) ?? null;
+/** The first unsolved level in these chapters; null once all are solved. */
+export function firstUnsolved(chapters: Chapter[], p: Progress): HandmadeLevel | null {
+  return chapters.flatMap((c) => c.levels).find((h) => !solved(p, h)) ?? null;
 }
 
 export class SkyMap {
@@ -47,19 +46,26 @@ export class SkyMap {
   private progress!: Progress;
   private current: string | null = null;
   private next: HandmadeLevel | null = null;
+  private levels: HandmadeLevel[];
 
   constructor(
     private root: HTMLElement,
+    private chapters: Chapter[],
+    /** The small label beside an island's name, if it has one. */
+    private badgeFor: (c: Chapter) => string | null,
+    /** Join the islands with the dashed path. */
+    private trail: boolean,
     private onPlay: (id: string) => void,
-    /** The player closed the map and went back to the level behind it. */
+    /** The player left this screen. */
     private onClose: () => void,
   ) {
+    this.levels = chapters.flatMap((c) => c.levels);
     root.addEventListener('click', (e) => {
       const el = e.target as HTMLElement;
       const node = el.closest<HTMLElement>('[data-level]');
       if (node) this.onPlay(node.dataset.level!);
-      else if (el.closest('[data-play]')) this.onPlay(HANDMADE[this.selected].id);
-      else if (el.closest('[data-close]')) this.close();
+      else if (el.closest('[data-play]')) this.onPlay(this.levels[this.selected].id);
+      else if (el.closest('[data-close]')) this.onClose();
     });
     // Islands are sized in px for legible text; scale them with the map so they neither crowd
     // a small window nor float lost in a big one.
@@ -71,45 +77,35 @@ export class SkyMap {
     // Hovering previews a level; clicking plays it.
     root.addEventListener('mouseover', (e) => {
       const node = (e.target as HTMLElement).closest<HTMLElement>('[data-level]');
-      if (node) this.select(HANDMADE.findIndex((h) => h.id === node.dataset.level));
+      if (node) this.select(this.levels.findIndex((h) => h.id === node.dataset.level));
     });
   }
 
-  get isOpen(): boolean {
-    return !this.root.classList.contains('hidden');
-  }
-
-  show(progress: Progress, current: string | null): void {
+  show(progress: Progress, current: string | null, backLabel: string): void {
     this.progress = progress;
     this.current = current;
-    this.next = suggestedLevel(progress);
-    const here = HANDMADE.find((h) => h.id === current);
+    this.next = firstUnsolved(this.chapters, progress);
+    const here = this.levels.find((h) => h.id === current);
     // Open on the level you're playing until it's solved, then on what comes next.
-    const focus = here && !solved(progress, here) ? here : (this.next ?? here ?? HANDMADE[0]);
-    this.root.querySelector('.sm-canvas')!.innerHTML = this.paths() + CHAPTERS.map((c, i) => this.island(c, i)).join('');
+    const focus = here && !solved(progress, here) ? here : (this.next ?? here ?? this.levels[0]);
+    this.root.querySelector('.sm-canvas')!.innerHTML = this.paths() + this.chapters.map((c, i) => this.island(c, i)).join('');
+    this.root.querySelector('[data-back-label]')!.textContent = backLabel;
     this.root.classList.remove('hidden');
-    this.select(HANDMADE.indexOf(focus));
+    this.select(this.levels.indexOf(focus));
   }
 
   hide(): void {
     this.root.classList.add('hidden');
   }
 
-  close(): void {
-    this.hide();
-    this.onClose();
-  }
-
   /** Handle a key while the map is open. Returns true if the map used it. */
   key(e: KeyboardEvent): boolean {
     if (e.code in STEP) {
-      this.select((this.selected + STEP[e.code] + HANDMADE.length) % HANDMADE.length);
+      this.select((this.selected + STEP[e.code] + this.levels.length) % this.levels.length);
     } else if (e.code in HOP) {
       this.hop(HOP[e.code]);
     } else if (e.code === 'Enter' || e.code === 'Space') {
-      this.onPlay(HANDMADE[this.selected].id);
-    } else if (e.code === 'Escape' || e.code === 'KeyL') {
-      this.close();
+      this.onPlay(this.levels[this.selected].id);
     } else {
       return false;
     }
@@ -120,16 +116,16 @@ export class SkyMap {
 
   /** Jump to the neighbouring island, landing on its first unsolved level. */
   private hop(delta: number): void {
-    const from = CHAPTERS.findIndex((c) => c.levels.includes(HANDMADE[this.selected]));
-    const chapter = CHAPTERS[(from + delta + CHAPTERS.length) % CHAPTERS.length];
+    const from = this.chapters.findIndex((c) => c.levels.includes(this.levels[this.selected]));
+    const chapter = this.chapters[(from + delta + this.chapters.length) % this.chapters.length];
     const target = chapter.levels.find((h) => !solved(this.progress, h)) ?? chapter.levels[0];
-    this.select(HANDMADE.indexOf(target));
+    this.select(this.levels.indexOf(target));
   }
 
   private select(index: number): void {
     if (index < 0) return;
     this.selected = index;
-    const h = HANDMADE[index];
+    const h = this.levels[index];
     this.root.querySelectorAll<HTMLElement>('[data-level]').forEach((n) => {
       n.classList.toggle('selected', n.dataset.level === h.id);
     });
@@ -137,15 +133,12 @@ export class SkyMap {
   }
 
   private paths(): string {
-    const pts = CHAPTERS.map((c, i) => ({ c, ...layoutOf(c, i) }));
-    const main = pts.filter((p) => !isExtra(p.c));
+    if (!this.trail) return '';
+    const pts = this.chapters.map((c, i) => layoutOf(c, i));
     const curve = (a: { x: number; y: number }, b: { x: number; y: number }, bend: number) =>
       `M${a.x} ${a.y} Q${(a.x + b.x) / 2} ${(a.y + b.y) / 2 + bend} ${b.x} ${b.y}`;
-    const trail = main.slice(1).map((b, i) => `<path class="sm-trail" d="${curve(main[i], b, 22)}"/>`);
-    // Extras branch off the end of the suggested path.
-    const last = main[main.length - 1];
-    const side = pts.filter((p) => isExtra(p.c)).map((b) => `<path class="sm-trail extra" d="${curve(last, b, -6)}"/>`);
-    return `<svg class="sm-paths" viewBox="0 0 ${W} ${H}" aria-hidden="true">${[...trail, ...side].join('')}</svg>`;
+    const trail = pts.slice(1).map((b, i) => `<path class="sm-trail" d="${curve(pts[i], b, 22)}"/>`);
+    return `<svg class="sm-paths" viewBox="0 0 ${W} ${H}" aria-hidden="true">${trail.join('')}</svg>`;
   }
 
   private island(c: Chapter, i: number): string {
@@ -153,7 +146,7 @@ export class SkyMap {
     const p = this.progress;
     const done = c.levels.filter((h) => solved(p, h)).length;
     const stars = c.levels.reduce((n, h) => n + (p.best[`level:${h.id}`] ?? 0), 0);
-    const badge = isExtra(c) ? 'Extras' : c.signature ? (SIGNATURE_LABEL[c.signature] ?? c.signature) : 'Basics';
+    const badge = this.badgeFor(c);
     const nodes = c.levels
       .map((h, n) => {
         const best = p.best[`level:${h.id}`];
@@ -168,12 +161,12 @@ export class SkyMap {
       })
       .join('');
     return `
-      <section class="sm-island ${theme} ${isExtra(c) ? 'extra' : ''}"
+      <section class="sm-island ${theme}"
                style="left:${(x / W) * 100}%;top:${(y / H) * 100}%;--delay:${-i * 1.7}s">
         <div class="sm-top">
           <header>
             <h3>${esc(c.title.replace(/\s*\(.*\)$/, ''))}</h3>
-            <span class="sm-badge">${esc(badge)}</span>
+            ${badge ? `<span class="sm-badge">${esc(badge)}</span>` : ''}
           </header>
           <p class="sm-progress">${done}/${c.levels.length} solved · <span class="stars">★</span> ${stars}/${c.levels.length * 3}</p>
           <div class="sm-nodes">${nodes}</div>
@@ -183,7 +176,7 @@ export class SkyMap {
 
   private caption(h: HandmadeLevel): string {
     const best = this.progress.best[`level:${h.id}`];
-    const chapter = CHAPTERS.find((c) => c.levels.includes(h))!;
+    const chapter = this.chapters.find((c) => c.levels.includes(h))!;
     const kicker =
       h.id === this.current ? 'You are here' : h === this.next ? 'Up next' : esc(chapter.title.replace(/\s*\(.*\)$/, ''));
     const record = best
@@ -199,4 +192,9 @@ export class SkyMap {
       </div>
       <button class="primary" data-play>Play <kbd>Enter</kbd></button>`;
   }
+}
+
+/** What an island's badge says on the sky map. */
+export function signatureBadge(c: Chapter): string {
+  return c.signature ? (SIGNATURE_LABEL[c.signature] ?? c.signature) : 'Basics';
 }

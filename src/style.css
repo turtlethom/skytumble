@@ -8,6 +8,16 @@
   --star: #f4b400;
   --star-off: rgba(35, 48, 74, 0.18);
   --shadow: 0 6px 24px rgba(35, 60, 110, 0.18);
+  --hover: #fff;
+  /* Menus and dialogs: each world below sets its own. */
+  --panel: linear-gradient(180deg, #ffffff, #dff0ff);
+  --panel-edge: #7fb8ee;
+  /* A selected menu entry: dark enough behind the world's accent ink, which the plain accent isn't everywhere. */
+  --select: #f4a940;
+  --title: #2b6cb5;
+  --btn: #ffffff;
+  --btn-edge: #b5d4f2;
+  --crest: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 19a4.5 4.5 0 0 1-.7-8.95A6 6 0 0 1 17.8 9 5 5 0 0 1 17 19z'/%3E%3C/svg%3E");
 }
 
 * {
@@ -32,6 +42,13 @@ body[data-theme='forest'] {
   --glass: rgba(255, 249, 234, 0.84);
   --glass-border: rgba(255, 246, 224, 0.95);
   --shadow: 0 6px 24px rgba(70, 60, 30, 0.2);
+  --panel: linear-gradient(180deg, #fffaf0, #eee2c4);
+  --panel-edge: #a9713d;
+  --select: #8c5a2d;
+  --title: #4f6b33;
+  --btn: #fffdf5;
+  --btn-edge: #cdb78d;
+  --crest: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M21 3C10 3 4 7.5 4 14.5c0 1.5.4 2.8 1 3.9L3 20.5 4.5 22l2.1-2.1c1.1.7 2.4 1.1 3.9 1.1C18 21 22 13 21 3zM8.6 17.6l-1-1C10 12.5 12.8 9.8 16.5 8c-3.2 2.6-5.8 5.8-7.9 9.6z'/%3E%3C/svg%3E");
   background: linear-gradient(180deg, #5fb2f0 0%, #9bd3f4 24%, #cde9e6 42%, #cfe8dc 100%);
 }
 
@@ -93,6 +110,13 @@ body[data-theme='frost'] {
   --shadow: 0 6px 24px rgba(90, 60, 90, 0.2);
   --cloud-under: #f4c489;
   --cloud-under-clear: rgba(244, 196, 137, 0);
+  --panel: linear-gradient(180deg, #ffffff, #f2e3ea);
+  --panel-edge: #b1687e;
+  --select: #99526a;
+  --title: #8d4f66;
+  --btn: #ffffff;
+  --btn-edge: #dcbccb;
+  --crest: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' d='M12 2.5v19M3.8 7.25l16.4 9.5M3.8 16.75l16.4-9.5M12 6.5 9.6 4.4M12 6.5l2.4-2.1M12 17.5l-2.4 2.1M12 17.5l2.4 2.1'/%3E%3C/svg%3E");
   background: linear-gradient(180deg, #7fb0e8 0%, #b6c7e6 16%, #f3d2c2 34%, #eccfd8 55%, #e3cde3 100%);
 }
 
@@ -105,6 +129,13 @@ body[data-theme='peaks'] {
   --shadow: 0 6px 24px rgba(50, 55, 65, 0.22);
   --cloud-under: #b4bfca;
   --cloud-under-clear: rgba(180, 191, 202, 0);
+  --panel: linear-gradient(180deg, #fbfbf8, #d9dee4);
+  --panel-edge: #b8862f;
+  --select: #8c6420;
+  --title: #4b5563;
+  --btn: #fdfdfb;
+  --btn-edge: #b4bcc6;
+  --crest: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M1.5 20.5 9 6.5l3.7 6.6L15 9.5l7.5 11z'/%3E%3C/svg%3E");
   background: linear-gradient(180deg, #6ea7e0 0%, #a4c6e3 16%, #d6e2e9 36%, #e2e7ea 62%, #e9ecee 100%);
 }
 
@@ -124,6 +155,13 @@ body[data-theme='toybox'] {
   --cloud-puff: #f7e2e6;
   --cloud-under: #e9a9bd;
   --cloud-under-clear: rgba(233, 169, 189, 0);
+  --panel: linear-gradient(180deg, #fff8ea, #f7e1bf);
+  --panel-edge: #a8483f;
+  --select: #a8483f;
+  --title: #a8483f;
+  --btn: #fffdf6;
+  --btn-edge: #d9bd92;
+  --crest: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m12 2.5 2.95 6.2 6.8.85-5 4.65 1.35 6.7L12 17.55 5.9 20.9l1.35-6.7-5-4.65 6.8-.85z'/%3E%3C/svg%3E");
   background: linear-gradient(180deg, #a999dc 0%, #c9aede 22%, #eebfd0 46%, #f9cfae 72%, #fbdcb6 100%);
 }
 
@@ -136,6 +174,15 @@ body[data-theme='night'] {
   --glass: rgba(26, 28, 72, 0.82);
   --glass-border: rgba(150, 150, 225, 0.45);
   --shadow: 0 6px 24px rgba(5, 6, 30, 0.5);
+  /* Hovering must stay dark: the text here is nearly white. */
+  --hover: rgba(66, 62, 148, 0.95);
+  --panel: linear-gradient(180deg, #2a2f7c, #15173f);
+  --panel-edge: #8d6cf0;
+  --select: #6f4fe0;
+  --title: #d9d4ff;
+  --btn: #2b2f73;
+  --btn-edge: #15163f;
+  --crest: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20.5 14.6A9 9 0 0 1 9.4 3.5a9 9 0 1 0 11.1 11.1z'/%3E%3C/svg%3E");
   background: linear-gradient(180deg, #11163f 0%, #1a2157 45%, #232b6b 78%, #2c2f76 100%);
 }
 
@@ -147,6 +194,7 @@ body[data-theme='night'] .sky-map {
   --glass: rgba(255, 255, 255, 0.78);
   --glass-border: rgba(255, 255, 255, 0.9);
   --shadow: 0 6px 24px rgba(35, 60, 110, 0.18);
+  --hover: #fff;
 }
 
 body[data-theme='night'] .brand p,
@@ -206,15 +254,14 @@ button {
 }
 
 button:hover {
-  background: #fff;
+  background: var(--hover);
 }
 
 button:active {
   transform: translateY(1px);
 }
 
-button.primary,
-.tabs button.active {
+button.primary {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--accent-ink);
@@ -274,11 +321,6 @@ kbd {
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
-.tabs {
-  display: flex;
-  gap: 8px;
-}
-
 .score {
   display: flex;
   gap: 18px;
@@ -322,6 +364,7 @@ kbd {
 
 .toast {
   position: fixed;
+  z-index: 10;
   left: 50%;
   top: 110px;
   transform: translate(-50%, -10px);
@@ -451,15 +494,48 @@ kbd {
 }
 
 .dialog {
+  position: relative;
   min-width: 320px;
-  padding: 24px 28px;
+  padding: 36px 28px 24px;
   text-align: center;
+  background: var(--panel);
+  border: 3px solid var(--panel-edge);
+  border-radius: 22px;
+}
+
+/* The world's crest, sitting on the panel's top edge. */
+.dialog::before,
+.dialog::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  border-radius: 50%;
+}
+
+.dialog::before {
+  top: -30px;
+  width: 56px;
+  height: 56px;
+  margin-left: -28px;
+  background: var(--panel-edge);
+  box-shadow: var(--shadow);
+}
+
+.dialog::after {
+  top: -20px;
+  width: 36px;
+  height: 36px;
+  margin-left: -18px;
+  background: var(--accent-ink);
+  -webkit-mask: var(--crest) center / contain no-repeat;
+  mask: var(--crest) center / contain no-repeat;
 }
 
 .dialog h2 {
   margin: 0 0 8px;
   font-size: 28px;
   font-weight: 900;
+  color: var(--title);
 }
 
 .big-stars {
@@ -482,22 +558,161 @@ kbd {
   margin-top: 16px;
 }
 
-#stats-table {
-  margin: 8px auto 0;
-  border-collapse: collapse;
+/* ---- Menus (ui/menu.ts) ----------------------------------------------- */
+
+.menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
 }
 
-#stats-table td,
-#stats-table th {
-  padding: 6px 14px;
+/* Chunky, like the sky map's level stones. */
+.menu-list button {
+  position: relative;
+  margin-bottom: 4px;
+  padding: 10px 18px;
+  font-size: 18px;
+  font-weight: 800;
+  background: var(--btn);
+  border: 2px solid var(--btn-edge);
+  border-radius: 14px;
+  box-shadow: 0 4px 0 var(--btn-edge);
+  transition: transform 0.08s, box-shadow 0.08s, background 0.12s, color 0.12s;
+}
+
+.menu-list button kbd {
+  background: rgba(35, 48, 74, 0.1);
+}
+
+/* The keyboard's place in the list, and the pointer's. */
+.menu-list button.selected {
+  background: var(--select);
+  border-color: var(--select);
+  color: var(--accent-ink);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 var(--panel-edge);
+}
+
+.menu-list button.selected kbd {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.menu-list button:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--panel-edge);
+}
+
+.menu-list button:disabled {
+  opacity: 0.6;
+  cursor: default;
+  background: var(--btn);
+}
+
+.menu-list button.danger {
+  color: #a3271c;
+}
+
+body[data-theme='night'] .menu-list button.danger {
+  color: #ffa89c;
+}
+
+
+.menu-list button.danger.selected,
+body[data-theme='night'] .menu-list button.danger.selected {
+  background: #b5362a;
+  border-color: #b5362a;
+  color: #fff;
+  box-shadow: 0 6px 0 #7c2118;
+}
+
+/* Where a new player should go next: the pulsing ring the sky map puts on "up next". */
+.menu-list button.suggested::before {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border-radius: 19px;
+  border: 3px solid var(--accent);
+  pointer-events: none;
+  animation: suggest-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes suggest-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.soon {
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--ink-soft);
+}
+
+/* The first screen: the title and buttons on the left, the live island beside them. */
+.main-menu {
+  position: fixed;
+  top: 50%;
+  left: clamp(24px, 9vw, 160px);
+  width: min(320px, calc(100vw - 48px));
+  transform: translateY(-50%);
+}
+
+.main-menu.hidden {
+  display: none;
+}
+
+.main-menu h1 {
+  margin: 0;
+  font-size: clamp(44px, 5vw, 68px);
+  font-weight: 900;
+  letter-spacing: -1px;
+  color: #fff;
+  text-shadow: 0 3px 0 #4a8fd8, 0 8px 24px rgba(30, 80, 160, 0.35);
+}
+
+.main-menu .menu-list {
+  margin-top: 22px;
+}
+
+.main-menu .menu-list button {
   text-align: left;
+  font-size: 20px;
 }
 
-#stats-table th {
+body.at-menu .top,
+body.at-menu .bottom {
+  display: none;
+}
+
+.dialog h3 {
+  margin: 14px 0 4px;
   font-size: 12px;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: var(--ink-soft);
+}
+
+.controls {
+  margin: 0 auto;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.controls td {
+  padding: 3px 10px;
+}
+
+.controls td:first-child {
+  max-width: 240px;
+}
+
+.controls kbd {
+  margin-left: 0;
 }
 
 /* ---- Sky map (ui/map.ts) ---------------------------------------------- */
@@ -583,13 +798,6 @@ kbd {
   animation: trail-march 1.6s linear infinite;
 }
 
-.sm-trail.extra {
-  stroke-width: 3;
-  stroke-dasharray: 1 10;
-  opacity: 0.6;
-  animation: none;
-}
-
 @keyframes trail-march {
   to {
     stroke-dashoffset: -16;
@@ -604,7 +812,7 @@ kbd {
   --cliff-dark: #6f4a2d;
   position: absolute;
   width: 250px;
-  transform: translate(-50%, -50%) scale(calc(var(--s, 1) * var(--k, 1)));
+  transform: translate(-50%, -50%) scale(var(--s, 1));
   animation: bob 7s ease-in-out var(--delay, 0s) infinite;
 }
 
@@ -660,19 +868,13 @@ kbd {
   --cliff-dark: #5e2522;
 }
 
-/* Extras sit off the path, smaller, so a column of them fits beside the campaign. */
-.sm-island.extra {
-  width: 230px;
-  --k: 0.66;
-}
-
 @keyframes bob {
   0%,
   100% {
-    transform: translate(-50%, -50%) scale(calc(var(--s, 1) * var(--k, 1)));
+    transform: translate(-50%, -50%) scale(var(--s, 1));
   }
   50% {
-    transform: translate(-50%, calc(-50% - 6px)) scale(calc(var(--s, 1) * var(--k, 1)));
+    transform: translate(-50%, calc(-50% - 6px)) scale(var(--s, 1));
   }
 }
 
@@ -902,7 +1104,8 @@ kbd {
 @media (prefers-reduced-motion: reduce) {
   .sm-island,
   .sm-trail,
-  .sm-node.next::before {
+  .sm-node.next::before,
+  .menu-list button.suggested::before {
     animation: none;
   }
 }

@@ -1,4 +1,4 @@
-title: First Glade
+title: Tutorial
 
 === tutorial-01
 par: 12

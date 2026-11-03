@@ -4,7 +4,7 @@ import { CHAPTER_THEMES, NEUTRAL, themeForLevel } from '../src/render/themes';
 
 describe('chapter themes', () => {
   it('find a level\'s chapter for its arrival title', () => {
-    expect(chapterOf('tutorial-03')?.title).toBe('First Glade');
+    expect(chapterOf('tutorial-03')?.title).toBe('Tutorial');
     expect(chapterOf('frost-01')?.title).toBe('Frost Isle');
     expect(chapterOf('nowhere-01')).toBeUndefined();
   });

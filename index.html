@@ -93,11 +93,6 @@
         <h1>Skytumble</h1>
         <p id="level-info"></p>
       </div>
-      <nav class="tabs" id="tabs">
-        <button data-mode="easy">Easy</button>
-        <button data-mode="medium">Medium</button>
-        <button data-mode="hand">Campaign</button>
-      </nav>
       <div class="score card">
         <div><span class="label">Moves</span><span id="moves">0</span></div>
         <div><span class="label">Par</span><span id="par">–</span></div>
@@ -107,12 +102,12 @@
 
     <footer class="bottom">
       <div class="actions">
-        <button id="btn-new">New level <kbd>N</kbd></button>
+        <button id="btn-menu">Menu <kbd>Esc</kbd></button>
+        <button id="btn-map">Map</button>
+        <button id="btn-new">Next level <kbd>N</kbd></button>
         <button id="btn-restart">Restart <kbd>R</kbd></button>
         <button id="btn-undo">Undo <kbd>Z</kbd></button>
         <button id="btn-link">Copy link</button>
-        <button id="btn-map">Map <kbd>L</kbd></button>
-        <button id="btn-stats">Stats</button>
       </div>
       <p class="help"><kbd>←↑↓→</kbd>/<kbd>WASD</kbd> roll · <kbd>Q</kbd>/<kbd>E</kbd> rotate view</p>
     </footer>
@@ -127,7 +122,7 @@
         <p id="win-detail"></p>
         <div class="dialog-actions">
           <button id="win-retry">Start over <kbd>R</kbd></button>
-          <button id="win-next" class="primary">Next level <kbd>Enter</kbd></button>
+          <button id="win-next" class="primary"><span id="win-next-label">Next level</span> <kbd>Enter</kbd></button>
         </div>
       </div>
     </div>
@@ -144,21 +139,11 @@
       </div>
     </div>
 
-    <div id="stats" class="modal hidden">
-      <div class="card dialog">
-        <h2>Your progress</h2>
-        <table id="stats-table"></table>
-        <div class="dialog-actions">
-          <button id="stats-close" class="primary">Close</button>
-        </div>
-      </div>
-    </div>
-
     <!-- Campaign sky map; filled in by ui/map.ts. -->
     <div id="map" class="sky-map hidden">
       <header class="sm-head">
         <h2>Sky map</h2>
-        <button data-close>Back to the level <kbd>Esc</kbd></button>
+        <button data-close><span data-back-label>Back</span> <kbd>Esc</kbd></button>
       </header>
       <div class="sm-stage"><div class="sm-canvas"></div></div>
       <div class="sm-caption card"></div>
@@ -167,6 +152,76 @@
         <span>Every island is open; the dashed path is just a suggestion.</span>
         <a href="./levels.html">Level index</a>
       </p>
+    </div>
+
+    <!-- The same screen as the sky map, for the mechanic prototypes. -->
+    <div id="labs" class="sky-map hidden">
+      <header class="sm-head">
+        <h2>Labs</h2>
+        <button data-close><span data-back-label>Back</span> <kbd>Esc</kbd></button>
+      </header>
+      <div class="sm-stage"><div class="sm-canvas"></div></div>
+      <div class="sm-caption card"></div>
+      <p class="sm-foot">
+        <span><kbd>←</kbd><kbd>→</kbd> level · <kbd>↑</kbd><kbd>↓</kbd> lab · <kbd>Enter</kbd> play</span>
+        <span>The rough prototypes each world's mechanic started from.</span>
+      </p>
+    </div>
+
+    <div id="main-menu" class="main-menu hidden">
+      <h1>Skytumble</h1>
+      <nav class="menu-list">
+        <button data-action="campaign">Campaign</button>
+        <button data-action="tutorial">Tutorial</button>
+        <button data-action="howto" disabled>How To Play <span class="soon">Coming next</span></button>
+        <button data-action="labs">Labs</button>
+        <button data-action="settings">Settings</button>
+      </nav>
+    </div>
+
+    <!-- Esc during a level: the level stays exactly as it is underneath. -->
+    <div id="pause" class="modal hidden">
+      <div class="card dialog">
+        <h2>Paused</h2>
+        <nav class="menu-list">
+          <button data-action="resume">Resume <kbd>Esc</kbd></button>
+          <button data-action="map">Map</button>
+          <button data-action="restart">Restart</button>
+          <button data-action="settings">Settings</button>
+          <button data-action="exit">Exit</button>
+        </nav>
+      </div>
+    </div>
+
+    <div id="settings" class="modal hidden">
+      <div class="card dialog">
+        <h2>Settings</h2>
+        <h3>Controls</h3>
+        <table class="controls">
+          <tr><td>Roll</td><td><kbd>←↑↓→</kbd> or <kbd>WASD</kbd></td></tr>
+          <tr><td>Rotate the view</td><td><kbd>Q</kbd> <kbd>E</kbd></td></tr>
+          <tr><td>Undo</td><td><kbd>Z</kbd></td></tr>
+          <tr><td>Restart</td><td><kbd>R</kbd></td></tr>
+          <tr><td>Next level</td><td><kbd>N</kbd></td></tr>
+          <tr><td>See the other floor (hold, on two-floor levels)</td><td><kbd>Space</kbd></td></tr>
+          <tr><td>Menu</td><td><kbd>Esc</kbd></td></tr>
+        </table>
+        <nav class="menu-list">
+          <button data-action="back">Back <kbd>Esc</kbd></button>
+          <button data-action="reset" class="danger">Reset all progress</button>
+        </nav>
+      </div>
+    </div>
+
+    <div id="confirm-reset" class="modal hidden">
+      <div class="card dialog">
+        <h2>Are you sure?</h2>
+        <p>This erases every star and solved level. It can't be undone.</p>
+        <nav class="menu-list">
+          <button data-action="cancel">Cancel <kbd>Esc</kbd></button>
+          <button data-action="confirm" class="danger">Yes, reset everything</button>
+        </nav>
+      </div>
     </div>
 
     <div id="fps" class="fps hidden"></div>

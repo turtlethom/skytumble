@@ -151,6 +151,7 @@ export class World {
   private camera = new THREE.PerspectiveCamera(38, 1, 0.1, 500);
   /** A scratch camera for working out where the real one is heading. */
   private probe = new THREE.PerspectiveCamera(38, 1, 0.1, 500);
+  private viewShift = 0;
   private sun = new THREE.DirectionalLight(0xfff4e0, 2.2);
   private levelGroup = new THREE.Group();
   private theme: Theme = NEUTRAL;
@@ -1281,6 +1282,18 @@ export class World {
     await this.tween(160, (t) => (this.block.position.y = (top1 + bottom1) / 2 - 0.03 * Math.sin(t * Math.PI)));
   }
 
+  /** Drop the block onto the board from above, as it arrives in a level. */
+  dropBlock(): Promise<void> {
+    const y = this.block.position.y;
+    this.block.position.y = y + 8;
+    return this.tween(520, (t) => (this.block.position.y = y + 8 * (1 - easeOutBounce(t))));
+  }
+
+  /** Jump every animation in progress to its end, for when what's on screen is about to be replaced. */
+  finishAnimations(): void {
+    for (const tw of this.tweens) tw.start = -Infinity;
+  }
+
   /** Islands rise into place and the block drops in from above. */
   private intro(): Promise<void> {
     const views = [...this.tiles.entries()];
@@ -1384,8 +1397,22 @@ export class World {
     const el = this.renderer.domElement.parentElement!;
     this.renderer.setSize(el.clientWidth, el.clientHeight);
     this.camera.aspect = el.clientWidth / el.clientHeight;
+    this.applyViewShift();
     this.camera.updateProjectionMatrix();
     if (this.bounds.length) this.fitCamera();
+  }
+
+  /** Slide the whole picture sideways by a fraction of the screen's width, to make room beside the island for a menu. */
+  setViewShift(fraction: number): void {
+    this.viewShift = fraction;
+    this.applyViewShift();
+    this.camera.updateProjectionMatrix();
+  }
+
+  private applyViewShift(): void {
+    const { clientWidth: w, clientHeight: h } = this.renderer.domElement.parentElement!;
+    if (this.viewShift) this.camera.setViewOffset(w, h, -this.viewShift * w, 0, w, h);
+    else this.camera.clearViewOffset();
   }
 
   /**

@@ -125,13 +125,15 @@ if (process.env.TITLE_CHECK === '1') {
   await key('KeyN');
   await sleep(600);
   check('next level in the same chapter: no title', !(await titleUp()));
-  await settle();
+  await send('Page.navigate', { url: `${base}/?level=frost-08` });
+  await untilTitle();
+  await sleep(3200);
   await key('KeyN');
   check('next level in a new chapter: title', await untilTitle());
-  check('it names the new chapter', (await evalJs("document.getElementById('arrival').textContent")) === 'Frost Isle');
+  check('it names the new chapter', (await evalJs("document.getElementById('arrival').textContent")) === 'Windy Peaks');
   await sleep(3200);
   check('it lifts by itself', !(await titleUp()));
-  await evalJs("document.querySelector('[data-mode=easy]').click()");
+  await send('Page.navigate', { url: `${base}/?tier=easy&seed=abc` });
   await sleep(1500);
   check('Easy has no title', !(await titleUp()));
   await send('Page.navigate', { url: `${base}/?sheet=forest` });
@@ -139,9 +141,9 @@ if (process.env.TITLE_CHECK === '1') {
   check('the tile sheet has no title', !(await titleUp()));
   await send('Page.navigate', { url: `${base}/` });
   await sleep(2500);
-  check('landing on the map: no title behind it', !(await titleUp()));
-  await key('Escape');
-  check('closing the map: title', await untilTitle());
+  check('landing on the main menu: no title', !(await titleUp()));
+  await evalJs("document.querySelector('[data-action=tutorial]').click()");
+  check('leaving it for a level: title', await untilTitle());
 } else
 for (const [id, moves] of Object.entries(solutions)) {
   await send('Page.navigate', { url: `${base}/?level=${id}` });
