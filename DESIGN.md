@@ -622,6 +622,29 @@ Status: live 2026-11-02; the user sent it live without notes on the sign-off que
 the structure behind the board, and the others fade out as the view turns, since at the screen's edges they were cut-off
 pieces, nearer and so larger.
 
+**Frost Isle pass**, settled in a grilling session 2026-11-02: a wild frozen range at dawn, centered on one great jagged peak
+beneath the board. Long ago someone mined here, which explains the belts, and now only reindeer walk these ridges. What the
+world lacked most: a sense of life. The biggest fear: ice getting harder to read (179 ice tiles). The pre-mortem: fake-looking reindeer.
+
+| Area | Decision |
+|---|---|
+| Landmark | One great jagged summit well below the board, seen from all four camera angles, so no sharp point shows through gaps |
+| Under the gaps | Deep turquoise glacier faces, strongest in shadowed cracks, with a rosy haze on sunlit faces and further out, clearly deeper than the ice tiles |
+| Moving piece | Two small groups of reindeer (about four or five each) always walking a ridge loop around the summit, on opposite sides, as dark silhouettes with a warm dawn rim |
+| Framing | A ring of far ice spires in haze, below board level |
+| The old mine | Leaning rusted cable towers with slack cable along two opposite ridges |
+| Unchanged | Tiles, snow, sky, flakes, sparkles, interface. The existing ridges stay as the wider range, thinned where the summit needs room. Ice Lab keeps its neutral look |
+| If it runs slowly | Cut spindrift first, then drifting cloud, then flakes, with reindeer and sparkles last |
+
+- **Sign-off:** does it feel alive? And a replay of `frost-04` and `frost-08` has no misread ice or gaps.
+- **Build order:** one reindeer walking, a piece of the turquoise face and one cable tower up close for approval → the full peak,
+  spires and herd → sign-off → ask before it goes live.
+- **If reindeer fail twice:** move them to a far skyline as small, plain silhouettes. If walking feels mechanical, add pauses first.
+- **Risks to watch:** turquoise clashing with the pink sky (lean on the haze first); glacier blue near ice tiles, especially in black
+  and white; reindeer pulling the eye (slow them or push them out); echoes of Starfall's Earth and Windy Peaks' structures.
+
+Status: settled; the samples are next.
+
 **After that pass: 20 levels per biome** (decided by the user 2026-11-02). Levels
 come out in **batches of 5**, and each batch is playtested and tuned before the next one starts.
 
