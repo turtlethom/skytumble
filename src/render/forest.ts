@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { Butterflies, GROVES, canopyRoll, makeGroves } from './grove';
 import { Scenery, intoTheSky, seeded } from './scenery';
 
 /** The haze the treetops fade into, close to the page's sky gradient just above them. */
@@ -14,7 +15,7 @@ const NEAR_TREES = 220;
 const CANOPY_RADIUS = 135;
 const CANOPY_TOP = -24;
 
-/** Motion, kept apart so it can be turned down. If it runs slowly, cut sway, then leaves, then cloud shadows, then pollen. */
+/** Motion, kept apart so it can be turned down. If it runs slowly, cut sway, then leaves, then cloud shadows, then pollen, with butterflies last. */
 const SWAY = 0.06;
 const CLOUD_SHADE = 0.16;
 const LEAVES = 3;
@@ -32,7 +33,7 @@ interface Leaf {
 }
 
 /**
- * First Glade's surroundings: a sea of treetops below the board, leaves and pollen around it.
+ * First Glade's surroundings: a sea of treetops below the board with grassy hills of old trees rising from it, and leaves, pollen and butterflies around it.
  * The big clouds are behind the canvas, in the page (`#sky`), so they hold still when the view turns.
  */
 export class ForestScenery implements Scenery {
@@ -49,9 +50,10 @@ export class ForestScenery implements Scenery {
   private drift: { phase: number; speed: number }[] = [];
   /** Half the width of the board, which the leaves and pollen keep around. */
   private spread = 6;
+  private butterflies = new Butterflies();
 
   constructor() {
-    this.group.add(...this.makeCanopy());
+    this.group.add(...this.makeCanopy(), makeGroves(this.uniforms), this.butterflies.group);
     this.makeLeaves();
     this.pollen = this.makePollen();
     this.group.add(this.pollen);
@@ -61,6 +63,7 @@ export class ForestScenery implements Scenery {
   place(center: THREE.Vector3, viewSize: number): void {
     this.group.position.set(center.x, 0, center.z);
     this.spread = viewSize * 0.65;
+    this.butterflies.place(viewSize);
     this.leaves.forEach((leaf, i) => this.dropLeaf(leaf, 9 - (i / this.leaves.length) * 13));
     const pos = this.pollen.geometry.attributes.position;
     const rnd = seeded(5);
@@ -73,6 +76,7 @@ export class ForestScenery implements Scenery {
   update(seconds: number, dt: number, canvasHeight: number): void {
     this.uniforms.uTime.value = seconds;
     this.uniforms.uHeight.value = canvasHeight;
+    this.butterflies.update(seconds);
 
     for (const leaf of this.leaves) {
       const m = leaf.mesh;
@@ -183,8 +187,10 @@ export class ForestScenery implements Scenery {
       const size = (2.6 + rnd() * 1.6) * (1 + r * 0.012);
       const rise = size * (0.8 + rnd() * 0.3);
       // A slow roll in the height, so it looks like a forest over hills and not a flat carpet.
-      const roll = Math.sin(x * 0.07 + 1) * Math.cos(z * 0.06) * 4;
-      m.compose(new THREE.Vector3(x, CANOPY_TOP - rise - 4 + roll - rnd() * 2.5, z), q.setFromAxisAngle(UP, rnd() * 6.28), new THREE.Vector3(size, rise, size));
+      const roll = canopyRoll(x, z);
+      // None in a grove's clearing, where its hill rises instead. It keeps its slot, so the rest of the forest doesn't change.
+      const kept = GROVES.every((g) => Math.hypot(x - g.x, z - g.z) >= g.clearing) ? 1 : 0;
+      m.compose(new THREE.Vector3(x, CANOPY_TOP - rise - 4 + roll - rnd() * 2.5, z), q.setFromAxisAngle(UP, rnd() * 6.28), new THREE.Vector3(size * kept, rise * kept, size * kept));
       const [crowns, slot] = i < NEAR_TREES ? [near, i] : [far, i - NEAR_TREES];
       crowns.setMatrixAt(slot, m);
       crowns.setColorAt(slot, color.set(CANOPY_COLORS[Math.floor(rnd() * CANOPY_COLORS.length)]));

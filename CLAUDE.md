@@ -151,7 +151,7 @@ src/render/    Three.js world (tiles, animations, push cue), palette.ts (belt co
                themes.ts (each chapter's look; rules in DESIGN.md's *Chapter themes*),
                scenery.ts (what a world's surroundings provide), forest.ts, frost.ts and peaks.ts (each world's
                scenery; the big clouds behind the game are `#sky` in the page), toybox.ts (Toybox's scenery), toys.ts
-               (its toys and plastic reflections), starfall.ts (Starfall's scenery), stardust.ts (flip sparkles), aerie.ts (Windy Peaks' arches, nests and birds), ridge.ts (Frost Isle's ridge, reindeer and cable towers)
+               (its toys and plastic reflections), starfall.ts (Starfall's scenery), stardust.ts (flip sparkles), aerie.ts (Windy Peaks' arches, nests and birds), ridge.ts (Frost Isle's ridge, reindeer and cable towers), grove.ts (First Glade's hills, trees and butterflies)
 src/ui/        progress (localStorage), map (campaign sky map; island layout per chapter)
 src/main.ts    game controller: modes, HUD, splash, key focus sink (for Vimium)
 scripts/       check-levels.ts; design/ (lib, explore, analyze, sim, search, solutions, play, verify)

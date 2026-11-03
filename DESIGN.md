@@ -648,9 +648,8 @@ board and a few butterflies in the air. The biggest fear: spoiling the calm of a
 
 | Area | Decision |
 |---|---|
-| Landmark | One giant, gnarled old tree: twisting bark, big branches, layered leaf clusters. Near the top of the screen, never covering a tile |
-| Tree position | Fixed in one place, directly behind the board at each level's starting camera angle. Other angles keep the plain canopy |
-| Moving piece | About three orange-and-black butterflies, a redder orange than the amber bridges, wandering beyond the board's edges and never crossing a tile |
+| Landmark | Eight soft grassy hills rising from the canopy around the board, crowned with old trees and a few bushes, each different: four near ones so a hill stands behind the board in every camera view, four smaller further out at the sides. A great old tree crowns the one behind a level's starting view. Near the top of the screen, never covering a tile (changed after the samples: one tree alone stood out, "but not in the best way"; on a mound the user liked the style, and asked for several around the map) |
+| Moving piece | Three orange-and-black butterflies, a redder orange than the amber bridges, each wandering its own patch of air beyond the board's bounds and never crossing a tile |
 | Unchanged | Treetops, sky, leaves, pollen, tiles, interface. Labs and generated levels keep their neutral look |
 | If it runs slowly | Cut canopy sway first, then leaves, then cloud shadows, then pollen, with butterflies last |
 
@@ -660,7 +659,11 @@ board and a few butterflies in the air. The biggest fear: spoiling the calm of a
 - **Risks to watch:** the tree looking fake or pasted on; a busier first screen; butterflies seeming to avoid the board; orange near the amber
   bridges; staying our own design rather than a copy of a famous film's tree.
 
-Status: settled; the samples are next.
+Status: live 2026-11-02, sent live without notes on the sign-off questions (still calm? eight groves too many? bushes under retracted bridges, butterflies
+near the top and bottom of the screen). Only the great tree is built finely, and groves out of view aren't drawn, but at about 830k triangles this is the
+heaviest world, and its frame rate on the user's laptop hasn't been read off (F in the game). If it suffers, reduce the crowns' detail first, then drop the far four groves.
+
+That finishes the older worlds' pass. Next: 20 levels per biome, once the user settles whether First Glade goes to 20 and whether split + paint comes first.
 
 **After that pass: 20 levels per biome** (decided by the user 2026-11-02). Levels
 come out in **batches of 5**, and each batch is playtested and tuned before the next one starts.
@@ -896,6 +899,13 @@ birds gather at a nest, stay a while, then leave.
 **2026-11-02 — Frost Isle samples.** Reindeer "look fantastic", "very convincing". The summit "looks strange"; "the older backdrop
 looked nice"; the turquoise is "a bit too strong, i had to know ahead of time that it was a summit to see it" → summit and bowl removed,
 reindeer moved to a soft ridge in the old style.
+
+**2026-11-02 — First Glade sample.** The tree "kind of stands out a bit, but not in the best way" → set it on a mound, with a few more
+trees. Still peaceful. Its size is fine. The butterfly's wings were "kind of still": a bug, both wings tilted the same way instead of
+flapping.
+
+**2026-11-02 — First Glade groves.** On the second sample: "let's actually make a few of these mounds with trees around the entire map, i do
+like the style a lot" → eight varied groves around the board, in the chapter.
 
 **2026-11-02 — The better peek.** The full 3D outline was more than needed: "the outline of the face of the block
 is fine... it should be flush with the tile" → flat footprints for both the block outline and the flip landing preview.

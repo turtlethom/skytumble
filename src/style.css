@@ -35,6 +35,15 @@ body[data-theme='forest'] {
   background: linear-gradient(180deg, #5fb2f0 0%, #9bd3f4 24%, #cde9e6 42%, #cfe8dc 100%);
 }
 
+/* The hills' crowns can pass behind the level's text from some camera angles. */
+body[data-theme='forest'] .brand p {
+  width: fit-content;
+  margin-left: -8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(255, 249, 234, 0.72);
+}
+
 /* Big soft clouds, far off behind the canvas: summer white in First Glade, gold-lit in Frost Isle. */
 #sky {
   display: none;
