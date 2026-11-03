@@ -24,7 +24,7 @@ export function tileSheet(bridgesOn: number): Level {
   return parseLevel(ROWS, SWITCH_GROUPS, bridgesOn);
 }
 
-/** A strip of floor for `?sheet=toybox&toys`: the sample toys stand on it, beside the block. */
+/** A strip of floor for close-up samples (`?sheet=toybox&toys`, `?sheet=peaks&aerie`), beside the block. */
 export function toySampleFloor(): Level {
   return parseLevel(['#############', '#############', '#############', 'S############', '#############']);
 }

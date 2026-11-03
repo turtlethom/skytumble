@@ -53,6 +53,8 @@ class Game {
   private toastTimer = 0;
   /** A theme forced from the URL, to preview it on any level. */
   private themeOverride: Theme | null = null;
+  /** `?level=wind-06&aerie`: preview Windy Peaks' arches around a level. */
+  private aerieRing = false;
 
   constructor() {
     // A bare URL lands on the map, with the suggested level waiting behind it.
@@ -71,6 +73,11 @@ class Game {
     if (params.has('fps')) this.readout.toggle();
     // For approving a theme's readability without relying on color.
     if (params.has('gray')) document.documentElement.style.filter = 'grayscale(1)';
+    if (params.has('aerie') && params.has('sheet')) {
+      void this.start(toySampleFloor(), 0).then(() => this.world.showAerie(true));
+      return;
+    }
+    this.aerieRing = params.has('aerie');
     if (params.has('toys')) {
       void this.start(toySampleFloor(), 0).then(() => this.world.showToySamples());
       return;
@@ -120,6 +127,7 @@ class Game {
     const arrival = this.playArrival();
     if (arrival) await arrival.covered;
     await this.world.setLevel(level, this.state, this.currentTheme(), arrival?.lifted);
+    if (this.aerieRing) this.world.showAerie(false);
     this.status = 'playing';
     this.updatePreviews();
     this.drainQueue();

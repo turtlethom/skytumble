@@ -6,6 +6,7 @@ import { FrostScenery } from './frost';
 import { CONVEYOR_COLORS, cssColor } from './palette';
 import { PeaksScenery } from './peaks';
 import { Scenery, softDot } from './scenery';
+import { makeAerieCloseUp, makeAerieRing } from './aerie';
 import { Stardust } from './stardust';
 import { StarfallScenery } from './starfall';
 import { NEUTRAL, Theme } from './themes';
@@ -197,6 +198,8 @@ export class World {
   /** A flip turning the camera over: it sets the view itself, in step with the block. Cleared if a new level or state arrives. */
   private flipTurn: symbol | null = null;
   private stardust = new Stardust();
+  private sampleBirds: THREE.Group[] = [];
+  private sampleRing: THREE.Group | null = null;
   /** 0 = camera above looking down, 1 = below looking up; eased toward its target. */
   private side = 0;
   private moonlight = new THREE.DirectionalLight(0xbcc8ff, 0);
@@ -458,6 +461,18 @@ export class World {
   /** Stand the three sample toys on the current floor, for `?sheet=toybox&toys`. */
   showToySamples(): void {
     this.layerGroups[0].add(makeToySamples(this.center));
+  }
+
+  /** Windy Peaks' samples, for approval: up close on a strip of floor, or all four arches around a real level. */
+  showAerie(closeUp: boolean): void {
+    if (closeUp) {
+      const { group, birds } = makeAerieCloseUp(this.center);
+      this.layerGroups[0].add(group);
+      this.sampleBirds = birds;
+    } else {
+      this.sampleRing = makeAerieRing(this.center, this.viewSize);
+      this.layerGroups[0].add(this.sampleRing);
+    }
   }
 
   /** What the last frame cost, for the frame-rate readout. */
@@ -1305,6 +1320,8 @@ export class World {
       if (c.position.x > this.center.x + 30) c.position.x = this.center.x - 30;
     }
     this.scenery?.update(now / 1000, dt, this.renderer.domElement.height, this.camera);
+    for (const bird of this.sampleBirds) (bird.userData.flap as (s: number) => void)(now / 1000);
+    (this.sampleRing?.userData.update as ((c: THREE.Camera) => void) | undefined)?.(this.camera);
     this.stardust.update(now / 1000, this.renderer.domElement.height, this.camera.fov);
     for (const c of this.chevrons) {
       // Each chevron travels across the tile, growing in at the back and shrinking out at the front.

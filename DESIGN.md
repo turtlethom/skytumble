@@ -602,7 +602,8 @@ which is why pads fling you. What the world lacked most: a sense of place. The b
 
 | Area | Decision |
 |---|---|
-| Landmark and framing | Four wind-carved stone arches, one per side of the board at middle distance in light haze, each with a giant nest on top. They stop below board level, so nothing covers a tile |
+| Landmark and framing | Four different wind-carved rock structures, one per side of the board at middle distance in light haze: three arches of different proportions (lopsided with a nest on its shoulder, low and wide, tall and narrow) and a family of pillars. They stop below board level, so nothing covers a tile |
+| Nests | At most two, on opposite sides (the lopsided arch and the pillars), small and sunk into rock ledges, in weathered sticks, with two or three large eggs and heather only outside the rim, so they belong to the stone (changed after the samples: a nest on each side looked strange and too dominant) |
 | Moving piece | A flock of medium storybook birds, mostly soft grey and white with a small warm accent, flying in formation from one nest to another every 20 to 30 seconds |
 | Color | Pink-violet mountain heather on the arches and nest ledges |
 | Banners | Removed, since they imply people; long white streamers of cloud pour off the peak tops instead |
@@ -617,7 +618,9 @@ which is why pads fling you. What the world lacked most: a sense of place. The b
   (if they fail twice, smaller silhouettes); the arches crowding the airy feel (push back or add haze first); rock arches
   suggesting a desert; streamers echoing Frost's spindrift; white birds blurring with the gust streaks.
 
-Status: settled; the samples are next.
+Status: the samples are built, awaiting approval (`?sheet=peaks&aerie` up close, `?level=wind-06&aerie` with all four
+arches in place). Each view shows only the structure directly behind the board, with its top near the top of the screen. The others
+fade out as the view turns, since at the screen's edges they were cut-off pieces, nearer and so larger.
 
 **After that pass: 20 levels per biome** (decided by the user 2026-11-02). Levels
 come out in **batches of 5**, and each batch is playtested and tuned before the next one starts.
@@ -837,6 +840,14 @@ shadow and no outline, chosen after trying four views.
 planets on the side, and it looks wildly out of place with the themes we have had so far." → Earth directly under
 the bottom floor, the moon behind the flipped floor, repainted like a picture book. The better peek moves up, next
 after this, ahead of the comet and orbit path.
+
+**2026-11-02 — Windy Peaks samples.** Likes the birds. A nest on all four sides "does look strange" → at most two, and a
+different rock structure on each side. Nest "a little too dominant" and birds "a tad smaller"; "nests should fit in
+naturally". Still airy; "really like the pink", so more of it. No desert feel.
+
+**2026-11-02 — Windy Peaks samples, second round.** Arches a bit thicker; at most three eggs, larger, filling the nest; "just a
+little too much pink, especially within the nest". Loves the lopsided arch with its nest and wants the other arches to be
+variations on it; the horn "looks really funky" → replaced, and the buttress became a low, wide arch.
 
 **2026-11-02 — The better peek.** The full 3D outline was more than needed: "the outline of the face of the block
 is fine... it should be flush with the tile" → flat footprints for both the block outline and the flip landing preview.
