@@ -24,7 +24,7 @@ as decisions are made or levels change.
 ## Commands
 
 ```
-npm run dev            # play at the printed URL; press L in-game for the sky map
+npm run dev            # play at the printed URL; a bare URL opens the main menu, ?level=<id> a level
 npm test               # rules, solver, generator, chapter format, every handmade level valid
 npm run levels:check   # validation report; `-- --fill-par` records par for new levels
 npm run build          # static site in dist/ (game + levels.html)
@@ -71,7 +71,7 @@ animations are shared. Shapes: a block's length (`n`: 1 cube, absent = 2, 3 tall
 rolling, support (a lying tall block rests on its ends), and weight; `c`/`t`/`n` are shape
 switches, `X` an extra-heavy switch, `C`/`T` goals marked for a shape, and `shape: cube|tall`
 (or `!shape` in a design block) sets the start shape. Traces print `cube`/`tall` before a pose. Chapters are registered in play order in
-`src/levels/index.ts` (which also marks extras), and a new chapter needs an island position and
+`src/levels/index.ts` (which also splits them into the Tutorial, the campaign and the labs), and a new chapter needs an island position and
 theme in `LAYOUT` in `src/ui/map.ts`. A chapter with `signature: ice` enforces the one-trick guard: the optimal
 solution must use ice in at least two distinct ways (`src/levels/validate.ts`).
 
@@ -130,8 +130,8 @@ SHOTS=<scratch dir> npm run verify -- frost-
 It plays every optimal solution with real key events, reports WON/NOT WON at par, and saves start
 and end screenshots to read. Controls follow the screen, so the driver asks the game which arrow
 rolls which way (`window.skytumbleKeyFor`). Options for `verify`/`play.mjs`: `STEPS=1` (a shot
-after every move), `PEEK_AT=n` (hold Space after move n), `ROTATE=n` (quarter turns before playing), `TITLE_CHECK=1` (check when the chapter title shows, instead of playing). For the sky map (a DOM overlay), a plain headless screenshot of `/`
-with `--virtual-time-budget=20000` is enough. Gotchas:
+after every move), `PEEK_AT=n` (hold Space after move n), `ROTATE=n` (quarter turns before playing), `TITLE_CHECK=1` (check when the chapter title shows, instead of playing). For the main menu, a plain headless screenshot of `/`
+with `--virtual-time-budget=20000` is enough; the sky map and other screens need the driver, to click through to them. Gotchas:
 
 - `--virtual-time-budget` screenshots freeze CSS transitions mid-way; use the driver instead.
 - To inspect a fast animation, build a throwaway copy with its constants slowed ~10× and capture
@@ -152,8 +152,9 @@ src/render/    Three.js world (tiles, animations, push cue), palette.ts (belt co
                scenery.ts (what a world's surroundings provide), forest.ts, frost.ts and peaks.ts (each world's
                scenery; the big clouds behind the game are `#sky` in the page), toybox.ts (Toybox's scenery), toys.ts
                (its toys and plastic reflections), starfall.ts (Starfall's scenery), stardust.ts (flip sparkles), aerie.ts (Windy Peaks' arches, nests and birds), ridge.ts (Frost Isle's ridge, reindeer and cable towers), grove.ts (First Glade's hills, trees and butterflies)
-src/ui/        progress (localStorage), map (campaign sky map; island layout per chapter)
-src/main.ts    game controller: modes, HUD, splash, key focus sink (for Vimium)
+src/ui/        progress (localStorage), map (the sky map and Labs screen; island layout per chapter),
+               menu (a keyboard-driven button list: main menu, Esc menu, Settings)
+src/main.ts    game controller: modes, the stack of open screens, HUD, splash, key focus sink (for Vimium)
 scripts/       check-levels.ts; design/ (lib, explore, analyze, sim, search, solutions, play, verify)
 ```
 
