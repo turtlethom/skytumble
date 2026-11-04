@@ -121,7 +121,13 @@ Wanted, not yet scheduled. Each becomes a biome's signature mechanic or a crossi
   blowing golden grit, and a parchment ivory block (`0xe6cf9f`). These colors and `src/render/peaks.ts`'s
   spires are enough to rebuild it.
 - **Future worlds (from the user, 2026-11-02, for the late future):** ocean, desert, lava, dark abyss, factory, cave and others. These are why *Worlds* in the shared theme rules no longer requires a sky.
-- **Tiles:** teleporters, crumbling/timed tiles
+- **Saved for other biomes (from the user, 2026-11-04, in the First Glade grilling):**
+  - **Pushable stones:** roll into a stone and it moves one tile; pushed into a gap, it fills it and becomes floor. Variant: heavier stones only move for a standing block.
+  - **Fit-through gates:** low branches only let a lying block pass under, narrow posts only let a standing one through. Rolling into the wrong one does nothing and costs no move.
+  - **Turning stumps:** a lying block resting half on a stump swings a quarter turn around it. Variant: clockwise or counter-clockwise.
+  - **Terraces:** floors one step higher or lower; rolling up needs the right pose, and dropping off a step lands you differently. The biggest change to rules, camera and tools.
+- **No timed or counting mechanics for now (from the user, 2026-11-04):** nothing that changes as moves pass or counts rests, such as tiles that crumble after two rests or vines that grow each move. "Basically don't want to touch these type of mechanics at all."
+- **Tiles:** teleporters
 - **Momentum pads:** fling the block onward in the direction it rolled onto the pad (deferred
   from Windy Peaks to keep one pad kind per chapter)
 - **Block changes:** grow/shrink (1×1×3, 1×1×1 cube; goal needs a size), paint (color
@@ -665,7 +671,7 @@ heaviest world, and it runs at 59 to 61 fps on the user's laptop with no stutter
 
 That finishes the older worlds' pass. Next: see *Start menu, tutorial section and a new First Glade* below.
 
-**Pick up here.** Stage 1 (main menu, Esc menu, Labs, Settings with reset), stage 2 (the Tutorial) and stage 3 (How To Play) are approved and committed. **Next: First Glade as a real biome**, starting with a grilling session on its mechanic. Nothing is pushed, on purpose: see *Release* below.
+**Pick up here** (paused 2026-11-04, at the user's request). Stage 1 (main menu, Esc menu, Labs, Settings with reset), stage 2 (the Tutorial) and stage 3 (How To Play) are approved and committed. First Glade's mechanic is settled, with nothing built yet: see *First Glade as a real biome* below. **Next: build the wall and hedge rules with tests, then the four-level lab, for a playtest.** Nothing is pushed, on purpose: see *Release* below.
 
 **Now: main menu, Tutorial and How To Play** (settled in a grilling session 2026-11-03). Order of work: these three → First Glade as a real biome (its mechanic gets
 its own grilling, lab and rules freeze) → the 20-level batches → split + paint (assumed; not raised by the user). **Success:** a friend given only the link can solve
@@ -716,8 +722,31 @@ renderer; silent unlocks may go unnoticed; and the release is large and long-hel
 - **Look:** the Tutorial's dark studio for every entry, not each mechanic's own world: it loads instantly when switching entries, and keeps attention on the rule.
 - **Unlocks:** reaching a level opens the entries for what's in it, saved as `seen` in the progress; labs count, and so do levels solved in older saves. A reset clears them. Unlocks are silent, as planned.
 
-**First Glade becomes a real biome** after that: its own gentle signature mechanic (see *Idea backlog*: teleporters, crumbling tiles, tilting islands, or something forest-born such as
-vines) and all new levels, with ids such as `glade-01`. It stays first on the map.
+**First Glade as a real biome**, settled in a grilling session 2026-11-04; nothing is built yet. Simple and relaxing, but still puzzling. **Success:** the user replays it weeks later, the same test as the other worlds. It has to work for a brand new player, who may have skipped the Tutorial. It stays first on the map with its existing forest look, and all its levels are new, with ids such as `glade-01`.
+
+| Area | Decision |
+|---|---|
+| Walls | A new **base rule** for every world, with the look of First Glade's world where it appears. A switch raises or lowers them. The user's idea; the gain over a retracted bridge is a clear look |
+| Rolling into a raised wall | The block bumps and settles back, and no move is counted |
+| Wall look | Block height, in its switch's color. Hidden tiles are accepted, since rotating is part of the game |
+| Lowered wall | Always leaves solid floor, so a wall only ever means one thing |
+| Switches | A press flips every wall and bridge of that color, and each piece starts up or down. One rule covers trading one route for another |
+| Block on a wall's tile | The wall waits until the block moves off (treated as lowered while the block is on it, so no timer or saved state) |
+| First Glade's twist | **Knock-down hedges**, here only: bumped standing, a hedge falls flat for good, the block stays put, and it costs one move. Bumped lying, it holds, with no move counted. Leafy, with no switch color: no color means no switch |
+| Other pieces | Basics only. **Belts stay in Frost Isle** (changed 2026-11-04, on Claude's recommendation: fewer new rules, belts are part of Frost's identity, and adding them later is easier than taking them out). If levels 11 to 15 feel thin in playtest, belts are the first thing to add |
+| Difficulty | First Glade only: mostly beginner friendly to level 10 (10 to 14 moves), then rising a lot to a gentle finale (25 to 30 moves) |
+| Getting stuck | Dead ends only if they're obvious from the board |
+| Walls in other worlds | Interactions with ice, pads, flips, shapes and belts are settled when each world first uses walls in its 12 new levels |
+| Frost Isle | Unchanged |
+
+- **Teaching walls:** Tutorial lesson 6, which also adds a walls entry to How To Play's Basics. Hedges get a locked entry under Mechanics. So the approved Tutorial grows by one lesson and gets another playtest.
+- **First five levels:** walls recap, a wall traded for a bridge, knock-down hedges, standing versus lying at a hedge, a small combination.
+- **Depth without belts:** arriving standing to knock a hedge down, the order hedges are cleared in, trades across two or three switch colors, and planks and heavy switches.
+- **Lab (four levels, one per rule question), then the rules freeze:** wall bump, a press flips its color, a wall waiting under the block, knock-down hedge.
+- **Assumptions to check when building:** undo and restart bring flattened hedges back; only a roll can knock a hedge down.
+- **Risks:** too many new rules (the user's pre-mortem: walls, color flips and hedges, taught one at a time); too much like bridges, since the user's answer was "simple is the point" while the success test is replaying it, so the second half has to deliver; a flattened hedge can't come back, which must stay obvious from the board.
+- **Where Claude differs:** it would avoid hiding anything important in the opening view of the first ten levels, as a design habit rather than a rule, and would have made a wall rising under the block impossible rather than delayed.
+- **Rejected for this world:** teleporters, crumbling tiles, tilting islands and vines. See *Idea backlog* for what's saved for others.
 
 **Every biome's shape:** 20 levels, the first few introductory and the last 15 ramping up in difficulty, so each biome can focus on its own creativity rather than on teaching the base rules.
 
