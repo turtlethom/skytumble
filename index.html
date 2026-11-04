@@ -104,7 +104,7 @@
       <div class="actions">
         <button id="btn-menu">Menu <kbd>Esc</kbd></button>
         <button id="btn-map">Map</button>
-        <button id="btn-new">Next level <kbd>N</kbd></button>
+        <button id="btn-new"><span class="next-label">Next level</span> <kbd>N</kbd></button>
         <button id="btn-restart">Restart <kbd>R</kbd></button>
         <button id="btn-undo">Undo <kbd>Z</kbd></button>
         <button id="btn-link">Copy link</button>
@@ -112,17 +112,20 @@
       <p class="help"><kbd>←↑↓→</kbd>/<kbd>WASD</kbd> roll · <kbd>Q</kbd>/<kbd>E</kbd> rotate view</p>
     </footer>
 
+    <!-- The Tutorial's running commentary; see levels/lessons.ts. -->
+    <div id="prompt" class="prompt card hidden" role="status"></div>
+
     <div id="toast" class="toast"></div>
     <div id="loading" class="loading">Building islands…</div>
 
     <div id="win" class="modal end hidden">
       <div class="card dialog">
-        <h2>Landed!</h2>
+        <h2 id="win-title">Landed!</h2>
         <div id="win-stars" class="big-stars"></div>
         <p id="win-detail"></p>
         <div class="dialog-actions">
           <button id="win-retry">Start over <kbd>R</kbd></button>
-          <button id="win-next" class="primary"><span id="win-next-label">Next level</span> <kbd>Enter</kbd></button>
+          <button id="win-next" class="primary"><span class="next-label">Next level</span> <kbd>Enter</kbd></button>
         </div>
       </div>
     </div>
@@ -130,11 +133,11 @@
     <div id="fell" class="modal end hidden">
       <div class="card dialog">
         <h2>You fell!</h2>
-        <p>Take back the last move, or try the island again.</p>
+        <p id="fell-detail"></p>
         <div class="dialog-actions">
           <button id="fell-undo">Undo <kbd>Z</kbd></button>
           <button id="fell-retry" class="primary">Start over <kbd>R</kbd></button>
-          <button id="fell-next">Next level <kbd>N</kbd></button>
+          <button id="fell-next"><span class="next-label">Next level</span> <kbd>N</kbd></button>
         </div>
       </div>
     </div>
@@ -179,13 +182,23 @@
       </nav>
     </div>
 
+    <!-- The Tutorial's own level list, from the main menu and from inside a lesson. main.ts adds the lessons. -->
+    <div id="lessons" class="modal hidden">
+      <div class="card dialog">
+        <h2>Tutorial</h2>
+        <nav class="menu-list">
+          <button data-action="back"><span data-back-label>Back</span> <kbd>Esc</kbd></button>
+        </nav>
+      </div>
+    </div>
+
     <!-- Esc during a level: the level stays exactly as it is underneath. -->
     <div id="pause" class="modal hidden">
       <div class="card dialog">
         <h2>Paused</h2>
         <nav class="menu-list">
           <button data-action="resume">Resume <kbd>Esc</kbd></button>
-          <button data-action="map">Map</button>
+          <button id="pause-map" data-action="map">Map</button>
           <button data-action="restart">Restart</button>
           <button data-action="settings">Settings</button>
           <button data-action="exit">Exit</button>

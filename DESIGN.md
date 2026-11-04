@@ -660,14 +660,12 @@ board and a few butterflies in the air. The biggest fear: spoiling the calm of a
   bridges; staying our own design rather than a copy of a famous film's tree.
 
 Status: live 2026-11-02, sent live without notes on the sign-off questions (still calm? eight groves too many? bushes under retracted bridges, butterflies
-near the top and bottom of the screen). Only the great tree is built finely, and groves out of view aren't drawn, but at about 830k triangles this is the
-heaviest world, and its frame rate on the user's laptop hasn't been read off (F in the game). If it suffers, reduce the crowns' detail first, then drop the far four groves.
+near the top and bottom of the screen). Only the great tree is built finely, and groves out of view aren't drawn. At about 830k triangles this is the
+heaviest world, and it runs at 59 to 61 fps on the user's laptop with no stutter (read 2026-11-03), so the other worlds should be fine too. If it ever suffers, reduce the crowns' detail first, then drop the far four groves.
 
 That finishes the older worlds' pass. Next: see *Start menu, tutorial section and a new First Glade* below.
 
-**Pick up here** (paused 2026-11-03, at the user's request). Stage 1 (main menu, Esc menu, Labs, Settings with reset) is built and approved in playtest. **Next: stage 2, the Tutorial:** the white-studio
-theme and tileset, five rebuilt lessons, prompts that react during play, and done-or-not-done scoring, which replaces the stand-ins: the old `tutorial-01`…`05` levels, the borrowed forest look (`tutorial: FOREST` in
-`CHAPTER_THEMES`) and stars. Then stage 3, How To Play, whose menu button is greyed out until then. Nothing is pushed, on purpose: see *Release* below. Still unread: the frame rate on the user's laptop.
+**Pick up here.** Stage 1 (main menu, Esc menu, Labs, Settings with reset) is built and approved in playtest. **Stage 2, the Tutorial, is built: the dark slate look is liked, and the level list and lesson locks are awaiting playtest** (see *The Tutorial as built* below). Then stage 3, How To Play, whose menu button is greyed out until then. Nothing is pushed, on purpose: see *Release* below.
 
 **Now: main menu, Tutorial and How To Play** (settled in a grilling session 2026-11-03). Order of work: these three → First Glade as a real biome (its mechanic gets
 its own grilling, lab and rules freeze) → the 20-level batches → split + paint (assumed; not raised by the user). **Success:** a friend given only the link can solve
@@ -683,9 +681,9 @@ Build order, with a playtest after each: (1) main menu, Esc menu, Labs and Setti
   main menu with no warning, and the level starts fresh next time. The user expects these menus to grow later.
 - **Esc elsewhere:** goes back one screen; it does nothing on the main menu.
 - **Settings:** a read-only controls list, on both menus, and a button to reset all progress, which asks "Are you sure?" first.
-- **Tutorial:** a biome outside the story and off the map, on its own tileset in a plain white studio (soft shadow, no horizon). Five rebuilt levels, one rule each, par about
+- **Tutorial:** a biome outside the story and off the map, on its own tileset in a plain studio (soft shadow, no horizon; dark slate since the first playtest, planned as white). Five rebuilt levels, one rule each, par about
   12 or less: rolling and the goal, standing versus lying, fragile tiles, soft switches and bridges, heavy switches. It keeps `tutorial-01`…`05`. Prompts react during play, in the
-  Tutorial only. Opens the next unfinished lesson; the last one leads to "Start the Campaign", which opens the sky map. Scored done or not done, with no stars or par.
+  Tutorial only. The main menu's Tutorial button opens its own level list (changed 2026-11-03; it used to jump straight to the next unfinished lesson). The last lesson leads to "Start the Campaign", which opens the sky map. Scored done or not done, with no stars or par.
 - **How To Play:** a main-menu page only, deliberately not in the Esc menu. One entry per mechanic, each with a description and a watch-only looping preview running on the real
   rules. Basics are always shown; other entries unlock when a level using that mechanic is reached (labs count, and so do levels already solved), and locked ones show as `???` rows.
 - **Release:** commit to `main` with no pushes, even for a live bug, until the user has approved these three and First Glade's first five levels.
@@ -695,6 +693,22 @@ the first Campaign click (the biggest risk to the success goal; the first-timer 
 
 Risks to watch: a stray loss of keyboard focus now opens the Esc menu, since focus loss stands in for Esc under Vimium; the preview's cost is unknown, since `World` owns the only
 renderer; silent unlocks may go unnoticed; and the release is large and long-held.
+
+**The Tutorial as built** (2026-11-03, awaiting playtest). It replaces the stand-ins: the old five levels (still in git history), First Glade's forest look on them, and stars. First Glade's world stays in the code, waiting for its new chapter, and can be previewed with `?level=tutorial-01&theme=forest`.
+
+| Level | Name | Par | The rule | The mistake it invites |
+|---|---|---|---|---|
+| 01 | First Steps | 7 | Rolling and the goal | Lying across the goal doesn't count |
+| 02 | Line It Up | 8 | Standing and lying: a sideways roll shifts a lying block one tile | Rolling straight never lines up with the one-wide ledge |
+| 03 | Old Planks | 10 | Planks break under a standing block | Rolling straight ahead from the start snaps them |
+| 04 | Drawbridge | 8 | A soft switch answers any touch, and each touch flips the bridge | Touching it twice lowers the bridge |
+| 05 | Full Weight | 8 | A heavy switch answers only a standing block | Rolling straight ahead lies across it, and nothing happens |
+
+- **Prompts** (`src/levels/lessons.ts`): one line at the top of the screen, worked out from the block's position and the last move, so undo and restart need no bookkeeping. A fall shows its line in the fall panel instead; a win shows the rule to take away.
+- **Scoring:** no moves, par or stars on screen. A solved lesson saves as one star, which only says it's done; par stays in the file for validation.
+- **The studio:** a dark slate page in the block's own color family, blue-grey tiles, the slate block and the usual mechanic colors, with the board's soft shadow on an unseen floor below it. Retracted bridges have a much fainter fill here. It started white (the plan's "plain white studio"), which the user found painfully bright; see the Playtest log.
+- **Self-contained** (asked for by the user after the first playtest, 2026-11-03): the main menu's Tutorial button opens a list of the five lessons, showing Done, Locked or Playing. In a lesson, the Map button and the Esc menu's Map entry become Levels, which opens the same list. Each lesson unlocks when the one before it is done, and the first is always open. A lesson that isn't done yet has no Next lesson button, and N does nothing. `?level=` links still open any lesson, so playtest notes and shared links keep working. The one exit is the last lesson's "Start the Campaign".
+- **Still to judge:** the first-timer test before the push is the real check on the prompts.
 
 **First Glade becomes a real biome** after that: its own gentle signature mechanic (see *Idea backlog*: teleporters, crumbling tiles, tilting islands, or something forest-born such as
 vines) and all new levels, with ids such as `glade-01`. It stays first on the map.
@@ -730,6 +744,8 @@ works and what doesn't. Claude writes the code and designs handmade levels from 
 feedback; batches of 5 levels per round.
 
 ## Playtest log
+
+**2026-11-03 — Tutorial, first build.** Prompts: "very good", keep. Retracted bridges "look great". The dark block is right. The goal is fine. The studio's look was then approved ("I do like the background and the outline a lot"), and the user asked for a self-contained Tutorial with its own level list and locked lessons. The white background was too bright and "hurts my eyes" → the studio is now a dark slate in the block's color family. The user also saw the tiles as green and out of place, like First Glade's. They render pale grey in headless Chrome, so this wasn't reproduced; that grey did lean slightly yellow-green, and the tiles are now clearly blue-grey. Check this on their screen.
 
 **2026-10-31 — tutorial + ice lab.** Tutorial 01–05: all good as teaching levels; keep as
 is. Ice rules raised no complaints → frozen. Notes:

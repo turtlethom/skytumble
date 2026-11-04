@@ -1,57 +1,49 @@
 title: Tutorial
 
 === tutorial-01
-par: 12
+par: 7
 name: First Steps
-idea: Rolling basics: stand, lie down, stand again on the goal.
-S###......
-#####.....
-.#########
-.....##G##
-......###.
+idea: Rolling and the goal: tip the block along and stand it on the goal.
+###.....
+#S######
+########
+.....###
+.....#G#
+.....###
 
 === tutorial-02
-par: 11
-name: The Ledge
-idea: Precise orientation: one-wide ledges only work if you reach each corner standing.
-######...
-######...
-##S###...
-######...
-.....#...
-.....#...
-.....#...
-.....####
-........#
-........#
-........G
+par: 8
+name: Line It Up
+idea: Standing and lying: rolled sideways, a lying block shifts one tile, which lines it up with a one-wide ledge.
+S##...
+###...
+###...
+..#...
+..#...
+..#...
+..###G
 
 === tutorial-03
-par: 18
+par: 10
 name: Old Planks
-idea: Fragile tiles: cross sideways so your weight is spread over two tiles.
-######..........
-#S####ffffff####
-######ffffff##G#
-............####
+idea: Fragile tiles: planks break under a standing block, so cross them lying down.
+###....
+S#fff##
+##fff##
+....#G#
 
 === tutorial-04
-par: 7
+par: 8
 name: Drawbridge
-idea: Soft switches: any touch extends the bridge.
-####........
-#S#o0000####
-####....##G#
-........####
+idea: Soft switches: any touch raises the bridge, and another touch lowers it again.
+##o#......
+S###00###G
+####......
 
 === tutorial-05
-par: 27
-name: Long Way Round
-idea: Deception + heavy switch: the goal is right there, but the switch is behind you.
-x##...........
-###...........
-.##...........
-.######.......
-.#S####000###.
-.######..##G#.
-.........####.
+par: 8
+name: Full Weight
+idea: Heavy switches: only a standing block presses one, so line up to stand on it.
+####.....
+####.....
+S#x#00##G

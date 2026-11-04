@@ -146,12 +146,13 @@ with `--virtual-time-budget=20000` is enough; the sky map and other screens need
 
 ```
 src/game/      pure rules: types, rules (step: roll → slide → push → slide), solver (BFS), generator
-src/levels/    chapter .txt files, format.ts (parser), validate.ts (checks + one-trick guard), index.ts
+src/levels/    chapter .txt files, format.ts (parser), validate.ts (checks + one-trick guard), index.ts,
+               lessons.ts (the Tutorial's prompts, from the block's position and the last move)
 src/render/    Three.js world (tiles, animations, push cue), palette.ts (belt colors by direction),
                themes.ts (each chapter's look; rules in DESIGN.md's *Chapter themes*),
                scenery.ts (what a world's surroundings provide), forest.ts, frost.ts and peaks.ts (each world's
                scenery; the big clouds behind the game are `#sky` in the page), toybox.ts (Toybox's scenery), toys.ts
-               (its toys and plastic reflections), starfall.ts (Starfall's scenery), stardust.ts (flip sparkles), aerie.ts (Windy Peaks' arches, nests and birds), ridge.ts (Frost Isle's ridge, reindeer and cable towers), grove.ts (First Glade's hills, trees and butterflies)
+               (its toys and plastic reflections), starfall.ts (Starfall's scenery), stardust.ts (flip sparkles), aerie.ts (Windy Peaks' arches, nests and birds), ridge.ts (Frost Isle's ridge, reindeer and cable towers), grove.ts (First Glade's hills, trees and butterflies), studio.ts (the Tutorial's dark studio)
 src/ui/        progress (localStorage), map (the sky map and Labs screen; island layout per chapter),
                menu (a keyboard-driven button list: main menu, Esc menu, Settings)
 src/main.ts    game controller: modes, the stack of open screens, HUD, splash, key focus sink (for Vimium)

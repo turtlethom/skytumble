@@ -38,6 +38,12 @@ export const LABS: Chapter[] = CHAPTERS.filter((c) => LAB_IDS.has(c.id));
 /** Every handmade level, across chapters. */
 export const HANDMADE: HandmadeLevel[] = CHAPTERS.flatMap((c) => c.levels);
 
+/** A lesson opens once the one before it is done; the first is always open. */
+export function lessonUnlocked(id: string, done: (id: string) => boolean): boolean {
+  const i = TUTORIAL.levels.findIndex((l) => l.id === id);
+  return i <= 0 || done(TUTORIAL.levels[i - 1].id);
+}
+
 /** The chapters a level's "next level" walks through: the Tutorial, the campaign, or the labs. */
 export function trackOf(id: string): Chapter[] {
   if (TUTORIAL.levels.some((l) => l.id === id)) return [TUTORIAL];

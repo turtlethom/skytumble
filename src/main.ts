@@ -3,13 +3,16 @@ import { randomSeed } from './game/rng';
 import { initialState, step } from './game/rules';
 import { solve } from './game/solver';
 import { DIRS, Dir, Level, State, TIERS, Tier } from './game/types';
-import { CAMPAIGN, LABS, TUTORIAL, chapterOf, findLevel, nextOnTrack, trackOf } from './levels';
+import { CAMPAIGN, LABS, TUTORIAL, chapterOf, findLevel, lessonUnlocked, nextOnTrack, trackOf } from './levels';
+import { isLesson, lessonDone, lessonPrompt } from './levels/lessons';
+import { HandmadeLevel } from './levels/format';
 import { MENU_LEVEL } from './levels/menuScene';
 import { tileSheet, toySampleFloor } from './levels/sheet';
 import { NEUTRAL, THEMES, Theme, themeForLevel } from './render/themes';
 import { World } from './render/world';
 import { ChapterArrival } from './ui/arrival';
 import { FrameReadout } from './ui/fps';
+import { esc } from './ui/html';
 import { SkyMap, firstUnsolved, signatureBadge } from './ui/map';
 import { Menu } from './ui/menu';
 import { loadProgress, resetProgress, saveProgress, starsFor } from './ui/progress';
@@ -28,6 +31,7 @@ const MENU_REST_MS = 450;
 const MENU_VIEW_SHIFT = 0.17;
 /** An extension's Esc can arrive as both a key and a lost focus: count them once. */
 const ESC_REPEAT_MS = 200;
+const FELL_DETAIL = 'Take back the last move, or try the island again.';
 
 /** A screen over the game. The top one takes the keys, and Esc returns to the one below. */
 interface Panel {
@@ -70,7 +74,17 @@ class Game {
       root.querySelector('[data-action=campaign]')!.classList.toggle('suggested', !fresh);
     },
   );
-  private pause = new Menu($('pause'), (action) => this.pauseAction(action));
+  private pause = new Menu($('pause'), (action) => this.pauseAction(action), () => {
+    // The Tutorial is self-contained: its Esc menu leads to its own levels, not the sky map.
+    const button = $('pause-map');
+    button.dataset.action = this.lessonId() ? 'levels' : 'map';
+    button.textContent = this.lessonId() ? 'Levels' : 'Map';
+  });
+  private lessons = new Menu(
+    $('lessons'),
+    (action) => (action === 'back' ? this.back() : this.load({ kind: 'hand', id: action })),
+    (root) => this.refreshLessons(root),
+  );
   private settings = new Menu($('settings'), (action) => (action === 'reset' ? this.open(this.confirmReset) : this.back()));
   private confirmReset = new Menu($('confirm-reset'), (action) => this.confirmResetAction(action));
   /** The open screens, bottom first; empty during play. */
@@ -103,6 +117,7 @@ class Game {
       if (e.data.id === this.requestId) void this.start(e.data.level, e.data.par);
     };
     this.bindUi();
+    $('lessons').querySelector('nav')!.prepend(...TUTORIAL.levels.map(lessonButton));
     // For the headless play driver (scripts/design/play.mjs): which arrow key (0 up, 1 right, 2 down,
     // 3 left) rolls the block in a grid direction from the current view.
     (window as unknown as { skytumbleKeyFor: (d: Dir) => number }).skytumbleKeyFor = (d) =>
@@ -142,6 +157,7 @@ class Game {
     this.status = 'loading';
     this.queued = null;
     this.hideModals();
+    this.showPrompt('');
     document.body.classList.toggle('at-menu', mode.kind === 'menu');
     this.renderChrome();
     history.replaceState(null, '', modeToQuery(mode));
@@ -185,6 +201,7 @@ class Game {
     if (scene !== this.scene) return;
     this.status = 'playing';
     this.updatePreviews();
+    this.updatePrompt();
     this.drainQueue();
   }
 
@@ -239,7 +256,7 @@ class Game {
   }
 
   private nextLevel(): void {
-    if (this.mode.kind === 'menu') return;
+    if (this.mode.kind === 'menu' || this.lessonLocksNext()) return;
     const prevKey = this.levelKey();
     if (this.status !== 'won' && this.progress.best[prevKey] === undefined) {
       // Skipping an unsolved level ends the streak.
@@ -288,6 +305,10 @@ class Game {
       await this.world.fall(level, result.state.block, result.broke);
       if (scene !== this.scene) return;
       this.status = 'fallen';
+      // In the Tutorial the panel says what went wrong, in place of the prompt.
+      const id = this.lessonId();
+      $('fell-detail').innerHTML = id ? keysIn(lessonPrompt(id, { level, state: result.state, before: from, last: result, moves: this.moves })) : FELL_DETAIL;
+      this.showPrompt('');
       $('fell').classList.remove('hidden');
       return;
     }
@@ -296,11 +317,13 @@ class Game {
       await this.world.win();
       if (scene !== this.scene) return;
       this.status = 'won';
+      this.showPrompt('');
       this.recordWin();
       return;
     }
     this.status = 'playing';
     this.updatePreviews();
+    this.updatePrompt(from, result);
     this.drainQueue();
   }
 
@@ -352,6 +375,7 @@ class Game {
     this.world.syncState(prev);
     this.updatePreviews();
     this.hideModals();
+    this.updatePrompt();
     this.renderChrome();
   }
 
@@ -364,11 +388,14 @@ class Game {
     this.world.syncState(this.state);
     this.updatePreviews();
     this.hideModals();
+    this.updatePrompt();
     this.renderChrome();
   }
 
   private recordWin(): void {
-    const stars = starsFor(this.moves, this.par);
+    const lesson = this.lessonId();
+    // A lesson is done or not done, which counts as one star in the save.
+    const stars = lesson ? 1 : starsFor(this.moves, this.par);
     const key = this.levelKey();
     const prev = this.progress.best[key];
     if (prev === undefined) {
@@ -382,10 +409,14 @@ class Game {
     }
     saveProgress(this.progress);
 
-    $('win-stars').innerHTML = [1, 2, 3].map((n) => `<span class="${n <= stars ? 'on' : 'off'}">★</span>`).join('');
-    const verdict = this.moves <= this.par ? 'Perfect: you matched par!' : `Par is ${this.par}. Can you find a shorter way?`;
-    $('win-detail').textContent = `${this.moves} moves. ${verdict}`;
-    $('win-next-label').textContent = this.nextLabel();
+    $('win-title').textContent = lesson ? 'Lesson done!' : 'Landed!';
+    $('win-stars').innerHTML = lesson ? '' : [1, 2, 3].map((n) => `<span class="${n <= stars ? 'on' : 'off'}">★</span>`).join('');
+    if (lesson) {
+      $('win-detail').innerHTML = keysIn(lessonDone(lesson));
+    } else {
+      const verdict = this.moves <= this.par ? 'Perfect: you matched par!' : `Par is ${this.par}. Can you find a shorter way?`;
+      $('win-detail').textContent = `${this.moves} moves. ${verdict}`;
+    }
     $('win').classList.remove('hidden');
     this.renderChrome();
   }
@@ -402,9 +433,43 @@ class Game {
     return this.mode.kind === 'hand' ? this.mode.id : null;
   }
 
+  /** The level being played, if it's a Tutorial lesson. */
+  private lessonId(): string | null {
+    const id = this.playingId();
+    return id && isLesson(id) ? id : null;
+  }
+
+  /** A lesson has to be done before the one after it opens, so it can't be skipped. */
+  private lessonLocksNext(): boolean {
+    const id = this.lessonId();
+    return !!id && !this.lessonDone(id);
+  }
+
+  private lessonDone = (id: string): boolean => this.progress.best[`level:${id}`] !== undefined;
+
+  /** Let the lesson react to where things stand. `from` and `last` are the move just made, if any. */
+  private updatePrompt(from: State | null = null, last: ReturnType<typeof step> | null = null): void {
+    const id = this.lessonId();
+    if (!id || !this.level) return this.showPrompt('');
+    this.showPrompt(lessonPrompt(id, { level: this.level, state: this.state, before: from, last, moves: this.moves }));
+  }
+
+  private showPrompt(text: string): void {
+    const el = $('prompt');
+    el.classList.toggle('hidden', !text);
+    if (text === el.dataset.text) return;
+    el.dataset.text = text;
+    el.innerHTML = keysIn(text);
+    // Restart the little pop, so a new line gets noticed.
+    el.classList.remove('changed');
+    void el.offsetWidth;
+    el.classList.add('changed');
+  }
+
   /** What the win panel's main button leads to. */
   private nextLabel(): string {
     const id = this.playingId();
+    if (id && nextOnTrack(id) && isLesson(id)) return 'Next lesson';
     if (!id || nextOnTrack(id)) return 'Next level';
     const track = trackOf(id);
     return track === LABS ? 'Back to the Labs' : track === CAMPAIGN ? 'Sky map' : 'Start the Campaign';
@@ -412,6 +477,12 @@ class Game {
 
   private renderChrome(): void {
     if (this.mode.kind === 'menu') return;
+    // The Tutorial is done or not done: no moves, par or stars.
+    const lesson = this.lessonId();
+    document.body.classList.toggle('in-lesson', !!lesson);
+    document.querySelectorAll('.next-label').forEach((el) => (el.textContent = this.nextLabel()));
+    $('btn-new').hidden = $('fell-next').hidden = this.lessonLocksNext();
+    $('btn-map').textContent = lesson ? 'Levels' : 'Map';
     $('moves').textContent = String(this.moves);
     $('par').textContent = this.level && this.status !== 'loading' ? String(this.par) : '–';
     const best = this.progress.best[this.levelKey()];
@@ -419,7 +490,7 @@ class Game {
     if (this.mode.kind === 'hand') {
       // The id leads so playtest notes can quote it.
       const h = findLevel(this.mode.id)!;
-      $('level-info').textContent = `${h.id} · ${h.name}: ${h.idea}`;
+      $('level-info').textContent = lesson ? `${h.id} · ${h.name}` : `${h.id} · ${h.name}: ${h.idea}`;
     } else {
       $('level-info').textContent = `${capitalize(this.mode.tier)} · seed ${this.mode.seed}`;
     }
@@ -442,6 +513,7 @@ class Game {
     $('fell').classList.add('hidden');
     for (const panel of this.panels) panel.hide();
     this.panels = [];
+    this.syncPanelsOpen();
     this.hideToast();
   }
 
@@ -456,12 +528,19 @@ class Game {
     this.topPanel?.hide();
     this.panels.push(panel);
     panel.show();
+    this.syncPanelsOpen();
+  }
+
+  /** The win and fall panels step aside while a menu is open over them. */
+  private syncPanelsOpen(): void {
+    document.body.classList.toggle('panel-open', this.panels.length > 0);
   }
 
   /** Close the top screen and return to the one below, or to the level. */
   private back(): void {
     this.panels.pop()?.hide();
     this.topPanel?.show();
+    this.syncPanelsOpen();
   }
 
   /** What leaving the screen now being opened returns to. */
@@ -488,6 +567,24 @@ class Game {
     this.open(this.pause);
   }
 
+  private openLessons(): void {
+    this.lessons.forget();
+    this.open(this.lessons);
+  }
+
+  /** Show which lessons are done, open and locked; the next one to do is suggested. */
+  private refreshLessons(root: HTMLElement): void {
+    root.querySelector('[data-back-label]')!.textContent = this.backLabel();
+    const next = firstUnsolved([TUTORIAL], this.progress);
+    for (const { id } of TUTORIAL.levels) {
+      const button = root.querySelector<HTMLButtonElement>(`[data-action="${id}"]`)!;
+      const open = lessonUnlocked(id, this.lessonDone);
+      button.disabled = !open;
+      button.classList.toggle('suggested', id === next?.id);
+      button.querySelector('.soon')!.textContent = !open ? 'Locked' : this.lessonDone(id) ? 'Done' : id === this.playingId() ? 'Playing' : '';
+    }
+  }
+
   private openSettings(): void {
     this.settings.forget();
     this.open(this.settings);
@@ -495,16 +592,15 @@ class Game {
 
   private mainMenuAction(action: string): void {
     if (action === 'campaign') this.open(this.mapPanel);
-    else if (action === 'tutorial') {
-      const lesson = firstUnsolved([TUTORIAL], this.progress) ?? TUTORIAL.levels[0];
-      this.load({ kind: 'hand', id: lesson.id });
-    } else if (action === 'labs') this.open(this.labsPanel);
+    else if (action === 'tutorial') this.openLessons();
+    else if (action === 'labs') this.open(this.labsPanel);
     else if (action === 'settings') this.openSettings();
   }
 
   private pauseAction(action: string): void {
     if (action === 'resume') this.back();
     else if (action === 'map') this.open(this.mapPanel);
+    else if (action === 'levels') this.openLessons();
     else if (action === 'settings') this.openSettings();
     else if (action === 'exit') this.load({ kind: 'menu' });
     else if (action === 'restart') {
@@ -549,7 +645,7 @@ class Game {
     click('fell-undo', () => this.undo());
     click('fell-retry', () => this.restart());
     click('fell-next', () => this.nextLevel());
-    click('btn-map', () => this.open(this.mapPanel));
+    click('btn-map', () => (this.lessonId() ? this.openLessons() : this.open(this.mapPanel)));
     focusKeys(() => this.escape());
 
     // Peeking lasts while Space is held; losing focus ends it too.
@@ -630,6 +726,20 @@ function modeFromUrl(): Mode {
 function modeToQuery(mode: Mode): string {
   if (mode.kind === 'menu') return location.pathname;
   return mode.kind === 'hand' ? `?level=${mode.id}` : `?tier=${mode.tier}&seed=${encodeURIComponent(mode.seed)}`;
+}
+
+/** A lesson's entry in the Tutorial's level list. */
+function lessonButton(lesson: HandmadeLevel, i: number): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.className = 'lesson';
+  button.dataset.action = lesson.id;
+  button.innerHTML = `<span>${i + 1}. ${esc(lesson.name)}</span><span class="soon"></span>`;
+  return button;
+}
+
+/** A line of text, with each `[Z]` in it drawn as a key. */
+function keysIn(text: string): string {
+  return esc(text).replace(/\[(\w+)\]/g, '<kbd>$1</kbd>');
 }
 
 function capitalize(s: string): string {

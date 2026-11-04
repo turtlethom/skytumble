@@ -114,9 +114,9 @@ if (process.env.TITLE_CHECK === '1') {
     if (!ok) failed++;
   };
   const settle = () => sleep(2200);
-  await send('Page.navigate', { url: `${base}/?level=tutorial-04` });
+  await send('Page.navigate', { url: `${base}/?level=frost-04` });
   check('fresh page load shows the title', await untilTitle());
-  await shot('title-glade');
+  await shot('title-frost');
   await key('ArrowUp');
   await sleep(150);
   check('a key skips it', !(await titleUp()));
@@ -143,6 +143,8 @@ if (process.env.TITLE_CHECK === '1') {
   await sleep(2500);
   check('landing on the main menu: no title', !(await titleUp()));
   await evalJs("document.querySelector('[data-action=tutorial]').click()");
+  await sleep(300);
+  await evalJs("document.querySelector('[data-action=tutorial-01]').click()");
   check('leaving it for a level: title', await untilTitle());
 } else
 for (const [id, moves] of Object.entries(solutions)) {

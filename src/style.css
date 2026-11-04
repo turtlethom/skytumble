@@ -52,6 +52,61 @@ body[data-theme='forest'] {
   background: linear-gradient(180deg, #5fb2f0 0%, #9bd3f4 24%, #cde9e6 42%, #cfe8dc 100%);
 }
 
+/* The Tutorial: a plain dark studio in the block's own slate, with no horizon. */
+body[data-theme='studio'] {
+  --ink: #e6e9f2;
+  --ink-soft: #aeb5c8;
+  --accent: #56617f;
+  --accent-ink: #ffffff;
+  --glass: rgba(40, 47, 68, 0.9);
+  --glass-border: rgba(150, 160, 190, 0.35);
+  --shadow: 0 6px 24px rgba(5, 7, 15, 0.45);
+  /* Hovering must stay dark: the text here is nearly white. */
+  --hover: rgba(62, 71, 98, 0.95);
+  --panel: linear-gradient(180deg, #2f3750, #1c2233);
+  --panel-edge: #98a2b8;
+  --select: #56617f;
+  --title: #e6e9f2;
+  --btn: #2f3750;
+  --btn-edge: #141826;
+  background: radial-gradient(ellipse at 50% 42%, #262d42 0%, #1c2233 55%, #141826 100%);
+}
+
+body[data-theme='studio'] .brand h1 {
+  color: #e6e9f2;
+  text-shadow: none;
+}
+
+body[data-theme='studio'] .brand p {
+  text-shadow: none;
+}
+
+body[data-theme='studio'] kbd,
+body[data-theme='studio'] .menu-list button kbd {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* The map keeps its own light panels, whichever world it opens over. */
+body[data-theme='studio'] .sky-map {
+  color: #23304a;
+  --ink: #23304a;
+  --ink-soft: #5b6884;
+  --glass: rgba(255, 255, 255, 0.78);
+  --glass-border: rgba(255, 255, 255, 0.9);
+  --shadow: 0 6px 24px rgba(35, 60, 110, 0.18);
+  --hover: #fff;
+}
+
+body[data-theme='studio'] .sky-map kbd {
+  background: rgba(35, 48, 74, 0.08);
+}
+
+/* The toast's background is the ink color, which is nearly white in the dark worlds. */
+body[data-theme='studio'] .toast,
+body[data-theme='night'] .toast {
+  color: #1c2233;
+}
+
 /* The hills' crowns can pass behind the level's text from some camera angles. */
 body[data-theme='forest'] .brand p {
   width: fit-content;
@@ -362,6 +417,40 @@ kbd {
 
 /* ---- Overlays --------------------------------------------------------- */
 
+/* The Tutorial speaks here as you play. */
+.prompt {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  width: min(560px, calc(100vw - 720px), 100%);
+  min-width: 340px;
+  padding: 12px 20px;
+  transform: translateX(-50%);
+  font-size: 18px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.prompt.hidden {
+  display: none;
+}
+
+.prompt.changed {
+  animation: prompt-pop 0.25s ease-out;
+}
+
+@keyframes prompt-pop {
+  from {
+    transform: translateX(-50%) translateY(-6px);
+    opacity: 0.4;
+  }
+}
+
+/* A lesson is done or not done, so nothing counts moves. */
+body.in-lesson .score {
+  display: none;
+}
+
 .toast {
   position: fixed;
   z-index: 10;
@@ -420,6 +509,10 @@ kbd {
   pointer-events: auto;
   transition: opacity 0.3s ease-in;
 }
+.arrival[data-theme='studio'] {
+  color: #e6e9f2;
+  background: #1c2233;
+}
 .arrival[data-theme='forest'] {
   color: #3f5b2f;
   background: #e6f2dc;
@@ -466,7 +559,8 @@ kbd {
   background: rgba(35, 60, 110, 0.18);
 }
 
-.modal.hidden {
+.modal.hidden,
+body.panel-open .modal.end {
   display: none;
 }
 
@@ -613,13 +707,15 @@ kbd {
   color: #a3271c;
 }
 
-body[data-theme='night'] .menu-list button.danger {
+body[data-theme='night'] .menu-list button.danger,
+body[data-theme='studio'] .menu-list button.danger {
   color: #ffa89c;
 }
 
 
 .menu-list button.danger.selected,
-body[data-theme='night'] .menu-list button.danger.selected {
+body[data-theme='night'] .menu-list button.danger.selected,
+body[data-theme='studio'] .menu-list button.danger.selected {
   background: #b5362a;
   border-color: #b5362a;
   color: #fff;
@@ -650,6 +746,20 @@ body[data-theme='night'] .menu-list button.danger.selected {
   text-transform: uppercase;
   letter-spacing: 0.8px;
   color: var(--ink-soft);
+}
+
+/* A Tutorial lesson: its name on the left, whether it's done or locked on the right. */
+.menu-list button.lesson {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  min-width: 340px;
+  text-align: left;
+}
+
+.menu-list button.selected .soon {
+  color: inherit;
 }
 
 /* The first screen: the title and buttons on the left, the live island beside them. */

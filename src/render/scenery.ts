@@ -3,6 +3,8 @@ import * as THREE from 'three';
 export interface SceneryTiles {
   ice: { x: number; z: number }[];
   pads: { x: number; z: number }[];
+  /** Every ground tile that's always there, so not bridges. */
+  solid: { x: number; z: number }[];
 }
 
 /** A world's surroundings: what's around and below the board. Decoration only, never rules. */

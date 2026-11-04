@@ -4,24 +4,25 @@
  */
 export interface Theme {
   /** Also set as `data-theme` on the page body, where the sky gradient and text colors are styled. */
-  id: 'neutral' | 'night' | 'forest' | 'frost' | 'peaks' | 'toybox';
+  id: 'neutral' | 'night' | 'forest' | 'frost' | 'peaks' | 'toybox' | 'studio';
   /** What surrounds the level. */
-  sky: 'clouds' | 'stars' | 'forest' | 'frost' | 'peaks' | 'toybox';
+  sky: 'clouds' | 'stars' | 'forest' | 'frost' | 'peaks' | 'toybox' | 'studio';
   hemi: { sky: number; ground: number; intensity: number };
   sun: { color: number; intensity: number };
   block: { color: number; edge: number; roughness?: number };
   /** Walkable ground. `detail` lists shades of one color, darkest first, painted over each tile: as soft blotches, as snow, as slate, or as holes in a pegboard, or as meadow grass. */
   floor: { color: number; detail?: number[]; style?: 'snow' | 'slate' | 'pegboard' | 'meadow' };
-  /** Under the tiles: a block of soil, and rock spikes, a clump with dangling roots, icicles, jagged shards, dangling pegs, or roots with glowing tips. */
-  earth: { soil: number; hanging: number; style: 'rock' | 'roots' | 'icicles' | 'shards' | 'pegs' | 'glowroots' };
+  /** Under the tiles: a block of soil, and rock spikes, a clump with dangling roots, icicles, jagged shards, dangling pegs, roots with glowing tips, or nothing more. */
+  earth: { soil: number; hanging: number; style: 'rock' | 'roots' | 'icicles' | 'shards' | 'pegs' | 'glowroots' | 'plain' };
   fragile: { light: number; dark: number; weathered?: boolean };
   /**
    * A finish for mechanics. Their shapes and color coding never change. `snow` is a color laid on
    * stone bases, belt rails and plank seams, never on a switch's or bridge's own color. `plastic` makes
    * the board a shiny building set: reflections, rounded edges, snap-on plates and tread belts. `rail`
-   * colors belt rails and bridge corners.
+   * colors belt rails and bridge corners. `bridgeGhost` is how solid a retracted bridge's fill looks, if
+   * this world's background needs it fainter than usual.
    */
-  finish: { switchBase?: number; wood?: boolean; snow?: number; iceSheen?: boolean; brass?: number; padVents?: boolean; plastic?: boolean; rail?: number };
+  finish: { switchBase?: number; wood?: boolean; snow?: number; iceSheen?: boolean; brass?: number; padVents?: boolean; plastic?: boolean; rail?: number; bridgeGhost?: number };
   /** Where a pad flight lands, if this floor needs a color other than the usual deep blue. */
   landingMark?: number;
   /** Where a flip lands, if this floor needs a color other than the usual violet. */
@@ -115,9 +116,24 @@ const TOYBOX: Theme = {
   finish: { switchBase: 0xdcd1b8, plastic: true },
 };
 
+/** The Tutorial: a plain dark studio in the block's own slate, with nothing to look at but the rule being taught. */
+const STUDIO: Theme = {
+  id: 'studio',
+  sky: 'studio',
+  hemi: { sky: 0xe4e9f5, ground: 0x59627c, intensity: 1.7 },
+  sun: { color: 0xf4f6fc, intensity: 1.8 },
+  // A light edge, or the block's sides melt into the page at the board's edge.
+  block: { color: 0x3b4560, edge: 0xaab3c7 },
+  floor: { color: 0x98a2b8 },
+  earth: { soil: 0x4c5570, hanging: 0x4c5570, style: 'plain' },
+  fragile: { light: 0xc99f63, dark: 0xa77f48 },
+  // The usual fill makes a retracted bridge look like a tile you could stand on.
+  finish: { switchBase: 0xc9cfdc, bridgeGhost: 0.12 },
+};
+
 /** Chapters with a world of their own; any other chapter uses NEUTRAL. */
 export const CHAPTER_THEMES: Record<string, Theme> = {
-  tutorial: FOREST,
+  tutorial: STUDIO,
   frost: FROST,
   wind: PEAKS,
   star: NIGHT,
@@ -125,7 +141,7 @@ export const CHAPTER_THEMES: Record<string, Theme> = {
 };
 
 /** Every theme by id, so `?theme=forest` can preview one on any level or on the tile sheet. */
-export const THEMES: Record<string, Theme> = { neutral: NEUTRAL, night: NIGHT, forest: FOREST, frost: FROST, peaks: PEAKS, toybox: TOYBOX };
+export const THEMES: Record<string, Theme> = { neutral: NEUTRAL, night: NIGHT, forest: FOREST, frost: FROST, peaks: PEAKS, toybox: TOYBOX, studio: STUDIO };
 
 /** The theme for a handmade level, from the chapter in its id (`star-03` is in `star`). */
 export function themeForLevel(id: string): Theme {

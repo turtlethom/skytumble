@@ -10,6 +10,7 @@ import { makeAerieCloseUp } from './aerie';
 import { Stardust } from './stardust';
 import { ReindeerCloseUp } from './ridge';
 import { StarfallScenery } from './starfall';
+import { StudioScenery } from './studio';
 import { NEUTRAL, Theme } from './themes';
 import { ToyboxScenery } from './toybox';
 import { makeToySamples, plasticEnvironment } from './toys';
@@ -142,6 +143,7 @@ const SCENERY: Partial<Record<Theme['sky'], () => Scenery>> = {
   peaks: () => new PeaksScenery(),
   toybox: () => new ToyboxScenery(),
   stars: () => new StarfallScenery(),
+  studio: () => new StudioScenery(),
 };
 
 /** Three.js view of a level. Holds no game rules: the controller tells it what happened. */
@@ -451,7 +453,8 @@ export class World {
     }
     const cells = (tile: Tile) =>
       level.tiles.flatMap((t, i) => (t === tile ? [{ x: i % level.width, z: Math.floor(i / level.width) }] : []));
-    this.scenery?.place(this.center, this.viewSize, { ice: cells(Tile.Ice), pads: cells(Tile.Pad) });
+    const solid = level.tiles.flatMap((t, i) => (t !== Tile.Empty && t !== Tile.Bridge ? [{ x: i % level.width, z: Math.floor(i / level.width) }] : []));
+    this.scenery?.place(this.center, this.viewSize, { ice: cells(Tile.Ice), pads: cells(Tile.Pad), solid });
     this.stars.position.copy(this.center);
     this.moonlight.target.position.copy(this.center);
     this.moonlight.position.copy(this.center).add(new THREE.Vector3(-8, -30, 12));
@@ -500,7 +503,7 @@ export class World {
 
     if (tile === Tile.Bridge) {
       const color = GROUP_COLORS[group % GROUP_COLORS.length];
-      const ghost = box(0.94, 0.04, 0.94, color, { transparent: true, opacity: 0.4 });
+      const ghost = box(0.94, 0.04, 0.94, color, { transparent: true, opacity: this.theme.finish.bridgeGhost ?? 0.4 });
       ghost.position.y = -0.1;
       // A retracted bridge keeps its group's color at the edges, so it still names its switch on a pale sky.
       for (const [dx, dz, w, d] of [[0, -0.44, 0.94, 0.06], [0, 0.44, 0.94, 0.06], [-0.44, 0, 0.06, 0.82], [0.44, 0, 0.06, 0.82]]) {
@@ -2204,6 +2207,7 @@ function earth(jitter: number, theme: Theme): THREE.Object3D {
   const dirt = box(0.9, 0.45, 0.9, theme.earth.soil, theme.finish.plastic ? { roughness: 0.35 } : {});
   dirt.position.y = -0.4;
   g.add(dirt);
+  if (theme.earth.style === 'plain') return g;
   if (theme.earth.style === 'roots' || theme.earth.style === 'glowroots') {
     const clump = new THREE.Mesh(clumpGeometry, new THREE.MeshStandardMaterial({ color: theme.earth.soil, roughness: 1 }));
     clump.position.y = -0.62;
