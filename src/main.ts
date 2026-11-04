@@ -6,6 +6,7 @@ import { DIRS, Dir, Level, State, TIERS, Tier } from './game/types';
 import { CAMPAIGN, LABS, TUTORIAL, chapterOf, findLevel, lessonUnlocked, nextOnTrack, trackOf } from './levels';
 import { isLesson, lessonDone, lessonPrompt } from './levels/lessons';
 import { HandmadeLevel } from './levels/format';
+import { MECHANICS, Mechanic, mechanicsIn } from './levels/mechanics';
 import { MENU_LEVEL } from './levels/menuScene';
 import { tileSheet, toySampleFloor } from './levels/sheet';
 import { NEUTRAL, THEMES, Theme, themeForLevel } from './render/themes';
@@ -29,6 +30,9 @@ const MENU_ROLL_GAP_MS = 90;
 const MENU_REST_MS = 450;
 /** How far the menu's island sits right of center, as a share of the screen's width. */
 const MENU_VIEW_SHIFT = 0.17;
+/** How To Play's scenes go slowly enough to follow, and rest longer between runs. */
+const HOWTO_ROLL_GAP_MS = 240;
+const HOWTO_REST_MS = 800;
 /** An extension's Esc can arrive as both a key and a lost focus: count them once. */
 const ESC_REPEAT_MS = 200;
 const FELL_DETAIL = 'Take back the last move, or try the island again.';
@@ -74,6 +78,29 @@ class Game {
       root.querySelector('[data-action=campaign]')!.classList.toggle('suggested', !fresh);
     },
   );
+  private howTo = new Menu(
+    $('howto'),
+    (action) => action === 'back' && this.back(),
+    (root) => this.refreshHowTo(root),
+    (button) => this.previewMechanic(button.dataset.mechanic),
+  );
+  private howToPanel: Panel = {
+    show: () => {
+      this.howTo.forget();
+      this.shownMechanic = null;
+      this.howTo.show();
+    },
+    // How To Play has the world to itself, so give it back to the main menu's scene.
+    hide: () => {
+      this.howTo.hide();
+      this.scene++;
+      this.world.finishAnimations();
+      void this.playMenuScene();
+    },
+    key: (e) => this.howTo.key(e),
+  };
+  /** The mechanic How To Play is showing. */
+  private shownMechanic: string | null = null;
   private pause = new Menu($('pause'), (action) => this.pauseAction(action), () => {
     // The Tutorial is self-contained: its Esc menu leads to its own levels, not the sky map.
     const button = $('pause-map');
@@ -118,6 +145,9 @@ class Game {
     };
     this.bindUi();
     $('lessons').querySelector('nav')!.prepend(...TUTORIAL.levels.map(lessonButton));
+    const [basics, others] = $('howto').querySelectorAll('h3');
+    basics.after(...MECHANICS.filter((m) => m.basic).map(mechanicButton));
+    others.after(...MECHANICS.filter((m) => !m.basic).map(mechanicButton));
     // For the headless play driver (scripts/design/play.mjs): which arrow key (0 up, 1 right, 2 down,
     // 3 left) rolls the block in a grid direction from the current view.
     (window as unknown as { skytumbleKeyFor: (d: Dir) => number }).skytumbleKeyFor = (d) =>
@@ -170,6 +200,7 @@ class Game {
     }
     if (mode.kind === 'hand') {
       const level = findLevel(mode.id)!.level;
+      this.noteMechanics(level);
       void this.start(level, solve(level)!.moves.length);
       return;
     }
@@ -210,24 +241,28 @@ class Game {
   }
 
   /** The main menu's island: the block drops in and solves its puzzle on the real rules, over and over. */
-  private async playMenuScene(): Promise<void> {
+  private playMenuScene(): Promise<void> {
+    return this.playScene(MENU_LEVEL, solve(MENU_LEVEL)!.moves, NEUTRAL, MENU_ROLL_GAP_MS, MENU_REST_MS);
+  }
+
+  /** Play these moves on the real rules, over and over, until another scene takes over the world. */
+  private async playScene(level: Level, moves: Dir[], theme: Theme, rollGap: number, rest: number): Promise<void> {
     const scene = this.scene;
     await this.animating;
     await revealPage();
     if (scene !== this.scene) return;
-    const start = initialState(MENU_LEVEL);
-    const solution = solve(MENU_LEVEL)!.moves;
+    const start = initialState(level);
     const pause = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
     this.lastChapter = null;
     this.world.setViewShift(MENU_VIEW_SHIFT);
-    await this.world.setLevel(MENU_LEVEL, start, NEUTRAL);
+    await this.world.setLevel(level, start, theme);
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     for (;;) {
       let state = start;
-      for (const dir of solution) {
-        await pause(MENU_ROLL_GAP_MS);
+      for (const dir of moves) {
+        await pause(rollGap);
         if (scene !== this.scene) return;
-        const result = step(MENU_LEVEL, state, dir);
+        const result = step(level, state, dir);
         this.animating = this.animateStep(state, result, dir, scene);
         await this.animating;
         if (scene !== this.scene) return;
@@ -235,7 +270,7 @@ class Game {
       }
       this.animating = this.world.win();
       await this.animating;
-      await pause(MENU_REST_MS);
+      await pause(rest);
       if (scene !== this.scene) return;
       this.animating = this.world.setBridges(start.bridges);
       await this.animating;
@@ -567,6 +602,44 @@ class Game {
     this.open(this.pause);
   }
 
+  /** Reaching a level opens the How To Play entries for what's in it. */
+  private noteMechanics(level: Level): void {
+    const fresh = mechanicsIn(level).filter((m) => !this.progress.seen.includes(m));
+    if (!fresh.length) return;
+    this.progress.seen.push(...fresh);
+    saveProgress(this.progress);
+  }
+
+  /** Whether How To Play shows this entry: always for the basics; others once met, or in any level already solved. */
+  private mechanicOpen(m: Mechanic): boolean {
+    if (m.basic || this.progress.seen.includes(m.id)) return true;
+    return Object.keys(this.progress.best).some((key) => {
+      const level = key.startsWith('level:') ? findLevel(key.slice(6))?.level : undefined;
+      return !!level && mechanicsIn(level).includes(m.id);
+    });
+  }
+
+  private refreshHowTo(root: HTMLElement): void {
+    root.querySelector('[data-back-label]')!.textContent = this.backLabel();
+    for (const m of MECHANICS) {
+      const button = root.querySelector<HTMLButtonElement>(`[data-mechanic="${m.id}"]`)!;
+      const open = this.mechanicOpen(m);
+      button.disabled = !open;
+      button.textContent = open ? m.name : '???';
+    }
+  }
+
+  /** Describe a mechanic and let the world behind the list play it. */
+  private previewMechanic(id: string | undefined): void {
+    const m = MECHANICS.find((e) => e.id === id);
+    if (!m || m.id === this.shownMechanic) return;
+    this.shownMechanic = m.id;
+    $('howto').querySelector('.howto-text')!.innerHTML = keysIn(m.text);
+    this.scene++;
+    this.world.finishAnimations();
+    void this.playScene(m.level, m.moves, THEMES.studio, HOWTO_ROLL_GAP_MS, HOWTO_REST_MS);
+  }
+
   private openLessons(): void {
     this.lessons.forget();
     this.open(this.lessons);
@@ -593,6 +666,7 @@ class Game {
   private mainMenuAction(action: string): void {
     if (action === 'campaign') this.open(this.mapPanel);
     else if (action === 'tutorial') this.openLessons();
+    else if (action === 'howto') this.open(this.howToPanel);
     else if (action === 'labs') this.open(this.labsPanel);
     else if (action === 'settings') this.openSettings();
   }
@@ -726,6 +800,14 @@ function modeFromUrl(): Mode {
 function modeToQuery(mode: Mode): string {
   if (mode.kind === 'menu') return location.pathname;
   return mode.kind === 'hand' ? `?level=${mode.id}` : `?tier=${mode.tier}&seed=${encodeURIComponent(mode.seed)}`;
+}
+
+/** A mechanic's entry in How To Play. */
+function mechanicButton(mechanic: Mechanic): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.dataset.action = 'look';
+  button.dataset.mechanic = mechanic.id;
+  return button;
 }
 
 /** A lesson's entry in the Tutorial's level list. */

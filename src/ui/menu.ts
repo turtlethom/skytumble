@@ -11,6 +11,8 @@ export class Menu {
     private onAction: (action: string) => void,
     /** Runs each time the menu opens, to refresh anything that depends on progress. */
     private beforeShow: (root: HTMLElement) => void = () => {},
+    /** Runs whenever the keyboard or the pointer lands on an entry. */
+    private onSelect: (button: HTMLButtonElement) => void = () => {},
   ) {
     root.addEventListener('click', (e) => {
       const button = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-action]');
@@ -63,5 +65,6 @@ export class Menu {
     this.selected?.classList.remove('selected');
     this.selected = button;
     button.classList.add('selected');
+    this.onSelect(button);
   }
 }

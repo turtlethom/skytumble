@@ -58,6 +58,7 @@ describe('resetting progress', () => {
     played.streak = 4;
     played.bestStreak = 9;
     played.tiers.easy.solved = 7;
+    played.seen.push('ice');
     saveProgress(played);
     expect(loadProgress().best['level:frost-01']).toBe(3);
 
@@ -67,6 +68,7 @@ describe('resetting progress', () => {
       expect(p.streak).toBe(0);
       expect(p.bestStreak).toBe(0);
       expect(p.tiers.easy.solved).toBe(0);
+      expect(p.seen).toEqual([]);
     }
   });
 });

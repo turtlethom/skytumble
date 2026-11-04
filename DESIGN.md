@@ -665,7 +665,7 @@ heaviest world, and it runs at 59 to 61 fps on the user's laptop with no stutter
 
 That finishes the older worlds' pass. Next: see *Start menu, tutorial section and a new First Glade* below.
 
-**Pick up here.** Stage 1 (main menu, Esc menu, Labs, Settings with reset) is built and approved in playtest. **Stage 2, the Tutorial, is built: the dark slate look is liked, and the level list and lesson locks are awaiting playtest** (see *The Tutorial as built* below). Then stage 3, How To Play, whose menu button is greyed out until then. Nothing is pushed, on purpose: see *Release* below.
+**Pick up here.** Stage 1 (main menu, Esc menu, Labs, Settings with reset), stage 2 (the Tutorial) and stage 3 (How To Play) are approved and committed. **Next: First Glade as a real biome**, starting with a grilling session on its mechanic. Nothing is pushed, on purpose: see *Release* below.
 
 **Now: main menu, Tutorial and How To Play** (settled in a grilling session 2026-11-03). Order of work: these three → First Glade as a real biome (its mechanic gets
 its own grilling, lab and rules freeze) → the 20-level batches → split + paint (assumed; not raised by the user). **Success:** a friend given only the link can solve
@@ -710,6 +710,12 @@ renderer; silent unlocks may go unnoticed; and the release is large and long-hel
 - **Self-contained** (asked for by the user after the first playtest, 2026-11-03): the main menu's Tutorial button opens a list of the five lessons, showing Done, Locked or Playing. In a lesson, the Map button and the Esc menu's Map entry become Levels, which opens the same list. Each lesson unlocks when the one before it is done, and the first is always open. A lesson that isn't done yet has no Next lesson button, and N does nothing. `?level=` links still open any lesson, so playtest notes and shared links keep working. The one exit is the last lesson's "Start the Campaign".
 - **Still to judge:** the first-timer test before the push is the real check on the prompts.
 
+**How To Play as built** (2026-11-03, approved in playtest). The page has two groups: Basics (rolling and the goal, standing and lying, old planks, soft switches and bridges, heavy switches), always shown, and Mechanics (ice, belts, launch pads, flip rings, the cube, the tall block, extra-heavy switches), each `???` until opened.
+
+- **Previews:** the risk was the cost, since `World` owns the only renderer. Instead of a second renderer, the page is laid over the one world, which plays the selected entry's scene, as the main menu plays its own. So there's one preview at a time, it follows the selection, and it costs no more than a small level. Scenes are written-out moves on the real rules (`src/levels/mechanics.ts`), checked by tests to end in a win and to show what they describe. One scene shows every way its mechanic behaves, in one loop (the user's note after the first playtest, when pads and belts each showed one case): pads fling standing and hop lying; belts push a standing block, push a lying one, and leave one lying half on; ice grips and slides; rings flip up standing and down lying; a soft switch goes up, down and up; a lying block does nothing to a heavy switch.
+- **Look:** the Tutorial's dark studio for every entry, not each mechanic's own world: it loads instantly when switching entries, and keeps attention on the rule.
+- **Unlocks:** reaching a level opens the entries for what's in it, saved as `seen` in the progress; labs count, and so do levels solved in older saves. A reset clears them. Unlocks are silent, as planned.
+
 **First Glade becomes a real biome** after that: its own gentle signature mechanic (see *Idea backlog*: teleporters, crumbling tiles, tilting islands, or something forest-born such as
 vines) and all new levels, with ids such as `glade-01`. It stays first on the map.
 
@@ -744,6 +750,8 @@ works and what doesn't. Claude writes the code and designs handmade levels from 
 feedback; batches of 5 levels per round.
 
 ## Playtest log
+
+**2026-11-03 — How To Play, first build.** "A great menu." The scenes were a little slow → shorter gaps between rolls and shorter rests. Launch pads showed only the fling and belts only one case → each scene now shows every way its mechanic behaves, and ice, rings and soft switches got the same treatment.
 
 **2026-11-03 — Tutorial, first build.** Prompts: "very good", keep. Retracted bridges "look great". The dark block is right. The goal is fine. The studio's look was then approved ("I do like the background and the outline a lot"), and the user asked for a self-contained Tutorial with its own level list and locked lessons. The white background was too bright and "hurts my eyes" → the studio is now a dark slate in the block's color family. The user also saw the tiles as green and out of place, like First Glade's. They render pale grey in headless Chrome, so this wasn't reproduced; that grey did lean slightly yellow-green, and the tiles are now clearly blue-grey. Check this on their screen.
 

@@ -762,6 +762,65 @@ body[data-theme='studio'] .menu-list button.danger.selected {
   color: inherit;
 }
 
+/* How To Play: the list on the left, the world playing the selected mechanic beside it, its description below. */
+.howto.hidden {
+  display: none;
+}
+
+.howto-side {
+  position: fixed;
+  top: 50%;
+  left: clamp(24px, 6vw, 110px);
+  width: 300px;
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+  padding: 8px 8px 8px 0;
+  transform: translateY(-50%);
+}
+
+.howto-side h1 {
+  margin: 0;
+  font-size: 40px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  color: var(--title);
+}
+
+.howto-side h3 {
+  margin: 8px 0 -2px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+}
+
+.howto-side .menu-list {
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.howto-side .menu-list button {
+  margin-bottom: 2px;
+  padding: 5px 14px;
+  font-size: 16px;
+  text-align: left;
+}
+
+.howto-side .menu-list button[data-action='back'] {
+  margin-top: 10px;
+}
+
+.howto-text {
+  position: fixed;
+  right: clamp(24px, 6vw, 110px);
+  bottom: 28px;
+  width: min(560px, calc(100vw - 420px));
+  padding: 14px 20px;
+  font-size: 17px;
+  line-height: 1.4;
+}
+
 /* The first screen: the title and buttons on the left, the live island beside them. */
 .main-menu {
   position: fixed;

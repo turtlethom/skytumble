@@ -147,7 +147,8 @@ with `--virtual-time-budget=20000` is enough; the sky map and other screens need
 ```
 src/game/      pure rules: types, rules (step: roll → slide → push → slide), solver (BFS), generator
 src/levels/    chapter .txt files, format.ts (parser), validate.ts (checks + one-trick guard), index.ts,
-               lessons.ts (the Tutorial's prompts, from the block's position and the last move)
+               lessons.ts (the Tutorial's prompts, from the block's position and the last move),
+               mechanics.ts (How To Play's entries, scenes and unlocks)
 src/render/    Three.js world (tiles, animations, push cue), palette.ts (belt colors by direction),
                themes.ts (each chapter's look; rules in DESIGN.md's *Chapter themes*),
                scenery.ts (what a world's surroundings provide), forest.ts, frost.ts and peaks.ts (each world's

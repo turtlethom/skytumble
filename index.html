@@ -176,10 +176,23 @@
       <nav class="menu-list">
         <button data-action="campaign">Campaign</button>
         <button data-action="tutorial">Tutorial</button>
-        <button data-action="howto" disabled>How To Play <span class="soon">Coming next</span></button>
+        <button data-action="howto">How To Play</button>
         <button data-action="labs">Labs</button>
         <button data-action="settings">Settings</button>
       </nav>
+    </div>
+
+    <!-- How To Play: one entry per mechanic, with the world behind it playing that mechanic. main.ts adds the entries. -->
+    <div id="howto" class="howto hidden">
+      <div class="howto-side">
+        <h1>How To Play</h1>
+        <nav class="menu-list">
+          <h3>Basics</h3>
+          <h3>Mechanics</h3>
+          <button data-action="back"><span data-back-label>Back</span> <kbd>Esc</kbd></button>
+        </nav>
+      </div>
+      <div class="howto-text card" role="status"></div>
     </div>
 
     <!-- The Tutorial's own level list, from the main menu and from inside a lesson. main.ts adds the lessons. -->

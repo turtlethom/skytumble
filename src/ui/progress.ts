@@ -12,6 +12,8 @@ export interface Progress {
   bestStreak: number;
   /** Best stars per level, keyed "tier:seed" or "level:<id>". */
   best: Record<string, number>;
+  /** Mechanics met in levels reached, which opens their How To Play entries. */
+  seen: string[];
 }
 
 const KEY = 'skytumble.progress';
@@ -23,6 +25,7 @@ function empty(): Progress {
     streak: 0,
     bestStreak: 0,
     best: {},
+    seen: [],
   };
 }
 
