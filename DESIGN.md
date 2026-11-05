@@ -682,7 +682,7 @@ heaviest world, and it runs at 59 to 61 fps on the user's laptop with no stutter
 
 That finishes the older worlds' pass. Next: see *Start menu, tutorial section and a new First Glade* below.
 
-**Pick up here** (2026-11-05). Stage 1 (main menu, Esc menu, Labs, Settings with reset), stage 2 (the Tutorial) and stage 3 (How To Play) are approved and committed. First Glade's wall and hedge rules and the four-level Glade Lab are built and waiting for the user's playtest: see *The Glade Lab as built* below. The Glade Lab is approved and committed, and the wall and hedge rules are frozen. Tutorial lesson 6 (walls) and How To Play's two new entries are committed. `glade-01`…`05` are approved and committed: see *First Glade's first five levels* below. `glade-06`…`10` are built and waiting for the user's playtest: see *First Glade's second five levels* below. `glade-06`…`10` and the sky map fix are approved and committed. `glade-11`…`15` are approved and committed. `glade-16`…`20` are built and waiting for the user's playtest: see *First Glade's last five levels* below. **Next: playtest them, which finishes First Glade's 20. Then the first-timer test and the push, which the user hasn't scheduled, and the 12 new levels each for the other four biomes, with walls themed to each.** Nothing is pushed, on purpose: see *Release* below.
+**Pick up here** (paused 2026-11-05, at the user's request). First Glade's 20 levels, the menus, the Tutorial and How To Play are all live. The user's notes on `glade-16`…`20` and the maze are still open: whether it's the maze they pictured, whether low stone looks like a wall, and its frame rate on their laptop. The plan for walls in the other four worlds is settled: see *Walls in the other worlds* below. **Next: Frost Isle's wall material samples, for the user to approve, then its lab.**
 
 **Now: main menu, Tutorial and How To Play** (settled in a grilling session 2026-11-03). Order of work: these three → First Glade as a real biome (its mechanic gets
 its own grilling, lab and rules freeze) → the 20-level batches → split + paint (assumed; not raised by the user). **Success:** a friend given only the link can solve
@@ -703,7 +703,7 @@ Build order, with a playtest after each: (1) main menu, Esc menu, Labs and Setti
   Tutorial only. The main menu's Tutorial button opens its own level list (changed 2026-11-03; it used to jump straight to the next unfinished lesson). The last lesson leads to "Start the Campaign", which opens the sky map. Scored done or not done, with no stars or par.
 - **How To Play:** a main-menu page only, deliberately not in the Esc menu. One entry per mechanic, each with a description and a watch-only looping preview running on the real
   rules. Basics are always shown; other entries unlock when a level using that mechanic is reached (labs count, and so do levels already solved), and locked ones show as `???` rows.
-- **Release:** commit to `main` with no pushes, even for a live bug, until the user has approved these three and First Glade's first five levels.
+- **Release:** commit to `main` with no pushes, even for a live bug, until the user has approved these three and First Glade's first five levels. Done: all of it went live 2026-11-05, without the first-timer test, at the user's request. A new player's first ten minutes are still unobserved.
 
 Claude recommended otherwise on three of these, and they stand as the user's calls: How To Play in the Esc menu (as it is, a stuck player gives up their moves to read it), asking once on
 the first Campaign click (the biggest risk to the success goal; the first-timer test should show whether it's needed), and keeping a way to ship live fixes.
@@ -748,7 +748,7 @@ renderer; silent unlocks may go unnoticed; and the release is large and long-hel
 | Other pieces | Basics only. **Belts stay in Frost Isle** (changed 2026-11-04, on Claude's recommendation: fewer new rules, belts are part of Frost's identity, and adding them later is easier than taking them out). If levels 11 to 15 feel thin in playtest, belts are the first thing to add |
 | Difficulty | First Glade only: beginner friendly for the first five levels (10 to 14 moves), then clearly harder from level 6 (changed 2026-11-05 after playing them; it was gentle up to level 10) |
 | Getting stuck | Dead ends only if they're obvious from the board |
-| Walls in other worlds | The user wants walls in the later levels of the other biomes, **themed to each biome** rather than First Glade's stone brick (asked for 2026-11-05, to build when those levels start). Interactions with ice, pads, flips, shapes and belts are settled when each world first uses walls in its 12 new levels |
+| Walls in other worlds | Settled in a grilling session 2026-11-05: see *Walls in the other worlds* below |
 | Frost Isle | Unchanged |
 
 - **Teaching walls:** Tutorial lesson 6, which also adds a walls entry to How To Play's Basics. Hedges get a locked entry under Mechanics. So the approved Tutorial grows by one lesson and gets another playtest.
@@ -835,6 +835,38 @@ renderer; silent unlocks may go unnoticed; and the release is large and long-hel
 - **Low stone** (new, for the maze): a wall whose color has no switch in the level never moves, so it's drawn low (0.42 high, under half a lying block; at 0.8 it still hid the east-west lanes) with no colored line, and joined into one mass. Tall walls hide what's behind them, and a maze of them can't be read. The rules don't change: it's still a wall, and a bump is still free. `gladelab-01`'s walls now look like this too.
 - **Draw calls:** the finale took 1,127 draws at first, about three times `glade-15`. Merging the low stone and its soil brought it to 677 (`glade-15` 355, `glade-19` 602, `frost-08` 493). The frame rate on the user's laptop is still to be read.
 - **Tools:** `scripts/design/lattice.ts` and `strip.ts` are now in the repo, since the method that built 12 to 15 and these will serve the other biomes' new levels.
+
+**Walls in the other worlds**, settled in a grilling session 2026-11-05; nothing is built yet. For Frost Isle, Windy Peaks, Starfall and Toybox. **Success:** weeks later, the user still chooses the wall levels, the same test as the other worlds.
+
+| Area | Decision |
+|---|---|
+| Purpose | Walls combine with each world's mechanic |
+| Amount | 4 of each world's 12 new levels: three wall levels and a maze. The user first chose about half, then came down to protect each world's identity |
+| Look | The same notched shape in a new material per world. The user approves samples on the tile sheet, up, sunk and in black and white, before each lab. Readability beats theme: an ice wall could look like a slippery tile, and slate would melt into Windy Peaks' floor |
+| Mazes | One per world, in low stone of its material, one of the 4, mid-way through the last levels and not the finale, with the world's mechanic inside so it only works in that world |
+| Hidden tiles | Walls stay two tall. Careful layout handles it, over fading or shorter walls |
+| Teaching | The first wall level in a world teaches its rule, and that world's How To Play entry gets a line and a scene |
+| Testing | One lab per world, right before its levels, and its rules freeze after sign-off |
+| Order | Map order: Frost Isle, Windy Peaks, Starfall, Toybox |
+| Old levels | The existing 8 per world stay untouched. Walls only appear in levels 9 to 20 |
+| Audience | Someone who's come far and met walls in First Glade, with How To Play as the fallback |
+| Releases | Claude asks to push after each approved batch. Every push still needs the user's say-so |
+
+Rules, to be frozen per world. A raised wall and low stone behave the same:
+
+| When a wall is... | What happens |
+|---|---|
+| In a slide's path | The slide stops on the tile before it, so a switch can raise or lower a brake |
+| Where a belt would push | The belt can't push, and the block stays put |
+| Where a fling lands | The block stands up on the tile before it, which gives a new way to land standing |
+| On a sideways hop's landing (lying across two pads) | The block falls |
+| Over a flip ring | The ring won't fire, and looks visibly locked (it dims or stops glowing). Walls cross floors like bridges, so a press on one floor can lock a ring from the other. The user first chose own-floor walls, then changed it to keep one color rule; the ring rule was Claude's recommendation, at the user's request |
+| Rolled into | A free bump, the same for every shape. A tall block is stopped from three tiles away and a cube only from next to the wall. A tall block knocking through walls was considered and dropped |
+
+- **Assumptions to check when building:** flights still pass over walls, and only the landing tile matters. A fling landing short with no floor there falls, and a short landing on a pad, switch or plank acts like any other landing. A block lying along its hop stops the same way, standing before the wall. A wall touching one end of a lying block stops the whole slide. A blocked belt only tries again the next time the block lands on it. Hedges stay in First Glade.
+- **The user's pre-mortem:** a mix of two failures: worlds losing their identity and feeling like First Glade in a new coat of paint, and walls hiding too much of busy boards. No deadline came up.
+- **Risks:** identity rests on 4 levels in 12 and on the mazes, since a new material is the lightest look on offer. Hidden tiles rest on layout alone, and Starfall is the worst case. Five behaviors to learn across the worlds. Toybox may have little for walls to combine with: its lab decides, and a rule can be added then.
+- **Where Claude differs:** a sideways hop falling is the only place a wall can make the block fall, and Claude would have the pad not fire, as with rings. A fling standing up short is the rule most likely to fail in a lab, though it could give the best puzzles. Careful layout is the cheapest answer to one of the user's top fears, so revisit it if Starfall's lab feels hidden.
 
 **Every biome's shape:** 20 levels, the first few introductory and the last 15 ramping up in difficulty, so each biome can focus on its own creativity rather than on teaching the base rules.
 
