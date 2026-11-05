@@ -112,6 +112,8 @@ The process that produced the Frost chapter:
    so fix the idea's skeleton and leave only small `?` patches; and check that every switch in
    the solution matters (an untouched bridge `*` means its switch press was incidental). In the
    reach map, flip-tile cells never show `S` on their own floor: a block standing there flips.
+   For hard switch and hedge puzzles, lay the level out as lanes one tile wide between junctions three
+   tiles apart (`glade-09`, `glade-10`): the block can only go junction to junction, so par is routing.
 6. **Fix the ending.** Searches often leave 3–6 moves of shuffling around a cramped goal island.
    Put the goal in line with how the block arrives (and remove start-island busywork the same way).
 7. **Check the story against the trace.** Write the `name`/`idea` text from the actual solution and

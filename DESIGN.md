@@ -682,7 +682,7 @@ heaviest world, and it runs at 59 to 61 fps on the user's laptop with no stutter
 
 That finishes the older worlds' pass. Next: see *Start menu, tutorial section and a new First Glade* below.
 
-**Pick up here** (2026-11-05). Stage 1 (main menu, Esc menu, Labs, Settings with reset), stage 2 (the Tutorial) and stage 3 (How To Play) are approved and committed. First Glade's wall and hedge rules and the four-level Glade Lab are built and waiting for the user's playtest: see *The Glade Lab as built* below. The Glade Lab is approved and committed, and the wall and hedge rules are frozen. Tutorial lesson 6 (walls) and How To Play's two new entries are committed. `glade-01`…`05` are approved and committed: see *First Glade's first five levels* below. **Next: `glade-06`…`10`, harder than these. Still open: the first-timer test and the push, which the user hasn't scheduled.** Nothing is pushed, on purpose: see *Release* below.
+**Pick up here** (2026-11-05). Stage 1 (main menu, Esc menu, Labs, Settings with reset), stage 2 (the Tutorial) and stage 3 (How To Play) are approved and committed. First Glade's wall and hedge rules and the four-level Glade Lab are built and waiting for the user's playtest: see *The Glade Lab as built* below. The Glade Lab is approved and committed, and the wall and hedge rules are frozen. Tutorial lesson 6 (walls) and How To Play's two new entries are committed. `glade-01`…`05` are approved and committed: see *First Glade's first five levels* below. `glade-06`…`10` are built and waiting for the user's playtest: see *First Glade's second five levels* below. **Next: playtest them. Before `glade-11`…`15`, the sky map has to fit more stones. Still open: the first-timer test and the push, which the user hasn't scheduled.** Nothing is pushed, on purpose: see *Release* below.
 
 **Now: main menu, Tutorial and How To Play** (settled in a grilling session 2026-11-03). Order of work: these three → First Glade as a real biome (its mechanic gets
 its own grilling, lab and rules freeze) → the 20-level batches → split + paint (assumed; not raised by the user). **Success:** a friend given only the link can solve
@@ -791,6 +791,21 @@ renderer; silent unlocks may go unnoticed; and the release is large and long-hel
 - **Board layout:** what matters sits to the side of or in front of the block, since a standing block or raised wall hides what's directly north of it. One exception: 05's floor north of the far hedge, which only catches a hedge sent the wrong way.
 - **The maze level** the user wants belongs later: these five stay beginner friendly.
 
+**First Glade's second five levels** (built 2026-11-05, awaiting playtest). The user asked for a clear step up after the first five. Their hints give the idea, not the route.
+
+| Level | Name | Par | States | Dead ends | The idea |
+|---|---|---|---|---|---|
+| 06 | Half On | 14 | 32 | 0 of 31 | Press while lying half on the near wall, or it shuts you out. It rises behind you, so a hedge has to build the way back |
+| 07 | Front of the Line | 19 | 62 | 0 of 62 | Two hedges in line won't fall from the west. Topple the front one sideways from the north, which also opens the way to the switch |
+| 08 | Both Banks | 18 | 86 | 16 of 88 | A two-wide gap needs a hedge from each bank. The switch lowers the wall to the goal but pulls in the only bridge over, so the gap is the way back |
+| 09 | Round the Back | 17 | 41 | 12 of 40 | One X switch trades two walls that are never both down. Through the first, topple the hedge to build a way round to the second. Toppled from the far side, it's wasted |
+| 10 | Three Hedges | 25 | 156 | 35 of 210 | Each hedge has one job: south to connect the two halves, east and west to close the two-wide gap. Combines 07 and 08 |
+
+- **Method:** lanes one tile wide between junctions three tiles apart. A lying block can't shift sideways in a lane, so par comes from routing, not parity shuffles. `scripts/design/search.ts` on open rooms did pad par that way (26 moves for two presses), and a random lane search found one good seed, 09, and nothing for the finale, so 10 is by hand.
+- **Par doesn't climb evenly:** 06 and 09 are short, because each turns on one idea rather than on length. The playtest should say whether they feel harder than 05 regardless.
+- **Sky map:** First Glade's island grows with its stones and already overlaps Frost Isle's corner at ten. This is the check noted under *After that*, and it has to be fixed before `glade-11`.
+- **The maze level** isn't in this batch. First attempts on open floor looked scattered rather than like a maze. It needs stone corridors, which tall walls can hide, so it's better planned as its own level in the second half.
+
 **Every biome's shape:** 20 levels, the first few introductory and the last 15 ramping up in difficulty, so each biome can focus on its own creativity rather than on teaching the base rules.
 
 **After that: 20 levels per biome** (decided by the user 2026-11-02). Levels
@@ -798,10 +813,10 @@ come out in **batches of 5**, and each batch is playtested and tuned before the 
 
 | Chapter | Now | New levels | Batches |
 |---|---|---|---|
-| First Glade (a new chapter) | 5 | 15 | 5, 5, 5 |
+| First Glade (a new chapter) | 10 | 10 | 5, 5 |
 | Frost Isle, Windy Peaks, Starfall, Toybox | 8 each | 12 each | 5, 5, 2 |
 
-That is 68 new levels in 16 batches, for 100 levels across these five biomes, with the five old First Glade levels moving to the tutorial. A new biome is built
+That was planned as 68 new levels in 16 batches (58 and 14 to go), for 100 levels across these five biomes, with the five old First Glade levels moving to the tutorial. A new biome is built
 to 20 the same way, after its lab.
 
 - **Proposed, to confirm when this starts:** add new levels after the current ones (`frost-09` onward),
