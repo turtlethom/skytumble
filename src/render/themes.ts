@@ -68,7 +68,8 @@ const FOREST: Theme = {
   sky: 'forest',
   hemi: { sky: 0xe6f5ff, ground: 0x7d8f60, intensity: 1.5 },
   sun: { color: 0xfff0cf, intensity: 2.4 },
-  block: { color: 0xe2a94f, edge: 0x7a4f1e },
+  // Pale, smooth stone: well above the walls' dirt-grey brick and clear of every switch color.
+  block: { color: 0xc4bfb2, edge: 0x5c584d },
   floor: { color: 0x5fa04a, detail: [0x4f8f3f, 0x5fa04a, 0x6cae55, 0x78b85f] },
   earth: { soil: 0x5d432e, hanging: 0x6d4c33, style: 'roots' },
   fragile: { light: 0xa89c86, dark: 0x857a68, weathered: true },
@@ -138,6 +139,8 @@ export const CHAPTER_THEMES: Record<string, Theme> = {
   wind: PEAKS,
   star: NIGHT,
   toy: TOYBOX,
+  // A lab, but walls and hedges are for this world, and a green hedge has to read on its grass.
+  gladelab: FOREST,
 };
 
 /** Every theme by id, so `?theme=forest` can preview one on any level or on the tile sheet. */

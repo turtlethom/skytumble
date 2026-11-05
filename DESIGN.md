@@ -66,11 +66,13 @@ detour away from the goal). Solution length alone is not the target.
 | Fragile tile | Breaks if the block stands upright on it |
 | Soft switch | Toggles its bridge group when any part of the block lands on it |
 | Heavy switch | Toggles its bridge group only when the block stands on it |
-| Bridge | Solid only while its group is on |
+| Bridge | Solid only while its group is on. A reversed bridge is the opposite, so one press can trade two bridges |
+| Wall | Raised, it stops any roll that would land on it. Lowered, it is plain floor. A press flips every wall and bridge of its color |
 | **Ice** (Frost) | A lying block fully on ice slides in the roll direction; a standing block grips |
 | **Conveyor** (Frost) | After a move, a block fully on conveyors shifts one tile along the arrow |
 | **Launch pad** (Windy Peaks) | Flings the block along the pad's arrow: standing = long fling, lying fully on two same-arrow pads = short hop |
 | **Flip tile** (Starfall) | Standing on one, or lying fully on two, moves the block to the other floor directly above (or below), same pose |
+| **Toppling hedge** (First Glade) | A standing block rolling into it topples it that way for good and stays put, for one move. It lands on the next tile, and an empty tile becomes floor. A lying block just bumps it |
 
 **Whole-block rule:** a special tile (ice, conveyor) acts only when the entire block is on
 it. A lying block half on ice and half on floor does not slide. A lying block on two conveyors
@@ -81,6 +83,15 @@ leaves ice → the tile it rests on acts (a conveyor pushes once per move; if th
 lying block fully on ice, it slides in the push direction) → stop. Falls are checked at
 every step. Only resting spots trigger fragile tiles and switches; tiles passed mid-slide
 don't. One conveyor push per move means no infinite loops.
+
+**Walls and hedges** (**rules frozen** 2026-11-05 after the Glade Lab playtests):
+- *Bump:* a roll is stopped by the first raised wall or upright hedge among the tiles it would land on, nearest the block first. The block stays where it was. That covers the far tile of a standing block's roll, and a wall beyond a gap, where the block would otherwise fall: nothing lands, so nothing falls. A bump isn't a move: no count, no undo step.
+- *Hedge:* a standing normal or tall block topples the first hedge in its way, including one two tiles off, along the roll, and stays put. That costs one move, can be undone, and comes back on restart. Lying blocks and the cube only bump it. Only a roll can topple one.
+- *Where it lands:* the next tile along the roll. An empty tile becomes floor for good. Anything else solid gets nothing, so that hedge is wasted, including a tile another hedge already bridged, and a retracted bridge's tile, which stays a gap. The hedge's own tile is floor either way.
+- *What stops it:* a raised wall or a hedge still up on the landing tile. It holds, and that's a bump, not a move. So a line of hedges has to be cleared from the far end or from the side.
+- *Colors:* a press flips every wall and bridge of its group. A wall starts up or down on its own, whatever `bridges-on` says, and a reversed bridge is always the opposite of its group's digit bridges.
+- *Block on a wall's tile:* a wall that comes up under the block shows lowered until the block moves off. The rules don't need to track this: only a roll into a tile checks for a wall, and a roll never lands on the tiles it left.
+- *Not settled:* a level mixing walls or hedges with ice, belts, pads, flips, shapes or extra-heavy switches fails validation, until each world first uses them.
 
 **One-trick guard:** every Frost level's optimal solution must use ice in at least two
 distinct ways. Checked with the solver before a level reaches playtest. The ways:
@@ -671,7 +682,7 @@ heaviest world, and it runs at 59 to 61 fps on the user's laptop with no stutter
 
 That finishes the older worlds' pass. Next: see *Start menu, tutorial section and a new First Glade* below.
 
-**Pick up here** (paused 2026-11-04, at the user's request). Stage 1 (main menu, Esc menu, Labs, Settings with reset), stage 2 (the Tutorial) and stage 3 (How To Play) are approved and committed. First Glade's mechanic is settled, with nothing built yet: see *First Glade as a real biome* below. **Next: build the wall and hedge rules with tests, then the four-level lab, for a playtest.** Nothing is pushed, on purpose: see *Release* below.
+**Pick up here** (2026-11-05). Stage 1 (main menu, Esc menu, Labs, Settings with reset), stage 2 (the Tutorial) and stage 3 (How To Play) are approved and committed. First Glade's wall and hedge rules and the four-level Glade Lab are built and waiting for the user's playtest: see *The Glade Lab as built* below. The Glade Lab is approved and committed, and the wall and hedge rules are frozen. **Next: Tutorial lesson 6 (walls) and How To Play's entries, then `glade-01`…`05`.** Nothing is pushed, on purpose: see *Release* below.
 
 **Now: main menu, Tutorial and How To Play** (settled in a grilling session 2026-11-03). Order of work: these three → First Glade as a real biome (its mechanic gets
 its own grilling, lab and rules freeze) → the 20-level batches → split + paint (assumed; not raised by the user). **Success:** a friend given only the link can solve
@@ -728,11 +739,11 @@ renderer; silent unlocks may go unnoticed; and the release is large and long-hel
 |---|---|
 | Walls | A new **base rule** for every world, with the look of First Glade's world where it appears. A switch raises or lowers them. The user's idea; the gain over a retracted bridge is a clear look |
 | Rolling into a raised wall | The block bumps and settles back, and no move is counted |
-| Wall look | Block height, in its switch's color. Hidden tiles are accepted, since rotating is part of the game |
-| Lowered wall | Always leaves solid floor, so a wall only ever means one thing |
+| Wall look | Block height. Hidden tiles are accepted, since rotating is part of the game. Stone brick, with only a thin line of its switch's color in the ground around it. Sunk, its top stays flush with the ground inside that line (changed 2026-11-05 after the first lab playtest; it was solid switch color, sinking to bare floor) |
+| Lowered wall | Always solid to stand on, so a wall only ever means one thing |
 | Switches | A press flips every wall and bridge of that color, and each piece starts up or down. One rule covers trading one route for another |
 | Block on a wall's tile | The wall waits until the block moves off (treated as lowered while the block is on it, so no timer or saved state) |
-| First Glade's twist | **Knock-down hedges**, here only: bumped standing, a hedge falls flat for good, the block stays put, and it costs one move. Bumped lying, it holds, with no move counted. Leafy, with no switch color: no color means no switch |
+| First Glade's twist | **Toppling hedges**, here only (changed 2026-11-05 after the first lab playtest, see the Playtest log; they used to just fall flat): bumped standing, a hedge topples that way for good, the block stays put, and it costs one move. An empty tile where it lands becomes floor. Bumped lying, it holds, with no move counted. Leafy, with no switch color: no color means no switch |
 | Other pieces | Basics only. **Belts stay in Frost Isle** (changed 2026-11-04, on Claude's recommendation: fewer new rules, belts are part of Frost's identity, and adding them later is easier than taking them out). If levels 11 to 15 feel thin in playtest, belts are the first thing to add |
 | Difficulty | First Glade only: mostly beginner friendly to level 10 (10 to 14 moves), then rising a lot to a gentle finale (25 to 30 moves) |
 | Getting stuck | Dead ends only if they're obvious from the board |
@@ -740,13 +751,30 @@ renderer; silent unlocks may go unnoticed; and the release is large and long-hel
 | Frost Isle | Unchanged |
 
 - **Teaching walls:** Tutorial lesson 6, which also adds a walls entry to How To Play's Basics. Hedges get a locked entry under Mechanics. So the approved Tutorial grows by one lesson and gets another playtest.
-- **First five levels:** walls recap, a wall traded for a bridge, knock-down hedges, standing versus lying at a hedge, a small combination.
-- **Depth without belts:** arriving standing to knock a hedge down, the order hedges are cleared in, trades across two or three switch colors, and planks and heavy switches.
-- **Lab (four levels, one per rule question), then the rules freeze:** wall bump, a press flips its color, a wall waiting under the block, knock-down hedge.
+- **First five levels:** walls recap, a wall traded for a bridge, a hedge bridging a gap, choosing which side to knock a hedge from, a small combination.
+- **Depth without belts:** arriving standing to knock a hedge down, the side it's knocked from, the order hedges are cleared in, trades across two or three switch colors, and planks and heavy switches.
+- **A maze level (from the user, 2026-11-05):** "I definitely want to have a maze like level with these features at some point." One of the later levels, probably in the second half, where the difficulty rises.
+- **Lab (four levels, one per rule question), then the rules freeze:** wall bump, a press flips its color, a wall waiting under the block, hedge (grew to two levels when hedges became toppling).
 - **Assumptions to check when building:** undo and restart bring flattened hedges back; only a roll can knock a hedge down.
 - **Risks:** too many new rules (the user's pre-mortem: walls, color flips and hedges, taught one at a time); too much like bridges, since the user's answer was "simple is the point" while the success test is replaying it, so the second half has to deliver; a flattened hedge can't come back, which must stay obvious from the board.
 - **Where Claude differs:** it would avoid hiding anything important in the opening view of the first ten levels, as a design habit rather than a rule, and would have made a wall rising under the block impossible rather than delayed.
 - **Rejected for this world:** teleporters, crumbling tiles, tilting islands and vines. See *Idea backlog* for what's saved for others.
+
+**The Glade Lab as built** (2026-11-05; approved in playtest). Rules are in *Mechanics* under *Walls and hedges*. Both assumptions above hold as built: undo and restart bring fallen hedges back, and only a roll can topple a hedge. Unlike the other labs, it plays in First Glade's forest, since a green hedge has to read on that grass.
+
+| Level | Name | Par | States | The rule question |
+|---|---|---|---|---|
+| 01 | Bump | 8 | 35 | Is a bump clear, including from two tiles away and across a gap? |
+| 02 | One Press, Every Piece | 14 | 22 | Does one press flipping walls and bridges together read? |
+| 03 | Wait For Me | 7 | 16 | Does a wall waiting under the block, then rising behind it, make sense? |
+| 04 | Timber | 11 | 22 | Does a hedge turning a gap into floor read, with the standing and lying rules? |
+| 05 | Which Way | 19 | 105 | Does choosing which side to knock from make hedges a real decision? 31 of 138 reachable states are dead ends, all from wasting a hedge, and it should be obvious from the board |
+
+- **Calls Claude made beyond the grilling, confirmed by the user in the first playtest:** the far tile of a roll counts as rolling into something; a wall beyond a gap holds the block instead of letting it fall; a hedge falls from two tiles away. A hedge can't fall onto a hedge still up or a raised wall: Claude's call, and the user approved the lab without changing it.
+- **Look:** a raised wall is dirt-grey stone brick with notched corners and a darker deck between them, all without color. It sinks until that top is flush with the ground. A thin line of its switch's color in the ground around it is the only thing naming its switch: Claude kept it after the user asked for the color off the wall, since several colors in one level would otherwise be unreadable, and it's easy to remove. The hedge is dark leaf clumps, leaving a dark mat of leaves on its own tile and, over a gap, a thick slab of leaves level with the floor. First Glade's block is now pale, smooth stone (`0xc4bfb2`, was amber `0xe2a94f`), lighter than the brick so the two don't blur. The brick is shared across worlds for now; each world can restyle it when it first uses walls.
+- **Format:** `H I J K` walls starting up in groups 0 to 3, `h i j k` starting down, `a b d e` reversed bridges, `&` a hedge, at most 9 per level, and never on the edge of the grid (validation asks for padding, so a hedge never falls off the grid looking just like one falling into a gap).
+- **Also fixed:** an animation started by another animation was silently dropped, which froze the game after a knock. The fix is in the frame loop, so it applies everywhere.
+- **Risks to watch:** a wall can hide what's behind it from the default camera (accepted, but `gladelab-02` was re-laid east to west after its north lane vanished behind the block and a wall).
 
 **Every biome's shape:** 20 levels, the first few introductory and the last 15 ramping up in difficulty, so each biome can focus on its own creativity rather than on teaching the base rules.
 
@@ -1000,6 +1028,8 @@ is fine... it should be flush with the tile" → flat footprints for both the bl
 **2026-11-03 — Main menu and Esc menu.** The menu looks good, but the block should move faster, solve the puzzle over and over, and drop down onto the board → a small
 switch-and-bridge puzzle on a loop, on the real rules. The menus looked "kind of plain and should match the theme" → each world's own panel colors, chunky buttons like the map's stones, and
 a crest. Hovering in Starfall's menu made the text nearly unreadable: a bug, every button turned white on hover even when the theme's text was white. Exit with no warning, felt in play: fine. The Labs screen works.
+
+**2026-11-05 — Glade Lab, first playtest.** "I really like the lab so far." The bumps "feel good". All three rule calls confirmed: a wall two tiles away stops a roll, a wall across a gap holds the block, and a hedge falls from two tiles away. An amber wall beside the amber block: "I'd prefer the block to look more like a stone color and I'd prefer the walls look more dirtish-grayish like stone brick" → First Glade's block is now pale stone, and walls are stone brick, keeping a band of their switch's color so they still name it. "We should see what the changes are before fully committing it to the campaign" → no lesson or campaign work until the new look is signed off. On seeing it: a sunk wall should show "the top of the wall... just flush with the ground" instead of the grass, and "get the orange off the wall" → both done; a thin colored line stays in the ground around the wall, which the user then approved ("the thin colored line works"). After playing the levels, on hedges: "the weirdest feature... it just doesn't really offer a challenge, just an annoying obstacle" → open. Claude's reading: knocking a hedge down is never the wrong choice (it only ever adds floor, and `gladelab-04` has 0 dead ends), so it's a toll, not a decision. Hedges aren't frozen, and First Glade's twist is back up for discussion. Options offered: toppling hedges that bridge gaps, flattened hedges that are fragile, pushable stones, or walls alone. The user chose toppling hedges → built, with `gladelab-04` rebuilt and `gladelab-05` added. On playing them: "I do like the new wall mechanic", wants a maze-like level with these features at some point, and "just a bit of a speed up on the walls going up and down" → 260 ms down to 170 ms, a roll's length. "Other than that, I approve of committing this" → rules frozen.
 
 ## Architecture
 

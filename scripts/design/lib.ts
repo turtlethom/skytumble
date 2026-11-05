@@ -40,6 +40,8 @@ export function touched(level: Level, moves: Dir[]): Set<string> {
   for (const d of moves) {
     const r = step(level, s, d);
     mark(r.rolled);
+    // Bumping a wall or a hedge is using it, though the block never rests there.
+    if (r.bumped) seen.add(`${r.bumped.x},${textRow(level, layer, r.bumped.y)}`);
     for (const m of r.motions) {
       // Flights pass over everything: only take-off and landing touch tiles. A flip changes layer.
       if (m.kind === 'fly' || m.kind === 'flip') {

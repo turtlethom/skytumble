@@ -1,4 +1,4 @@
-import { blockCells, blockLength, findGoal, initialState, isSolid, layerView, step, tileAt } from '../game/rules';
+import { blockCells, blockLength, findGoal, initialState, isSolid, isWall, layerView, step, tileAt } from '../game/rules';
 import { solve } from '../game/solver';
 import { Dir, Level, Tile } from '../game/types';
 import { Chapter, HandmadeLevel } from './format';
@@ -43,7 +43,7 @@ export function flipUses(level: Level, moves: Dir[]): FlipUse[] {
   for (const layer of [0, 1]) {
     const view = layerView(level, layer);
     view.tiles.forEach((t, i) => {
-      if (t !== Tile.Bridge) return;
+      if (t !== Tile.Bridge && t !== Tile.BridgeReversed) return;
       if (!groupLayers.has(view.groups[i])) groupLayers.set(view.groups[i], new Set());
       groupLayers.get(view.groups[i])!.add(layer);
     });
@@ -163,8 +163,25 @@ export function padUses(level: Level, moves: Dir[]): PadUse[] {
   return [...uses];
 }
 
+/** What a wall or hedge does to a slide, a push, a flight, a flip or another shape isn't settled yet. */
+const NOT_WITH_WALLS = [Tile.Ice, Tile.Conveyor, Tile.Pad, Tile.Flip, Tile.ShapeSwitch, Tile.ExtraHeavy];
+
+function mixesWalls(level: Level): boolean {
+  const tiles = [...level.tiles, ...(level.ceiling?.tiles ?? [])];
+  const walled = tiles.some((t) => isWall(t) || t === Tile.Hedge);
+  return walled && (!!level.ceiling || !!level.startShape || tiles.some((t) => NOT_WITH_WALLS.includes(t)));
+}
+
 export function validateLevel(h: HandmadeLevel, chapter: Chapter): LevelReport {
   const errors: string[] = [];
+  if (mixesWalls(h.level)) errors.push('walls and hedges only mix with the basics until their other interactions are settled');
+  // A hedge falling off the grid would just vanish, while one falling onto an empty tile bridges it,
+  // and both look like open sky.
+  for (const c of h.level.hedgeCells ?? []) {
+    if (c.x === 0 || c.y === 0 || c.x === h.level.width - 1 || c.y === h.level.height - 1) {
+      errors.push(`the hedge at ${c.x},${c.y} is on the edge of the grid: pad the grid so it can fall every way`);
+    }
+  }
   if (!h.id.startsWith(`${chapter.id}-`)) errors.push(`id should start with '${chapter.id}-'`);
   if (!findGoal(h.level)) errors.push('no goal (G)');
 

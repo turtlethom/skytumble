@@ -11,10 +11,14 @@ export interface Solution {
 
 const O_INDEX = { S: 0, X: 1, Y: 2 } as const;
 
+/** More than every bridge group can add up to (ten digits, 0-9), so fallen hedges sit above them. */
+const HEDGE_STEP = 1024;
+
 function key(level: Level, s: State): number {
   const b = s.block;
   const shape = (b.n ?? 2) - 1;
-  return ((((s.bridges * 3 + O_INDEX[b.o]) * 2 + (s.layer ?? 0)) * 3 + shape) * level.height + b.y) * level.width + b.x;
+  const switched = s.bridges + (s.hedges ?? 0) * HEDGE_STEP;
+  return ((((switched * 3 + O_INDEX[b.o]) * 2 + (s.layer ?? 0)) * 3 + shape) * level.height + b.y) * level.width + b.x;
 }
 
 /** Breadth-first search for the shortest solution, or null if the level is unsolvable. */

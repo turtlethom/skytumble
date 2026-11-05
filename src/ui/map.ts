@@ -17,10 +17,11 @@ const LAYOUT: Record<string, { x: number; y: number; theme: string }> = {
   wind: { x: 80, y: 27, theme: 'peaks' },
   star: { x: 110, y: 62, theme: 'night' },
   toy: { x: 140, y: 27, theme: 'toy' },
-  lab: { x: 50, y: 20, theme: 'lab' },
-  windlab: { x: 110, y: 20, theme: 'lab' },
-  gravlab: { x: 50, y: 62, theme: 'lab' },
-  shapelab: { x: 110, y: 62, theme: 'lab' },
+  lab: { x: 30, y: 22, theme: 'lab' },
+  windlab: { x: 80, y: 22, theme: 'lab' },
+  gravlab: { x: 130, y: 22, theme: 'lab' },
+  shapelab: { x: 50, y: 64, theme: 'lab' },
+  gladelab: { x: 110, y: 64, theme: 'lab' },
 };
 
 const SIGNATURE_LABEL: Record<string, string> = { ice: 'Ice & belts', pads: 'Launch pads', gravity: 'Gravity', shapes: 'Shapes' };

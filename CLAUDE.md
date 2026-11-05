@@ -70,7 +70,13 @@ time through `layerView`; the renderer mirrors the ceiling group (scale y −1),
 animations are shared. Shapes: a block's length (`n`: 1 cube, absent = 2, 3 tall) drives
 rolling, support (a lying tall block rests on its ends), and weight; `c`/`t`/`n` are shape
 switches, `X` an extra-heavy switch, `C`/`T` goals marked for a shape, and `shape: cube|tall`
-(or `!shape` in a design block) sets the start shape. Traces print `cube`/`tall` before a pose. Chapters are registered in play order in
+(or `!shape` in a design block) sets the start shape. Traces print `cube`/`tall` before a pose.
+Walls and hedges: `H I J K` a wall starting up in group 0-3, `h i j k` starting down, `a b d e` a
+reversed bridge, `&` a toppling hedge (at most 9; pad the grid around them, or validation fails).
+They only mix with the basics for now (validation fails otherwise). A diagnosis lists where each hedge
+lands each way; traces print `TOPPLE` with what it bridged, or `wasted`. In `analyze`, a raised wall the solution never bumps still shows `*`: it can be doing its
+job, so don't strip it the way you would an unused tile. `sim` prints bumps and knocks, and doesn't
+stop at them. Chapters are registered in play order in
 `src/levels/index.ts` (which also splits them into the Tutorial, the campaign and the labs), and a new chapter needs an island position and
 theme in `LAYOUT` in `src/ui/map.ts`. A chapter with `signature: ice` enforces the one-trick guard: the optimal
 solution must use ice in at least two distinct ways (`src/levels/validate.ts`).

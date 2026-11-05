@@ -2,6 +2,12 @@ import { DIRS, Dir, Level, Tile } from './types';
 
 const CONVEYOR_CHARS: Record<Dir, string> = { up: '^', down: 'v', left: '<', right: '>' };
 const PAD_CHARS: Record<Dir, string> = { up: 'U', down: 'D', left: 'L', right: 'R' };
+/** One character per switch color, groups 0-3: a wall starting up, a wall starting down, a reversed bridge. */
+const WALLS_UP = 'HIJK';
+const WALLS_DOWN = 'hijk';
+const BRIDGES_REVERSED = 'abde';
+/** Each hedge takes three bits in `State.hedges`, and the solver's key has to stay a safe whole number. */
+const MAX_HEDGES = 9;
 
 /**
  * Text level format, one character per cell:
@@ -13,6 +19,10 @@ const PAD_CHARS: Record<Dir, string> = { up: 'U', down: 'D', left: 'L', right: '
  *   c t n  shape switch: turns a block standing on it into a cube / tall block / normal block
  *   X  extra-heavy switch (only a standing tall block presses it)
  *   C T  goal marked for a cube / a tall block (G takes the normal block)
+ *   H I J K  wall starting raised, in the color of group 0 / 1 / 2 / 3
+ *   h i j k  the same, starting lowered
+ *   a b d e  bridge in group 0 / 1 / 2 / 3 that is out when a digit bridge of its group is in
+ *   &  toppling hedge
  * A line of dashes (`---`) ends the ground and starts the ceiling layer: the same grid seen from
  * above, cell for cell directly over the ground (not mirrored). The start is on the ground.
  * Switches target group 0 unless `switchGroups` lists groups in reading order (ground, then ceiling).
@@ -26,6 +36,7 @@ export function parseLevel(rows: string[], switchGroups: number[] = [], bridgesO
   const width = Math.max(...[...groundRows, ...(ceilingRows ?? [])].map((r) => r.length));
   let start = { x: -1, y: -1 };
   let switchIndex = 0;
+  const hedgeCells: { x: number; y: number }[] = [];
 
   const grid = (lines: string[], ground: boolean) => {
     const tiles: Tile[] = [];
@@ -64,6 +75,17 @@ export function parseLevel(rows: string[], switchGroups: number[] = [], bridgesO
         } else if (c >= '0' && c <= '9') {
           tile = Tile.Bridge;
           group = Number(c);
+        } else if (WALLS_UP.includes(c) || WALLS_DOWN.includes(c)) {
+          tile = WALLS_UP.includes(c) ? Tile.WallUp : Tile.WallDown;
+          group = (WALLS_UP.includes(c) ? WALLS_UP : WALLS_DOWN).indexOf(c);
+        } else if (BRIDGES_REVERSED.includes(c)) {
+          tile = Tile.BridgeReversed;
+          group = BRIDGES_REVERSED.indexOf(c);
+        } else if (c === '&') {
+          if (hedgeCells.length === MAX_HEDGES) throw new Error(`More than ${MAX_HEDGES} hedges`);
+          tile = Tile.Hedge;
+          group = hedgeCells.length;
+          hedgeCells.push({ x, y });
         } else if (c !== '.') {
           throw new Error(`Unknown level character '${c}' at ${x},${y}${ground ? '' : ' on the ceiling'}`);
         }
@@ -86,6 +108,7 @@ export function parseLevel(rows: string[], switchGroups: number[] = [], bridgesO
     start,
     bridgesOn,
     ...(ceiling ? { ceiling } : {}),
+    ...(hedgeCells.length ? { hedgeCells } : {}),
     ...(startShape !== 2 ? { startShape: startShape as 1 | 3 } : {}),
   };
 }
@@ -108,6 +131,10 @@ const CHARS: Record<Tile, string> = {
   [Tile.Flip]: '+',
   [Tile.ShapeSwitch]: '?',
   [Tile.ExtraHeavy]: 'X',
+  [Tile.BridgeReversed]: '?',
+  [Tile.WallUp]: '?',
+  [Tile.WallDown]: '?',
+  [Tile.Hedge]: '&',
 };
 
 export function formatLevel(level: Level): string {
@@ -122,6 +149,9 @@ export function formatLevel(level: Level): string {
         const t = l.tiles[i];
         if (layer === 0 && x === level.start.x && y === level.start.y) row += 'S';
         else if (t === Tile.Bridge) row += String(l.groups[i]);
+        else if (t === Tile.BridgeReversed) row += BRIDGES_REVERSED[l.groups[i]];
+        else if (t === Tile.WallUp) row += WALLS_UP[l.groups[i]];
+        else if (t === Tile.WallDown) row += WALLS_DOWN[l.groups[i]];
         else if (t === Tile.Conveyor) row += CONVEYOR_CHARS[DIRS[l.groups[i]]];
         else if (t === Tile.Pad) row += PAD_CHARS[DIRS[l.groups[i]]];
         else if (t === Tile.ShapeSwitch) row += Object.keys(SHAPE_SWITCHES).find((k) => SHAPE_SWITCHES[k] === l.groups[i]);

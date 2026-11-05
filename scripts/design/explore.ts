@@ -1,10 +1,10 @@
 // Whole-level exploration for the design tools: every reachable state, which of them can still
 // win, where each pad sends the block, and a map of where the block can get to. diagnose() turns
 // it into a report that says *why* a draft is unsolvable instead of just "UNSOLVABLE".
-import { blockCells, findGoal, flight, initialState, isSolid, layerView, step, tileAt } from '../../src/game/rules';
-import { Block, DIRS, Dir, Level, State, Tile } from '../../src/game/types';
+import { blockCells, bridgeOut, findGoal, flight, initialState, isSolid, layerView, step, tileAt } from '../../src/game/rules';
+import { Block, DIR_DELTA, DIRS, Dir, Level, State, Tile } from '../../src/game/types';
 
-const keyOf = (s: State) => `${s.block.x},${s.block.y},${s.block.o},${s.block.n ?? 2},${s.bridges},${s.layer ?? 0}`;
+const keyOf = (s: State) => `${s.block.x},${s.block.y},${s.block.o},${s.block.n ?? 2},${s.bridges},${s.layer ?? 0},${s.hedges ?? 0}`;
 const blockKey = (b: Block, layer = 0) => `${b.x},${b.y},${b.o},${b.n ?? 2},${layer}`;
 
 interface Node {
@@ -94,7 +94,8 @@ function tileName(level: Level, x: number, y: number, bridges: number): string {
     case Tile.Empty:
       return 'EMPTY';
     case Tile.Bridge:
-      return `bridge ${g} (${(bridges >> g) & 1 ? 'on' : 'off'} at start)`;
+    case Tile.BridgeReversed:
+      return `bridge ${g} (${bridgeOut(t, g, bridges) ? 'on' : 'off'} at start)`;
     case Tile.Pad:
       return `pad ${DIRS[g]}`;
     case Tile.Conveyor:
@@ -178,13 +179,25 @@ export function reachMap(rows: string[], full: Level, ex: Exploration): string[]
       let reach = '';
       for (let x = 0; x < level.width; x++) {
         const k = `${layer},${x},${y}`;
-        reach += tileAt(level, x, y) === Tile.Empty ? '.' : standing.has(k) ? 'S' : covered.has(k) ? 'l' : '-';
+        // Checked first, since a fallen hedge lets the block rest on a tile that's empty in the level.
+        reach += standing.has(k) ? 'S' : covered.has(k) ? 'l' : tileAt(level, x, y) === Tile.Empty ? '.' : '-';
       }
       const text = rows[layer ? full.height + 1 + y : y] ?? '';
       out.push(`${String(y).padStart(3)} ${text.padEnd(full.width)}   ${reach}`);
     }
   }
   return out;
+}
+
+/** One line per hedge: where it would land each way, and whether that bridges anything. */
+export function hedgeReport(level: Level): string[] {
+  return (level.hedgeCells ?? []).map((c, i) => {
+    const ways = DIRS.map((d) => {
+      const [x, y] = [c.x + DIR_DELTA[d].dx, c.y + DIR_DELTA[d].dy];
+      return `${d} ${tileAt(level, x, y) === Tile.Empty ? 'BRIDGES' : tileName(level, x, y, level.bridgesOn)}`;
+    });
+    return `hedge ${i} at ${c.x},${c.y}: ${ways.join(' · ')}`;
+  });
 }
 
 /** The reached state nearest the goal (standing preferred, then fewest moves). */
@@ -224,6 +237,8 @@ export function diagnose(rows: string[], level: Level, ex = explore(level)): str
   if (pads.length) out.push('pads:', ...pads.map((l) => `  ${l}`));
   const flips = flipReport(level);
   if (flips.length) out.push('flips:', ...flips.map((l) => `  ${l}`));
+  const hedges = hedgeReport(level);
+  if (hedges.length) out.push('hedges:', ...hedges.map((l) => `  ${l}`));
   out.push('reach (S stand · l lie · - never · . empty):', ...reachMap(rows, level, ex));
   return out;
 }

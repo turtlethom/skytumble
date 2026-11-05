@@ -1,6 +1,7 @@
 import { Block, DIR_DELTA, DIRS, Dir, Level, State, Tile } from './types';
 
-export type Outcome = 'ok' | 'fall' | 'win';
+/** `bump`: something in the way stopped the roll, and nothing changed: it isn't a move. */
+export type Outcome = 'ok' | 'fall' | 'win' | 'bump';
 
 /**
  * A move after the roll: an ice slide or a conveyor push (both keep the block's orientation), or
@@ -29,6 +30,12 @@ export interface StepResult {
   broke?: { x: number; y: number };
   /** The block's length before and after a shape switch changed it this move. */
   reshaped?: { from: number; to: number };
+  /** What stopped the roll: a raised wall or a hedge. The block stayed where it was. */
+  bumped?: { x: number; y: number };
+  /** The hedge at `bumped` toppled along the roll. This is a move, unlike any other bump. */
+  knocked?: boolean;
+  /** The empty tile a toppled hedge landed on, which is floor from now on. */
+  bridged?: { x: number; y: number };
 }
 
 export function initialState(level: Level): State {
@@ -101,21 +108,83 @@ export function groupAt(level: Level, x: number, y: number): number {
   return level.groups[y * level.width + x];
 }
 
-export function isSolid(level: Level, x: number, y: number, bridges: number): boolean {
+export function isBridge(tile: Tile): boolean {
+  return tile === Tile.Bridge || tile === Tile.BridgeReversed;
+}
+
+export function isWall(tile: Tile): boolean {
+  return tile === Tile.WallUp || tile === Tile.WallDown;
+}
+
+/** Whether this bridge piece is out when the groups are set like `bridges`. */
+export function bridgeOut(tile: Tile, group: number, bridges: number): boolean {
+  return (((bridges >> group) & 1) === 1) !== (tile === Tile.BridgeReversed);
+}
+
+/**
+ * Whether this wall piece is up when the groups are set like `bridges`: as it started, unless its
+ * group has been flipped since. A block on the tile doesn't change this: the roll into a tile is
+ * what checks it, so a wall that comes up under the block only stops it coming back.
+ */
+export function wallUp(tile: Tile, group: number, bridges: number, startBridges: number): boolean {
+  const flipped = ((bridges ^ startBridges) >> group) & 1;
+  return (tile === Tile.WallUp) !== (flipped === 1);
+}
+
+/** Which way this hedge fell, or null if it's still up. */
+export function hedgeFell(group: number, hedges: number): Dir | null {
+  const fell = (hedges >> (group * HEDGE_BITS)) & 7;
+  return fell ? DIRS[fell - 1] : null;
+}
+
+const HEDGE_BITS = 3;
+
+const inGrid = (level: Level, x: number, y: number) => x >= 0 && y >= 0 && x < level.width && y < level.height;
+
+/** Whether a hedge has fallen onto this empty tile, making it floor. */
+export function isBridged(level: Level, x: number, y: number, hedges: number): boolean {
+  if (!hedges || !inGrid(level, x, y) || tileAt(level, x, y) !== Tile.Empty) return false;
+  return (level.hedgeCells ?? []).some((c, i) => {
+    const fell = hedgeFell(i, hedges);
+    return !!fell && c.x + DIR_DELTA[fell].dx === x && c.y + DIR_DELTA[fell].dy === y;
+  });
+}
+
+export function isSolid(level: Level, x: number, y: number, bridges: number, hedges = 0): boolean {
   const t = tileAt(level, x, y);
-  if (t === Tile.Empty) return false;
-  if (t === Tile.Bridge) return ((bridges >> groupAt(level, x, y)) & 1) === 1;
+  if (t === Tile.Empty) return isBridged(level, x, y, hedges);
+  if (isBridge(t)) return bridgeOut(t, groupAt(level, x, y), bridges);
   return true;
+}
+
+/** Something standing there stops a hedge falling onto it: a raised wall or another hedge still up. */
+function standsUp(level: Level, x: number, y: number, state: State): boolean {
+  const t = tileAt(level, x, y);
+  if (isWall(t)) return wallUp(t, groupAt(level, x, y), state.bridges, level.bridgesOn);
+  return t === Tile.Hedge && !hedgeFell(groupAt(level, x, y), state.hedges ?? 0);
+}
+
+/**
+ * The first thing in the way of a roll that would land on `to`, nearest the block first: a raised
+ * wall or an upright hedge. Only the roll checks this; slides, pushes and flights don't.
+ */
+function obstacle(level: Level, state: State, to: Block, dir: Dir): { x: number; y: number; hedge: boolean } | null {
+  const cells = blockCells(to);
+  if (dir === 'left' || dir === 'up') cells.reverse();
+  for (const [x, y] of cells) {
+    if (standsUp(level, x, y, state)) return { x, y, hedge: tileAt(level, x, y) === Tile.Hedge };
+  }
+  return null;
 }
 
 /**
  * Every cell must be on something, except that a lying tall block rests on its two ends like a
  * plank, so its middle can hang over a gap.
  */
-function supported(level: Level, b: Block, bridges: number): boolean {
+function supported(level: Level, b: Block, bridges: number, hedges = 0): boolean {
   const cells = blockCells(b);
   const needed = blockLength(b) === 3 && b.o !== 'S' ? [cells[0], cells[2]] : cells;
-  return needed.every(([x, y]) => isSolid(level, x, y, bridges));
+  return needed.every(([x, y]) => isSolid(level, x, y, bridges, hedges));
 }
 
 /** Whole-block rule: special tiles act only when every cell of the block is on them. */
@@ -201,14 +270,41 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
   let block = rolled;
   let layer = state.layer ?? 0;
   let view = layerView(level, layer);
+
+  // Rolling into something: the block stays put, even over a gap. A standing block has the weight
+  // to topple a hedge along the roll, which costs a move, unless something standing beyond the hedge
+  // stops it falling. Anything else holds, and no move happened.
+  const hit = obstacle(view, state, rolled, dir);
+  if (hit) {
+    const { x, y } = hit;
+    const { dx, dy } = DIR_DELTA[dir];
+    const [lx, ly] = [x + dx, y + dy];
+    const knocked = hit.hedge && state.block.o === 'S' && blockLength(state.block) >= 2 && !standsUp(view, lx, ly, state);
+    const fills = knocked && inGrid(view, lx, ly) && !isSolid(view, lx, ly, state.bridges, state.hedges ?? 0) && tileAt(view, lx, ly) === Tile.Empty;
+    const fell = (DIRS.indexOf(dir) + 1) << (groupAt(view, x, y) * HEDGE_BITS);
+    return {
+      state: knocked ? { ...state, hedges: (state.hedges ?? 0) | fell } : state,
+      outcome: knocked ? 'ok' : 'bump',
+      rolled: state.block,
+      motions: [],
+      toggled: 0,
+      pressed: [],
+      bumped: { x, y },
+      ...(knocked ? { knocked } : {}),
+      ...(fills ? { bridged: { x: lx, y: ly } } : {}),
+    };
+  }
+
   const motions: Motion[] = [];
   const moveTo = (kind: Motion['kind'], d: Dir, to: Block) => {
     if (to.x === block.x && to.y === block.y) return;
     motions.push({ kind, dir: d, from: block, to });
     block = to;
   };
+  // Hedges stay absent until one falls, so a level without any compares as it always has.
+  const hedges = state.hedges ? { hedges: state.hedges } : {};
   const fell = (bridges: number, extra: Partial<StepResult> = {}): StepResult => ({
-    state: { block, bridges, layer },
+    state: { block, bridges, layer, ...hedges },
     outcome: 'fall',
     rolled,
     motions,
@@ -217,7 +313,7 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
     ...extra,
   });
 
-  const still = () => supported(view, block, state.bridges);
+  const still = () => supported(view, block, state.bridges, state.hedges ?? 0);
   if (still()) moveTo('slide', dir, slide(view, block, dir, state.bridges));
   // Then belts, pads and flip tiles act wherever the block rests, until none does. At most one
   // belt push per move, and each pad or flip tile fires at most once, so every move ends.
@@ -284,7 +380,7 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
   }
 
   // A switch can retract the bridge the block is resting on.
-  if (!supported(view, block, bridges)) return { ...fell(bridges), pressed };
+  if (!supported(view, block, bridges, state.hedges ?? 0)) return { ...fell(bridges), pressed };
 
   // The goal takes a standing block of its shape: normal unless the goal is marked (group = length).
   const goalShape = (x: number, y: number) => (groupAt(view, x, y) > 0 ? groupAt(view, x, y) : 2);
@@ -293,7 +389,7 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
     tileAt(view, block.x, block.y) === Tile.Goal &&
     blockLength(block) === goalShape(block.x, block.y);
   return {
-    state: { block, bridges, layer },
+    state: { block, bridges, layer, ...hedges },
     outcome: won ? 'win' : 'ok',
     rolled,
     motions,

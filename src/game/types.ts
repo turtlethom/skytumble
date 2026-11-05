@@ -18,6 +18,14 @@ export enum Tile {
   ShapeSwitch = 11,
   /** Toggles its bridge group only under a standing tall block. */
   ExtraHeavy = 12,
+  /** A bridge that is out while its group's bit is off, the opposite of a Bridge. */
+  BridgeReversed = 13,
+  /** A wall that starts raised; each press of its group's switch lowers or raises it. Lowered, it is floor. */
+  WallUp = 14,
+  /** The same wall, starting lowered. */
+  WallDown = 15,
+  /** Holds until a standing block rolls into it, then topples that way for good. Group = its index in `Level.hedgeCells`. */
+  Hedge = 16,
 }
 
 /** Standing upright, lying along the x axis, or lying along the y axis. */
@@ -41,13 +49,15 @@ export interface Level {
   /** Row-major, index = y * width + x. */
   tiles: Tile[];
   /**
-   * Bridge group for Bridge tiles, switch target group for switch tiles,
+   * Group for Bridge and wall tiles, switch target group for switch tiles, index for Hedge tiles,
    * arrow direction (index into DIRS) for Conveyor and Pad tiles, -1 otherwise.
    */
   groups: number[];
   start: { x: number; y: number };
   /** Bitmask of bridge groups that start switched on. */
   bridgesOn: number;
+  /** Where each hedge stands, by its index; absent if there are none. */
+  hedgeCells?: { x: number; y: number }[];
   /** The block's shape at the start (its length: 1 cube, 3 tall); absent means normal. */
   startShape?: 1 | 3;
   /**
@@ -62,6 +72,8 @@ export interface State {
   bridges: number;
   /** 0 on the ground, 1 on the ceiling (gravity flipped). Absent means 0. */
   layer?: number;
+  /** Which way each hedge fell: three bits per hedge, 0 still up, otherwise its index in DIRS + 1. Absent means none fell. */
+  hedges?: number;
 }
 
 export type Dir = 'up' | 'down' | 'left' | 'right';

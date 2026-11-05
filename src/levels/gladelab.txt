@@ -1,0 +1,48 @@
+title: Glade Lab (prototypes)
+
+=== gladelab-01
+par: 8
+name: Bump
+idea: A raised wall stops any roll that would land on it, with no move counted and no fall, even with a free tile or a gap before it. Rolling right from the start bumps the wall two tiles away. Go around the top.
+#######.I
+#######..
+##.####..
+S#I.I#G..
+
+=== gladelab-02
+par: 14
+name: One Press, Every Piece
+idea: The switch below the start flips every piece of its color. East is open and west is shut, and a press trades them: a wall goes down as another comes up, and a bridge goes out as another comes in. Fetch the far switch first, while east is open, then press the near one.
+switches: 1 0
+G10#H#S#h#a#x
+......#......
+......o......
+
+=== gladelab-03
+par: 7
+name: Wait For Me
+idea: A press raises the near wall and lowers the far one. From the start, the press comes first and the near wall shuts you out. Press while lying half on that wall instead: it waits under you, and comes up behind you as you leave.
+##.......
+##.......
+S#oh##HG.
+
+=== gladelab-04
+par: 11
+name: Timber
+idea: A standing block rolling into a hedge topples it the way it rolled, for one move, even from two tiles away. It lands on the next tile, and if that's a gap, the gap is floor from now on. A lying block just bumps it. The second hedge needs you upright, which takes a detour.
+...##......
+...##......
+S#&.##&.##G
+...........
+
+=== gladelab-05
+par: 19
+name: Which Way
+idea: Each hedge falls once, and the side you knock it from decides where it lands. Rolling down from the start drops the first hedge on solid ground, and the way east is gone. Walk around to its west side instead. The second hedge has to fall south, and the tile the first hedge stood on is what lines you up for it.
+............
+.###S.......
+.####.......
+.###&.###...
+....#..&....
+............
+....G###....

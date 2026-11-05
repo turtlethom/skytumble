@@ -325,6 +325,15 @@ class Game {
     const scene = this.scene;
     const from = this.state;
     const result = step(level, from, dir);
+    if (result.outcome === 'bump') {
+      // Not a move: nothing to count or undo.
+      this.status = 'busy';
+      await this.animateStep(from, result, dir, scene);
+      if (scene !== this.scene) return;
+      this.status = 'playing';
+      this.drainQueue();
+      return;
+    }
     this.history.push(from);
     this.moves++;
     this.status = 'busy';
@@ -364,6 +373,7 @@ class Game {
 
   /** Show one move: the roll, whatever carries the block after it, and the switches it presses. */
   private async animateStep(from: State, result: ReturnType<typeof step>, dir: Dir, scene: number): Promise<void> {
+    if (result.bumped) return this.world.bump(from.block, result.bumped, dir, !!result.knocked, result.bridged);
     await this.world.roll(from.block, result.rolled, dir);
     for (const [i, motion] of result.motions.entries()) {
       // A short beat between chained motions so slide → push → slide reads as three events.
@@ -377,7 +387,7 @@ class Game {
       const before = result.motions.length ? result.motions[result.motions.length - 1].to : result.rolled;
       await this.world.reshape(before, result.state.block);
     }
-    if (result.toggled) await this.world.setBridges(result.state.bridges);
+    await Promise.all([result.toggled ? this.world.setBridges(result.state.bridges) : null, this.world.setWalls(result.state)]);
   }
 
   /**

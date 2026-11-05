@@ -1,9 +1,12 @@
 // A flat SVG drawing of a level's grid: the level index cards and the campaign map's preview.
+import { bridgeOut, isBridge, isWall, wallUp } from '../game/rules';
 import { DIRS, Level, Tile } from '../game/types';
 import { CONVEYOR_COLORS, cssColor } from './palette';
 
 const CELL = 14;
 const GROUP_COLORS = ['#f4a940', '#b57edc', '#4fc3f7', '#ef6f6c'];
+const HEDGE = '#2f6b2c';
+const HEDGE_LEAF = '#46883a';
 const FILL: Partial<Record<Tile, string>> = {
   [Tile.Floor]: '#86d07a',
   [Tile.Fragile]: '#e2b26f',
@@ -31,8 +34,23 @@ export function miniMap(level: Level): string {
       const px = x * CELL;
       const py = y * CELL;
       if (t === Tile.Empty) continue;
-      if (t === Tile.Bridge) {
-        const on = ((level.bridgesOn >> g) & 1) === 1;
+      if (isWall(t)) {
+        const up = wallUp(t, g, level.bridgesOn, level.bridgesOn);
+        parts.push(`<rect x="${px + 0.5}" y="${py + 0.5}" width="${CELL - 1}" height="${CELL - 1}" rx="2" fill="${FILL[Tile.Floor]}"/>`);
+        parts.push(
+          `<rect x="${px + 2}" y="${py + 2}" width="${CELL - 4}" height="${CELL - 4}"` +
+            (up ? ` fill="${GROUP_COLORS[g % 4]}" stroke="#1d1a2b" stroke-width="1"/>` : ` fill="none" stroke="${GROUP_COLORS[g % 4]}" stroke-width="1.5"/>`),
+        );
+        continue;
+      }
+      if (t === Tile.Hedge) {
+        parts.push(`<rect x="${px + 0.5}" y="${py + 0.5}" width="${CELL - 1}" height="${CELL - 1}" rx="2" fill="${FILL[Tile.Floor]}"/>`);
+        parts.push(`<rect x="${px + 2}" y="${py + 2}" width="${CELL - 4}" height="${CELL - 4}" rx="4" fill="${HEDGE}"/>`);
+        parts.push(`<circle cx="${px + 5}" cy="${py + 6}" r="1.5" fill="${HEDGE_LEAF}"/><circle cx="${px + 9}" cy="${py + 8}" r="1.5" fill="${HEDGE_LEAF}"/>`);
+        continue;
+      }
+      if (isBridge(t)) {
+        const on = bridgeOut(t, g, level.bridgesOn);
         parts.push(
           `<rect x="${px + 1}" y="${py + 1}" width="${CELL - 2}" height="${CELL - 2}" rx="2" fill="${GROUP_COLORS[g % 4]}"` +
             (on ? '/>' : ` fill-opacity="0.3" stroke="${GROUP_COLORS[g % 4]}" stroke-dasharray="2 2"/>`),

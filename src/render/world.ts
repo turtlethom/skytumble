@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Motion, blockCells, blockLength, flightLandings, layerView } from '../game/rules';
+import { Motion, blockCells, blockLength, bridgeOut, flightLandings, hedgeFell, isBridge, isWall, layerView, tileAt as levelTileAt, wallUp } from '../game/rules';
 import { Block, DIR_DELTA, DIRS, Dir, Level, State, Tile } from '../game/types';
 import { ForestScenery } from './forest';
 import { FrostScenery } from './frost';
@@ -89,6 +89,34 @@ const BRIDGE_PULSE_MS = 1400;
 const GROUP_COLORS = [0xf4a940, 0xb57edc, 0x4fc3f7, 0xef6f6c];
 
 const ROLL_MS = 170;
+/** A wall rising or sinking: as quick as a roll, so it never holds up the next one for long. */
+const WALL_MS = 170;
+/** A raised wall's height: the normal block standing. */
+const WALL_HEIGHT = 1.92;
+const WALL_WIDTH = 0.84;
+const WALL_NOTCH = 0.26;
+const WALL_MERLON = 0.27;
+/** How far a sunk wall's top stands above the ground: barely, so it reads as flush. */
+const WALL_FLUSH = 0.02;
+const WALL_DECK_TINT = 0xa39b8e;
+/** A bump: the whole tip and settle, and the part of it where the block arrives. */
+const BUMP_MS = 260;
+const BUMP_TOUCH = 0.3;
+/** How far the top of the block travels before it touches a wall, and how far it pushes into a hedge. */
+const BUMP_ROOM = 0.09;
+const BUMP_INTO_LEAVES = 0.3;
+/** The sine of the steepest tip, for something two tiles away. */
+const BUMP_MAX_SIN = 0.6;
+const BUMP_SHAKE = 0.04;
+const BUMP_SHAKE_MS = 170;
+const HEDGE_HEIGHT = 1.12;
+const HEDGE_HALF = 0.42;
+const HEDGE_FALL_MS = 300;
+const HEDGE_CRUMPLE_ANGLE = 1.35;
+/** Falling into a gap: the whole fall, the part spent tipping over, and how far it then drops to sit level with the floor. */
+const HEDGE_BRIDGE_MS = 420;
+const HEDGE_TIP_SHARE = 0.7;
+const HEDGE_DROP = 0.9;
 const PUSH_MS = 230;
 /** How far (radians) the block's top lags behind during a belt push. */
 const PUSH_LEAN = 0.32;
@@ -132,8 +160,28 @@ interface TileView {
 }
 
 interface BridgeView {
+  tile: Tile;
   group: number;
   slab: THREE.Object3D;
+}
+
+interface WallView {
+  layer: number;
+  x: number;
+  y: number;
+  tile: Tile;
+  group: number;
+  pillar: THREE.Object3D;
+  /** Whether the wall is showing raised, which waits for the block to move off its tile. */
+  up: boolean;
+}
+
+interface HedgeView {
+  x: number;
+  y: number;
+  layer: number;
+  group: number;
+  bush: THREE.Object3D;
 }
 
 /** The worlds with surroundings of their own, built the first time one opens. */
@@ -214,6 +262,11 @@ export class World {
   private tiles = new Map<number, TileView>();
   private switches = new Map<number, THREE.Object3D>();
   private bridges: BridgeView[] = [];
+  private walls: WallView[] = [];
+  /** Hedges by cell, in the same key as switches. */
+  private hedges = new Map<number, HedgeView>();
+  /** The hedge lying across each gap one has been knocked into, built when first needed. */
+  private fallen = new Map<number, THREE.Object3D>();
   private goalMarker: THREE.Object3D | null = null;
   /** Conveyor chevrons, each with a phase offset so they stream along the belt; cell keys as for switches. */
   private chevrons: {
@@ -375,6 +428,9 @@ export class World {
     this.applyTheme(theme);
     this.switches.clear();
     this.bridges = [];
+    this.walls = [];
+    this.hedges.clear();
+    this.fallen.clear();
     this.goalMarker = null;
     this.chevrons = [];
     this.padArrows.clear();
@@ -453,7 +509,7 @@ export class World {
     }
     const cells = (tile: Tile) =>
       level.tiles.flatMap((t, i) => (t === tile ? [{ x: i % level.width, z: Math.floor(i / level.width) }] : []));
-    const solid = level.tiles.flatMap((t, i) => (t !== Tile.Empty && t !== Tile.Bridge ? [{ x: i % level.width, z: Math.floor(i / level.width) }] : []));
+    const solid = level.tiles.flatMap((t, i) => (t !== Tile.Empty && !isBridge(t) ? [{ x: i % level.width, z: Math.floor(i / level.width) }] : []));
     this.scenery?.place(this.center, this.viewSize, { ice: cells(Tile.Ice), pads: cells(Tile.Pad), solid });
     this.stars.position.copy(this.center);
     this.moonlight.target.position.copy(this.center);
@@ -501,7 +557,21 @@ export class World {
     // Deterministic per-cell variation so islands look natural.
     const jitter = Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1;
 
-    if (tile === Tile.Bridge) {
+    if (isWall(tile)) {
+      const view = makeWall(GROUP_COLORS[group % GROUP_COLORS.length]);
+      g.add(floorTile(jitter, this.theme, layer), earth(jitter, this.theme), view.frame, view.pillar);
+      this.walls.push({ layer, x, y, tile, group, pillar: view.pillar, up: true });
+      return g;
+    }
+
+    if (tile === Tile.Hedge) {
+      const { bush, flat } = makeHedge(jitter);
+      g.add(floorTile(jitter, this.theme, layer), earth(jitter, this.theme), flat, bush);
+      this.hedges.set(cell, { x, y, layer, group, bush });
+      return g;
+    }
+
+    if (isBridge(tile)) {
       const color = GROUP_COLORS[group % GROUP_COLORS.length];
       const ghost = box(0.94, 0.04, 0.94, color, { transparent: true, opacity: this.theme.finish.bridgeGhost ?? 0.4 });
       ghost.position.y = -0.1;
@@ -545,7 +615,7 @@ export class World {
         }
       }
       g.add(ghost, slab);
-      this.bridges.push({ group, slab });
+      this.bridges.push({ tile, group, slab });
       return g;
     }
 
@@ -951,10 +1021,151 @@ export class World {
       view.obj.rotation.set(0, 0, 0);
     }
     for (const b of this.bridges) {
-      const on = ((state.bridges >> b.group) & 1) === 1;
+      const on = bridgeOut(b.tile, b.group, state.bridges);
       b.slab.visible = on;
       b.slab.scale.set(1, 1, 1);
     }
+    for (const w of this.walls) {
+      w.up = this.wallShows(w, state);
+      w.pillar.visible = w.up;
+      w.pillar.scale.y = 1;
+      w.pillar.position.set(0, 0, 0);
+    }
+    for (const h of this.hedges.values()) {
+      h.bush.visible = !hedgeFell(h.group, state.hedges ?? 0);
+      h.bush.position.set(0, 0, 0);
+      h.bush.quaternion.identity();
+      h.bush.scale.set(1, 1, 1);
+    }
+    for (const key of this.fallen.keys()) this.showFallen(key, false);
+    for (const h of this.hedges.values()) {
+      const fell = hedgeFell(h.group, state.hedges ?? 0);
+      if (!fell || !this.level) continue;
+      const [x, y] = [h.x + DIR_DELTA[fell].dx, h.y + DIR_DELTA[fell].dy];
+      if (levelTileAt(layerView(this.level, h.layer), x, y) === Tile.Empty) this.layFallen(h.layer, x, y);
+    }
+  }
+
+  /** A fallen hedge across this empty tile. It joins the tile map, since it's as good as floor now. */
+  private layFallen(layer: number, x: number, y: number): void {
+    if (!this.level) return;
+    const key = this.cellKey(layer, x, y, this.level.width, this.level.height);
+    if (!this.fallen.has(key)) {
+      const obj = makeFallenHedge(Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1);
+      obj.position.set(x, 0, y);
+      this.layerGroups[layer].add(obj);
+      this.fallen.set(key, obj);
+    }
+    this.showFallen(key, true);
+  }
+
+  private showFallen(key: number, on: boolean): void {
+    const obj = this.fallen.get(key);
+    if (!obj) return;
+    obj.visible = on;
+    if (on) this.tiles.set(key, { obj, baseY: 0 });
+    else this.tiles.delete(key);
+  }
+
+  /** A wall due up stays down while the block is on its tile, and comes up when the block moves off. */
+  private wallShows(w: WallView, state: State): boolean {
+    if (!this.level || !wallUp(w.tile, w.group, state.bridges, this.level.bridgesOn)) return false;
+    const on = (state.layer ?? 0) === w.layer && blockCells(state.block).some(([x, y]) => x === w.x && y === w.y);
+    return !on;
+  }
+
+  /** Raise and lower walls to match this state. Call it after every move: one may have been waiting for the block to leave. */
+  setWalls(state: State): Promise<void> {
+    const changes = this.walls.filter((w) => w.up !== this.wallShows(w, state));
+    if (changes.length === 0) return Promise.resolve();
+    for (const w of changes) {
+      w.up = !w.up;
+      w.pillar.visible = true;
+    }
+    return this.tween(WALL_MS, (t) => {
+      for (const w of changes) {
+        w.pillar.scale.y = Math.max(w.up ? easeOutBack(t) : 1 - easeOut(t), 0.001);
+        if (t === 1) {
+          w.pillar.visible = w.up;
+          w.pillar.scale.y = 1;
+        }
+      }
+    });
+  }
+
+  /**
+   * Rolling into a wall or a hedge: the block tips until it touches, then settles back where it was.
+   * A knocked hedge goes over as the block reaches it.
+   */
+  async bump(from: Block, hit: { x: number; y: number }, dir: Dir, knocked: boolean, bridged?: { x: number; y: number }): Promise<void> {
+    const { pivot, axis, angle } = this.tipPivot(from, dir);
+    const { dx, dy } = DIR_DELTA[dir];
+    const cells = blockCells(from);
+    const lead = Math.max(...cells.map(([x, y]) => x * dx + y * dy));
+    const tiles = hit.x * dx + hit.y * dy - lead - 1;
+    const height = from.o === 'S' ? blockLength(from) : 1;
+    const room = tiles + (knocked ? BUMP_INTO_LEAVES : BUMP_ROOM);
+    const lean = Math.sign(angle) * Math.asin(Math.min(room / height, BUMP_MAX_SIN));
+
+    const frame = this.frames[this.layer];
+    const key = this.layer * 1e8 + hit.y * 10000 + hit.x;
+    const hedge = this.hedges.get(key);
+    const wall = this.walls.find((w) => w.layer === this.layer && w.x === hit.x && w.y === hit.y);
+    let fell: Promise<void> = Promise.resolve();
+    let touched = false;
+    frame.add(pivot);
+    pivot.attach(this.block);
+    await this.tween(BUMP_MS, (t) => {
+      // Quick to reach it, slower to settle back.
+      pivot.rotation[axis] = lean * Math.sin(Math.PI * t ** 0.6);
+      if (touched || t < BUMP_TOUCH) return;
+      touched = true;
+      if (knocked && hedge) fell = this.fellHedge(hedge, dx, dy, bridged);
+      else if (hedge) void this.shake(hedge.bush, dx, dy);
+      else if (wall) void this.shake(wall.pillar, dx, dy);
+    });
+    frame.attach(this.block);
+    frame.remove(pivot);
+    this.placeBlock(from);
+    await fell;
+  }
+
+  /**
+   * The hedge goes over on its far edge and leaves the mat that was under it. Over a gap it falls all
+   * the way and drops into the gap, level with the floor. Onto anything else it crumples where it falls.
+   */
+  private fellHedge(h: HedgeView, dx: number, dy: number, bridged?: { x: number; y: number }): Promise<void> {
+    const axis = new THREE.Vector3(dy, 0, -dx);
+    const edge = new THREE.Vector3(dx * HEDGE_HALF, 0, dy * HEDGE_HALF);
+    const lean = (a: number) => {
+      h.bush.quaternion.setFromAxisAngle(axis, a);
+      h.bush.position.copy(edge).add(edge.clone().negate().applyAxisAngle(axis, a));
+    };
+    if (!bridged) {
+      return this.tween(HEDGE_FALL_MS, (t) => {
+        const e = easeIn(t);
+        lean(HEDGE_CRUMPLE_ANGLE * e);
+        h.bush.scale.y = 1 - 0.85 * e;
+        if (t === 1) h.bush.visible = false;
+      });
+    }
+    return this.tween(HEDGE_BRIDGE_MS, (t) => {
+      lean((Math.PI / 2) * easeIn(Math.min(t / HEDGE_TIP_SHARE, 1)));
+      const drop = Math.max((t - HEDGE_TIP_SHARE) / (1 - HEDGE_TIP_SHARE), 0);
+      h.bush.position.y -= HEDGE_DROP * easeOut(drop);
+      if (t === 1) {
+        h.bush.visible = false;
+        this.layFallen(h.layer, bridged.x, bridged.y);
+      }
+    });
+  }
+
+  /** A small shove away from the block, so what stopped it visibly took the hit. */
+  private shake(obj: THREE.Object3D, dx: number, dy: number): Promise<void> {
+    return this.tween(BUMP_SHAKE_MS, (t) => {
+      const s = BUMP_SHAKE * Math.sin(t * Math.PI);
+      obj.position.set(dx * s, 0, dy * s);
+    });
   }
 
   private placeBlock(b: Block): void {
@@ -968,6 +1179,20 @@ export class World {
 
   /** Tip the block over its leading bottom edge. */
   async roll(from: Block, to: Block, dir: Dir): Promise<void> {
+    const { pivot, axis, angle } = this.tipPivot(from, dir);
+
+    // Pivot inside the block's layer frame, so a roll on the ceiling plays mirrored.
+    const frame = this.frames[this.layer];
+    frame.add(pivot);
+    pivot.attach(this.block);
+    await this.tween(ROLL_MS, (t) => (pivot.rotation[axis] = angle * easeInOut(t)));
+    frame.attach(this.block);
+    frame.remove(pivot);
+    this.placeBlock(to);
+  }
+
+  /** The block's leading bottom edge for a tip in this direction, and the quarter turn that would lay it over. */
+  private tipPivot(from: Block, dir: Dir): { pivot: THREE.Object3D; axis: 'x' | 'z'; angle: number } {
     const cells = blockCells(from);
     const xs = cells.map(([x]) => x);
     const ys = cells.map(([, y]) => y);
@@ -985,15 +1210,7 @@ export class World {
     else if (dir === 'left') [pivot.position.x, pivot.position.z, axis, angle] = [minX, cz, 'z', Math.PI / 2];
     else if (dir === 'down') [pivot.position.x, pivot.position.z, axis, angle] = [cx, maxZ, 'x', Math.PI / 2];
     else [pivot.position.x, pivot.position.z, axis, angle] = [cx, minZ, 'x', -Math.PI / 2];
-
-    // Pivot inside the block's layer frame, so a roll on the ceiling plays mirrored.
-    const frame = this.frames[this.layer];
-    frame.add(pivot);
-    pivot.attach(this.block);
-    await this.tween(ROLL_MS, (t) => (pivot.rotation[axis] = angle * easeInOut(t)));
-    frame.attach(this.block);
-    frame.remove(pivot);
-    this.placeBlock(to);
+    return { pivot, axis, angle };
   }
 
   /** Carry the block without turning it: a glide that eases to a stop on ice, a steady shove on a belt. */
@@ -1221,12 +1438,12 @@ export class World {
 
   setBridges(mask: number): Promise<void> {
     this.buildBlueprints(mask, mask ^ this.bridgeMask);
-    const changes = this.bridges.filter((b) => b.slab.visible !== (((mask >> b.group) & 1) === 1));
+    const changes = this.bridges.filter((b) => b.slab.visible !== bridgeOut(b.tile, b.group, mask));
     if (changes.length === 0) return Promise.resolve();
     for (const b of changes) b.slab.visible = true;
     return this.tween(260, (t) => {
       for (const b of changes) {
-        const on = ((mask >> b.group) & 1) === 1;
+        const on = bridgeOut(b.tile, b.group, mask);
         const s = on ? easeOut(t) : 1 - easeOut(t);
         b.slab.scale.set(Math.max(s, 0.001), 1, Math.max(s, 0.001));
         if (t === 1) b.slab.visible = on;
@@ -1329,12 +1546,16 @@ export class World {
     const dt = Math.min((now - this.last) / 1000, 0.05);
     this.last = now;
 
-    this.tweens = this.tweens.filter((tw) => {
+    // An update can start another tween, which lands in the fresh list and runs from the next frame.
+    const running = this.tweens;
+    this.tweens = [];
+    const unfinished = running.filter((tw) => {
       const t = Math.min((now - tw.start) / tw.duration, 1);
       tw.update(t);
       if (t >= 1) tw.resolve();
       return t < 1;
     });
+    this.tweens.unshift(...unfinished);
 
     for (const c of this.clouds) {
       c.position.x += c.userData.speed * dt;
@@ -1521,7 +1742,7 @@ export class World {
       const there = layerView(level, 1 - layer);
       const solid = (view: Level, i: number) =>
         view.tiles[i] !== Tile.Empty &&
-        (view.tiles[i] !== Tile.Bridge || ((bridges >> view.groups[i]) & 1) === 1);
+        (!isBridge(view.tiles[i]) || bridgeOut(view.tiles[i], view.groups[i], bridges));
       const pad = SHADOW_BLUR * 2;
       const canvas = document.createElement('canvas');
       canvas.width = w * SHADOW_PX + pad * 2;
@@ -1562,10 +1783,10 @@ export class World {
       // when retracted, and a pulse when a press just changed them, so a switch that reaches the
       // other floor shows what it did without a peek.
       for (let i = 0; i < w * h; i++) {
-        if (there.tiles[i] !== Tile.Bridge) continue;
+        if (!isBridge(there.tiles[i])) continue;
         const group = there.groups[i];
         const color = GROUP_COLORS[group % GROUP_COLORS.length];
-        const on = ((bridges >> group) & 1) === 1;
+        const on = bridgeOut(there.tiles[i], group, bridges);
         const [x, y] = [i % w, Math.floor(i / w)];
         const sq = new THREE.MeshBasicMaterial({ color, transparent: true, depthWrite: false });
         sq.userData.opacity = on ? BRIDGE_ON_OPACITY : BRIDGE_OFF_OPACITY;
@@ -1778,6 +1999,175 @@ function blockPosition(b: Block): THREE.Vector3 {
 }
 
 /** A darker shade of a color: the rim that keeps a mechanic readable on any floor. */
+/**
+ * A raised stone wall, with a thin line of its switch's color set in the ground around it. When it
+ * sinks, its top stays flush with the ground inside that line.
+ */
+function makeWall(color: number): { frame: THREE.Object3D; pillar: THREE.Object3D } {
+  const frame = new THREE.Group();
+  const [outer, bar] = [WALL_WIDTH + 0.08, 0.05];
+  for (const [dx, dz, w, d] of [[0, -outer / 2 + bar / 2, outer, bar], [0, outer / 2 - bar / 2, outer, bar], [-outer / 2 + bar / 2, 0, bar, outer - 2 * bar], [outer / 2 - bar / 2, 0, bar, outer - 2 * bar]]) {
+    const edge = box(w, WALL_FLUSH + 0.006, d, color, { roughness: 0.6 });
+    edge.position.set(dx, (WALL_FLUSH + 0.006) / 2, dz);
+    edge.castShadow = false;
+    frame.add(edge);
+  }
+  // The same top twice: in the floor, flush with the ground, and on the pillar that rises over it.
+  frame.add(wallTop(WALL_FLUSH, 0));
+  const pillar = new THREE.Group();
+  const shoulder = WALL_HEIGHT - WALL_NOTCH;
+  const body = brickBox(WALL_WIDTH, shoulder, WALL_WIDTH);
+  body.position.y = shoulder / 2;
+  pillar.add(body, wallTop(WALL_NOTCH, shoulder));
+  return { frame, pillar };
+}
+
+/** The top of a wall: a darker deck between four notched corners `height` tall, starting at `y`. */
+function wallTop(height: number, y: number): THREE.Object3D {
+  const top = new THREE.Group();
+  const deck = brickBox(WALL_WIDTH, WALL_FLUSH / 2, WALL_WIDTH, WALL_DECK_TINT);
+  deck.position.y = y + WALL_FLUSH / 4;
+  top.add(deck);
+  const offset = WALL_WIDTH / 2 - WALL_MERLON / 2;
+  for (const [dx, dz] of [[-offset, -offset], [offset, -offset], [-offset, offset], [offset, offset]]) {
+    const merlon = brickBox(WALL_MERLON, height, WALL_MERLON);
+    merlon.position.set(dx, y + height / 2, dz);
+    top.add(merlon);
+  }
+  return top;
+}
+
+/** One texture's worth of brick, in tiles: two bricks long and four courses high. */
+const BRICK_TILE = 0.8;
+const BRICK_SHADES = ['#8f8574', '#857b6b', '#7a7263', '#97897a', '#8a7a68', '#807a6e'];
+const BRICK_MORTAR = '#5d5548';
+let brickTexture: THREE.CanvasTexture | null = null;
+
+/** Dirt-grey stone bricks in a running bond, repeating seamlessly, made once and shared by every wall. */
+function brickMap(): THREE.CanvasTexture {
+  if (brickTexture) return brickTexture;
+  const size = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  ctx.fillStyle = BRICK_MORTAR;
+  ctx.fillRect(0, 0, size, size);
+  const [courses, perRow, mortar] = [4, 2, 5];
+  const [h, w] = [size / courses, size / perRow];
+  let n = 0;
+  const shade = () => BRICK_SHADES[Math.floor(Math.abs(Math.sin(++n * 12.9898) * 43758.5453) % 1 * BRICK_SHADES.length)];
+  for (let row = 0; row < courses; row++) {
+    const shift = row % 2 ? w / 2 : 0;
+    for (let col = 0; col < perRow; col++) {
+      ctx.fillStyle = shade();
+      // A brick running off the right edge continues on the left, so the texture tiles.
+      for (const wrap of [0, -size]) ctx.fillRect(col * w + shift + wrap + mortar / 2, row * h + mortar / 2, w - mortar, h - mortar);
+    }
+  }
+  brickTexture = new THREE.CanvasTexture(canvas);
+  brickTexture.colorSpace = THREE.SRGBColorSpace;
+  brickTexture.wrapS = brickTexture.wrapT = THREE.RepeatWrapping;
+  brickTexture.anisotropy = 4;
+  return brickTexture;
+}
+
+/** A box of bricks that all come out the same size, whatever the box's proportions. */
+function brickBox(w: number, h: number, d: number, tint = 0xffffff): THREE.Mesh {
+  const geometry = new THREE.BoxGeometry(w, h, d);
+  const uv = geometry.attributes.uv;
+  // Four corners per face, in the order +x, -x, +y, -y, +z, -z.
+  const faces = [[d, h], [d, h], [w, d], [w, d], [w, h], [w, h]];
+  faces.forEach(([across, up], face) => {
+    for (let i = face * 4; i < face * 4 + 4; i++) uv.setXY(i, (uv.getX(i) * across) / BRICK_TILE, (uv.getY(i) * up) / BRICK_TILE);
+  });
+  const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ map: brickMap(), color: tint, roughness: 0.95 }));
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+const LEAF_DARK = 0x234f24;
+const LEAF_MID = 0x2f6b2c;
+const LEAF_LIGHT = 0x46883a;
+/** Flat-shaded clumps, shared by every hedge: only the materials are per hedge, since a floor fades on its own. */
+const leafClump = new THREE.IcosahedronGeometry(1, 0);
+
+/** A clipped hedge of leaf clumps with no switch color, and the mat of leaves it leaves when it falls. */
+function makeHedge(jitter: number): { bush: THREE.Object3D; flat: THREE.Object3D } {
+  const clump = (color: number) => new THREE.MeshStandardMaterial({ color, roughness: 1, flatShading: true });
+  const [dark, mid, light] = [clump(LEAF_DARK), clump(LEAF_MID), clump(LEAF_LIGHT)];
+  const random = (i: number) => Math.abs(Math.sin((jitter + 1) * 91.7 + i * 37.3) * 2371.13) % 1;
+  const bush = new THREE.Group();
+  const body = box(0.8, HEDGE_HEIGHT - 0.1, 0.8, LEAF_DARK, { roughness: 1 });
+  body.position.y = (HEDGE_HEIGHT - 0.1) / 2;
+  bush.add(body);
+  let n = 0;
+  // Clumps stand proud of each side and the top, darker low down and lighter up where the sun is.
+  for (let row = 0; row < 3; row++) {
+    const y = 0.22 + row * 0.33;
+    for (let a = 0; a < 8; a++) {
+      const angle = (a / 8) * Math.PI * 2 + random(n++) * 0.5;
+      const r = 0.47 / Math.max(Math.abs(Math.cos(angle)), Math.abs(Math.sin(angle)));
+      const leaf = new THREE.Mesh(leafClump, row === 0 ? dark : row === 1 ? mid : light);
+      leaf.position.set(Math.cos(angle) * r * 0.86, y + random(n++) * 0.08, Math.sin(angle) * r * 0.86);
+      leaf.scale.setScalar(0.13 + random(n++) * 0.05);
+      leaf.rotation.set(random(n++) * 3, random(n++) * 3, 0);
+      leaf.castShadow = true;
+      bush.add(leaf);
+    }
+  }
+  for (let i = 0; i < 9; i++) {
+    const leaf = new THREE.Mesh(leafClump, i % 3 ? light : mid);
+    const [gx, gz] = [(i % 3) - 1, Math.floor(i / 3) - 1];
+    leaf.position.set(gx * 0.27 + (random(n++) - 0.5) * 0.08, HEDGE_HEIGHT - 0.06 + random(n++) * 0.05, gz * 0.27 + (random(n++) - 0.5) * 0.08);
+    leaf.scale.setScalar(0.17 + random(n++) * 0.05);
+    leaf.rotation.set(random(n++) * 3, random(n++) * 3, 0);
+    leaf.castShadow = true;
+    bush.add(leaf);
+  }
+
+  const flat = new THREE.Group();
+  const mat = box(0.9, 0.03, 0.9, LEAF_MID, { roughness: 1 });
+  mat.position.y = 0.015;
+  mat.castShadow = false;
+  flat.add(mat);
+  for (let i = 0; i < 14; i++) {
+    const leaf = new THREE.Mesh(leafClump, i % 3 ? mid : dark);
+    leaf.position.set((random(n++) - 0.5) * 0.72, 0.035, (random(n++) - 0.5) * 0.72);
+    leaf.scale.set(0.09 + random(n++) * 0.05, 0.022, 0.09 + random(n++) * 0.05);
+    leaf.rotation.y = random(n++) * 3;
+    flat.add(leaf);
+  }
+  return { bush, flat };
+}
+
+/** A fallen hedge wedged in a gap: a thick slab of leaves, level with the floor, with twigs hanging under it. */
+function makeFallenHedge(jitter: number): THREE.Object3D {
+  const random = (i: number) => Math.abs(Math.sin((jitter + 1) * 53.1 + i * 41.7) * 1931.3) % 1;
+  const clump = (color: number) => new THREE.MeshStandardMaterial({ color, roughness: 1, flatShading: true });
+  const [dark, mid, light] = [clump(LEAF_DARK), clump(LEAF_MID), clump(LEAF_LIGHT)];
+  const g = new THREE.Group();
+  const slab = box(0.98, 0.24, 0.98, LEAF_MID, { roughness: 1 });
+  slab.position.y = -0.12;
+  g.add(slab);
+  let n = 0;
+  for (let i = 0; i < 18; i++) {
+    const leaf = new THREE.Mesh(leafClump, i % 3 === 0 ? light : i % 3 === 1 ? mid : dark);
+    leaf.position.set((random(n++) - 0.5) * 0.84, 0.005, (random(n++) - 0.5) * 0.84);
+    leaf.scale.set(0.09 + random(n++) * 0.06, 0.018, 0.09 + random(n++) * 0.06);
+    leaf.rotation.y = random(n++) * 3;
+    g.add(leaf);
+  }
+  for (let i = 0; i < 16; i++) {
+    const leaf = new THREE.Mesh(leafClump, i % 2 ? dark : mid);
+    leaf.position.set((random(n++) - 0.5) * 0.9, -0.25 - random(n++) * 0.08, (random(n++) - 0.5) * 0.9);
+    leaf.scale.setScalar(0.1 + random(n++) * 0.07);
+    leaf.rotation.set(random(n++) * 3, random(n++) * 3, 0);
+    g.add(leaf);
+  }
+  return g;
+}
+
 function rimColor(color: number, shade = 0.55): number {
   return new THREE.Color(color).multiplyScalar(shade).getHex();
 }
