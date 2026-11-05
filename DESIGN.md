@@ -682,7 +682,7 @@ heaviest world, and it runs at 59 to 61 fps on the user's laptop with no stutter
 
 That finishes the older worlds' pass. Next: see *Start menu, tutorial section and a new First Glade* below.
 
-**Pick up here** (2026-11-05). Stage 1 (main menu, Esc menu, Labs, Settings with reset), stage 2 (the Tutorial) and stage 3 (How To Play) are approved and committed. First Glade's wall and hedge rules and the four-level Glade Lab are built and waiting for the user's playtest: see *The Glade Lab as built* below. The Glade Lab is approved and committed, and the wall and hedge rules are frozen. Tutorial lesson 6 (walls) and How To Play's two new entries are committed. `glade-01`…`05` are approved and committed: see *First Glade's first five levels* below. `glade-06`…`10` are built and waiting for the user's playtest: see *First Glade's second five levels* below. `glade-06`…`10` and the sky map fix are approved and committed. **Next: `glade-11`…`15`, up to 15×11. Still open: the first-timer test and the push, which the user hasn't scheduled.** Nothing is pushed, on purpose: see *Release* below.
+**Pick up here** (2026-11-05). Stage 1 (main menu, Esc menu, Labs, Settings with reset), stage 2 (the Tutorial) and stage 3 (How To Play) are approved and committed. First Glade's wall and hedge rules and the four-level Glade Lab are built and waiting for the user's playtest: see *The Glade Lab as built* below. The Glade Lab is approved and committed, and the wall and hedge rules are frozen. Tutorial lesson 6 (walls) and How To Play's two new entries are committed. `glade-01`…`05` are approved and committed: see *First Glade's first five levels* below. `glade-06`…`10` are built and waiting for the user's playtest: see *First Glade's second five levels* below. `glade-06`…`10` and the sky map fix are approved and committed. `glade-11`…`15` are approved and committed. **Next: `glade-16`…`20` up to 17×11, with the maze as the finale. Still open: the first-timer test and the push, which the user hasn't scheduled.** Nothing is pushed, on purpose: see *Release* below.
 
 **Now: main menu, Tutorial and How To Play** (settled in a grilling session 2026-11-03). Order of work: these three → First Glade as a real biome (its mechanic gets
 its own grilling, lab and rules freeze) → the 20-level batches → split + paint (assumed; not raised by the user). **Success:** a friend given only the link can solve
@@ -748,7 +748,7 @@ renderer; silent unlocks may go unnoticed; and the release is large and long-hel
 | Other pieces | Basics only. **Belts stay in Frost Isle** (changed 2026-11-04, on Claude's recommendation: fewer new rules, belts are part of Frost's identity, and adding them later is easier than taking them out). If levels 11 to 15 feel thin in playtest, belts are the first thing to add |
 | Difficulty | First Glade only: beginner friendly for the first five levels (10 to 14 moves), then clearly harder from level 6 (changed 2026-11-05 after playing them; it was gentle up to level 10) |
 | Getting stuck | Dead ends only if they're obvious from the board |
-| Walls in other worlds | Interactions with ice, pads, flips, shapes and belts are settled when each world first uses walls in its 12 new levels |
+| Walls in other worlds | The user wants walls in the later levels of the other biomes, **themed to each biome** rather than First Glade's stone brick (asked for 2026-11-05, to build when those levels start). Interactions with ice, pads, flips, shapes and belts are settled when each world first uses walls in its 12 new levels |
 | Frost Isle | Unchanged |
 
 - **Teaching walls:** Tutorial lesson 6, which also adds a walls entry to How To Play's Basics. Hedges get a locked entry under Mechanics. So the approved Tutorial grows by one lesson and gets another playtest.
@@ -807,6 +807,20 @@ renderer; silent unlocks may go unnoticed; and the release is large and long-hel
 - **Board size past level 10** (Claude's recommendation 2026-11-05; the user went ahead without changing it): the user wondered whether a lack of tiles will limit the puzzles, without wanting the board to look far away. First Glade has been well under what the other worlds use (`glade-10`: 13×9, 28 tiles; `frost-08`: 21×9, 79 tiles; `wind-08`: 20×13, 63 tiles). Calculated tile width at 1280×800, facing and after a quarter turn: 13×9 62/49 px, 15×11 55/42, 17×11 50/37, 21×9 44/30, 20×13 43/32, 25×13 36/25. Proposed caps: 15×11 for levels 11 to 15 and 17×11 for 16 to 20, with the maze at the larger size. In a lane layout that takes junctions from 15 to 24. Keep the camera as it is.
 - **The maze level** isn't in this batch. First attempts on open floor looked scattered rather than like a maze. It needs stone corridors, which tall walls can hide, so it's better planned as its own level in the second half.
 
+**First Glade's third five levels** (built 2026-11-05, approved in playtest: "well made", and "levels 12 through 15 are great").
+
+| Level | Name | Par | States | Dead ends | Size | The idea |
+|---|---|---|---|---|---|---|
+| 11 | Two Gaps | 21 | 166 | 74 of 224 | 11×6 | One hedge sits beside two gaps. Rolling down from the start bridges the wrong one. Sent east, a second hedge reaches the switch side |
+| 12 | Soft Steps | 28 | 110 | 30 of 151 | 12×9 | Two soft switches in the first lane, each flipping the walls as you pass, so when you touch them decides which lanes are open |
+| 13 | Not All at Once | 22 | 447 | 178 of 551 | 15×9 | A full lattice of lanes and three switches, one of them not needed. A soft switch has to be crossed an extra time to set the walls right |
+| 14 | Three Colors | 28 | 222 | 72 of 268 | 12×9 | The first level with three colors, with bridges that swap places. Two hedges go first, then a run of presses |
+| 15 | Last Clearing | 29 | 562 | 212 of 561 | 15×9 | Three hedges and six switches, where the last two walls depend on what's been pressed |
+
+- **Method:** 11 is by hand. 12 to 15 came from a throwaway hill-climb over lane lattices, then a greedy pass removing whatever didn't change par (13 keeps its unused lanes as choices). The first scoring rewarded activity, and produced "switch soup": presses everywhere with no reasoning behind them. What worked was counting a piece only if removing it changes the solution, capping hedges, and not rewarding a press undone straight away. The script isn't in the repo; `scripts/design/search.ts` is still the tool for open floors.
+- **Watched for, and fine:** these four are less hand-shaped than 06 to 10, which could have made them easier to just try, but they're the ones the user liked best. 13 and 14 each need a soft switch touched an extra time, which could feel fiddly. Dead ends reach about a third in 11, 13 and 15. Every dead end comes after a hedge has fallen, since switches can always be pressed again, but in these levels a hedge can also fall at the wrong time, not only the wrong way, so "obvious from the board" needs checking.
+- **Layout:** 12 was flipped north to south after the first screenshots, when the block hid a switch, a wall hid the X and a hedge hid the goal.
+
 **Every biome's shape:** 20 levels, the first few introductory and the last 15 ramping up in difficulty, so each biome can focus on its own creativity rather than on teaching the base rules.
 
 **After that: 20 levels per biome** (decided by the user 2026-11-02). Levels
@@ -814,10 +828,10 @@ come out in **batches of 5**, and each batch is playtested and tuned before the 
 
 | Chapter | Now | New levels | Batches |
 |---|---|---|---|
-| First Glade (a new chapter) | 10 | 10 | 5, 5 |
+| First Glade (a new chapter) | 15 | 5 | 5 |
 | Frost Isle, Windy Peaks, Starfall, Toybox | 8 each | 12 each | 5, 5, 2 |
 
-That was planned as 68 new levels in 16 batches (58 and 14 to go), for 100 levels across these five biomes, with the five old First Glade levels moving to the tutorial. A new biome is built
+That was planned as 68 new levels in 16 batches (53 and 13 to go), for 100 levels across these five biomes, with the five old First Glade levels moving to the tutorial. A new biome is built
 to 20 the same way, after its lab.
 
 - **Proposed, to confirm when this starts:** add new levels after the current ones (`frost-09` onward),
@@ -1065,6 +1079,8 @@ a crest. Hovering in Starfall's menu made the text nearly unreadable: a bug, eve
 **2026-11-05 — First Glade, first five levels.** "Those first 5 were simple and easy, however, the difficulty for the next 5 levels should be harder now" → approved and committed; levels 6 to 10 step up, instead of staying gentle until level 10 as planned.
 
 **2026-11-05 — First Glade, second five levels and the sky map.** "I like the levels" → committed, with the sky map fix. Board caps of 15×11 for levels 11 to 15 and 17×11 for 16 to 20 stand.
+
+**2026-11-05 — First Glade, third five levels.** "The levels are well made. Levels 12 through 15 are great." Those four came from the lane search, so that method stays. Also: "I also want walls to be present in later levels, and they should be the same theme as its biome" → recorded under *First Glade as a real biome*, for when the other worlds' new levels start.
 
 ## Architecture
 
