@@ -1097,6 +1097,8 @@ a crest. Hovering in Starfall's menu made the text nearly unreadable: a bug, eve
 
 **2026-11-05 — First Glade, third five levels.** "The levels are well made. Levels 12 through 15 are great." Those four came from the lane search, so that method stays. Also: "I also want walls to be present in later levels, and they should be the same theme as its biome" → recorded under *First Glade as a real biome*, for when the other worlds' new levels start.
 
+**2026-11-05 — Pushing, and new keys.** The user asked to push what's committed, without running the first-timer test first (their call; it was planned as the check on the prompts, so a new player's first ten minutes are still unobserved). They also asked for M to do what Esc does, and for H J K L to move around menus → built: M is Esc everywhere, J and K move through menu lists, and on the sky map and Labs screen H and L step between levels and J and K hop between islands. In a level H J K L do nothing, so rolling stays on the arrows and WASD.
+
 ## Architecture
 
 ```
@@ -1123,11 +1125,11 @@ tests/         rules, solver, generator determinism, chapter format, handmade le
 
 ## Controls
 
-Arrows/WASD move · Q/E rotate camera · Z undo · R restart · N next level · Esc menu
+Arrows/WASD move · Q/E rotate camera · Z undo · R restart · N next level · Esc or M menu
 
-On the map: ←/→ level · ↑/↓ island · Enter play · Esc back
+On the map: ←/→ or H/L level · ↑/↓ or J/K island · Enter play · Esc or M back
 
-In a menu: ↑/↓ choose · Enter select · Esc back
+In a menu: ↑/↓ or J/K choose · Enter select · Esc or M back
 
 ## Open risks
 

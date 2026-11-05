@@ -28,8 +28,8 @@ const LAYOUT: Record<string, { x: number; y: number; theme: string }> = {
 const SIGNATURE_LABEL: Record<string, string> = { walls: 'Hedges', ice: 'Ice & belts', pads: 'Launch pads', gravity: 'Gravity', shapes: 'Shapes' };
 
 /** Map keys: Left/Right step through levels in play order, Up/Down hop between islands. */
-const STEP: Record<string, number> = { ArrowLeft: -1, KeyA: -1, ArrowRight: 1, KeyD: 1 };
-const HOP: Record<string, number> = { ArrowUp: -1, KeyW: -1, ArrowDown: 1, KeyS: 1 };
+const STEP: Record<string, number> = { ArrowLeft: -1, KeyA: -1, KeyH: -1, ArrowRight: 1, KeyD: 1, KeyL: 1 };
+const HOP: Record<string, number> = { ArrowUp: -1, KeyW: -1, KeyK: -1, ArrowDown: 1, KeyS: 1, KeyJ: 1 };
 
 function layoutOf(c: Chapter, i: number) {
   // Chapters without a hand-placed island line up along the bottom until they get one.

@@ -596,7 +596,7 @@ class Game {
     return below === this.mainMenu ? 'Back to the menu' : 'Back';
   }
 
-  /** Esc: back one screen; during a level, the Esc menu; on the main menu, nothing. */
+  /** Esc or M: back one screen; during a level, the Esc menu; on the main menu, nothing. */
   private escape(): void {
     const now = performance.now();
     if (now - this.lastEscape < ESC_REPEAT_MS) return;
@@ -744,7 +744,7 @@ class Game {
         if (!e.repeat) this.arrival.dismiss();
         return;
       }
-      if (e.code === 'Escape') {
+      if (e.code === 'Escape' || e.code === 'KeyM') {
         if (!e.repeat) this.escape();
         return;
       }
