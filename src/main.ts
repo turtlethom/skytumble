@@ -331,6 +331,7 @@ class Game {
       await this.animateStep(from, result, dir, scene);
       if (scene !== this.scene) return;
       this.status = 'playing';
+      this.updatePrompt(from, result);
       this.drainQueue();
       return;
     }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { StepResult, initialState, step, tileAt } from '../src/game/rules';
+import { StepResult, initialState, step, tileAt, wallUp } from '../src/game/rules';
 import { Tile } from '../src/game/types';
 import { CAMPAIGN, findLevel } from '../src/levels';
 import { MECHANICS, Mechanic, MechanicId, mechanicsIn } from '../src/levels/mechanics';
@@ -69,6 +69,26 @@ describe('How To Play scenes', () => {
     expect(results.some((r) => r.toggled)).toBe(true);
   });
 
+  it('show a wall stopping a roll, then one press flipping walls and bridges together', () => {
+    const results = run(entry('walls'));
+    expect(results[0].outcome).toBe('bump');
+    expect(results[0].bumped).toEqual({ x: 2, y: 1 });
+    expect(results[1].toggled).toBe(1);
+    const { level } = entry('walls');
+    const up = (x: number, y: number) => wallUp(tileAt(level, x, y), 0, results[1].state.bridges, level.bridgesOn);
+    expect(up(2, 1)).toBe(false);
+    expect(up(1, 0)).toBe(true);
+  });
+
+  it('show a hedge holding against a lying block, then toppling into a gap for a standing one', () => {
+    const results = run(entry('hedges'));
+    expect(results[1].outcome).toBe('bump');
+    const knocks = results.filter((r) => r.knocked);
+    expect(knocks).toHaveLength(1);
+    expect(knocks[0].bumped).toEqual({ x: 3, y: 2 });
+    expect(knocks[0].bridged).toEqual({ x: 4, y: 2 });
+  });
+
   it('cross the planks without breaking them', () => {
     expect(run(entry('planks')).some((r) => r.broke)).toBe(false);
     expect(run(entry('cube')).some((r) => r.broke)).toBe(false);
@@ -82,6 +102,7 @@ describe('How To Play unlocks', () => {
     expect(mechanicsIn(findLevel('star-01')!.level)).toContain('flips');
     expect(mechanicsIn(findLevel('toy-01')!.level)).toContain('tall');
     expect(mechanicsIn(findLevel('toy-02')!.level)).toContain('cube');
+    expect(mechanicsIn(findLevel('gladelab-04')!.level)).toContain('hedges');
   });
 
   it('count a level that starts in a shape', () => {
@@ -90,10 +111,12 @@ describe('How To Play unlocks', () => {
 
   it('find nothing to unlock in the Tutorial', () => {
     expect(mechanicsIn(findLevel('tutorial-05')!.level)).toEqual([]);
+    expect(mechanicsIn(findLevel('tutorial-06')!.level)).toEqual([]);
   });
 
   it('can open every entry from the campaign', () => {
     const reachable = new Set(CAMPAIGN.flatMap((c) => c.levels.flatMap((l) => mechanicsIn(l.level))));
-    for (const m of MECHANICS.filter((e) => !e.basic)) expect(reachable).toContain(m.id);
+    // Hedges wait for First Glade's chapter: drop this exception when `glade-` levels use them.
+    for (const m of MECHANICS.filter((e) => !e.basic && e.id !== 'hedges')) expect(reachable).toContain(m.id);
   });
 });

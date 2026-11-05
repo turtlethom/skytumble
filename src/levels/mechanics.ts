@@ -6,8 +6,8 @@ import { parseLevel } from '../game/ascii';
 import { Dir, Level, Tile } from '../game/types';
 
 export type MechanicId =
-  | 'rolling' | 'lying' | 'planks' | 'soft' | 'heavy'
-  | 'ice' | 'belts' | 'pads' | 'flips' | 'cube' | 'tall' | 'extraHeavy';
+  | 'rolling' | 'lying' | 'planks' | 'soft' | 'heavy' | 'walls'
+  | 'ice' | 'belts' | 'pads' | 'flips' | 'cube' | 'tall' | 'extraHeavy' | 'hedges';
 
 export interface Mechanic {
   id: MechanicId;
@@ -63,6 +63,15 @@ export const MECHANICS: Mechanic[] = [
     basic: true,
     level: parseLevel(['####.....', '####.....', 'S#x#00##G']),
     moves: moves('RLURRDRRRR'),
+  },
+  {
+    id: 'walls',
+    name: 'Stone walls',
+    text: 'A raised wall stops any roll that would land on it, even two tiles ahead, and that isn\'t a move. The thin colored line around it names its switch: every press of that color raises or lowers its walls and bridges together. A lowered wall is floor, and one that comes up under the block waits until the block moves off.',
+    basic: true,
+    // A bump from two tiles away, then one press: the wall in the way sinks, another rises, and the bridge comes out.
+    level: parseLevel(['.h........', 'S#H####00G', '#.........', 'o.........']),
+    moves: moves('RDURRRRRR'),
   },
   {
     id: 'ice',
@@ -124,6 +133,15 @@ export const MECHANICS: Mechanic[] = [
     level: parseLevel(['S###X00#T'], [], 0, 3),
     moves: moves('RRRR'),
   },
+  {
+    id: 'hedges',
+    name: 'Toppling hedges',
+    text: 'A standing block rolling into a hedge topples it the way it rolled, even from two tiles away, and stays put. It lands on the next tile, and an empty tile becomes floor for good, so choose the side you knock it from. Landing on solid ground, it\'s wasted: [Z] takes it back. A lying block just bumps it, and a hedge can\'t fall onto a raised wall or another hedge still up.',
+    basic: false,
+    // Lying, it holds. Then upright, from two tiles away, it topples into the gap and the block walks over it.
+    level: parseLevel(['##......', '##......', 'S##&.##G', '........']),
+    moves: moves('RRLURDRRRRR'),
+  },
 ];
 
 /** The mechanics a player meets in this level, among those that have to be unlocked. */
@@ -139,6 +157,7 @@ export function mechanicsIn(level: Level): MechanicId[] {
     else if (t === Tile.Pad) found.add('pads');
     else if (t === Tile.Flip) found.add('flips');
     else if (t === Tile.ExtraHeavy) found.add('extraHeavy');
+    else if (t === Tile.Hedge) found.add('hedges');
     else if (t === Tile.ShapeSwitch && groups[i] === 1) found.add('cube');
     else if (t === Tile.ShapeSwitch && groups[i] === 3) found.add('tall');
   });

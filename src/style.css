@@ -774,6 +774,9 @@ body[data-theme='studio'] .menu-list button.danger.selected {
   width: 300px;
   max-height: calc(100vh - 24px);
   overflow-y: auto;
+  /* Only short windows need it, and a default scrollbar is glaring on the dark studio. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-soft) transparent;
   padding: 8px 8px 8px 0;
   transform: translateY(-50%);
 }
@@ -787,7 +790,7 @@ body[data-theme='studio'] .menu-list button.danger.selected {
 }
 
 .howto-side h3 {
-  margin: 8px 0 -2px;
+  margin: 6px 0 -1px;
   font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
@@ -796,19 +799,19 @@ body[data-theme='studio'] .menu-list button.danger.selected {
 }
 
 .howto-side .menu-list {
-  gap: 6px;
-  margin-top: 6px;
+  gap: 4px;
+  margin-top: 4px;
 }
 
 .howto-side .menu-list button {
   margin-bottom: 2px;
-  padding: 5px 14px;
+  padding: 3px 14px;
   font-size: 16px;
   text-align: left;
 }
 
 .howto-side .menu-list button[data-action='back'] {
-  margin-top: 10px;
+  margin-top: 6px;
 }
 
 .howto-text {

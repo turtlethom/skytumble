@@ -81,7 +81,22 @@ const LESSONS: Record<string, Lesson> = {
       if (bridgeUp(m)) return 'Cross the bridge, then stand on the goal.';
       return 'Stand on the X. Rolling straight there won\'t work: lie down and shift sideways to line up, as on the ledge.';
     },
-    done: 'Only a standing block presses a heavy switch. That\'s all the basics: the Campaign is waiting.',
+    done: 'Only a standing block presses a heavy switch.',
+  },
+  'tutorial-06': {
+    say(m) {
+      if (m.last?.bumped) return 'A raised wall stops any roll that would land on it, even two tiles ahead. That didn\'t count as a move.';
+      if (fell(m)) return 'Off the edge! Press [Z] to take that back.';
+      if (m.moves === 0) return 'This stone wall is in the way. Go on, roll right into it: it won\'t cost you a move.';
+      if (m.last?.toggled) {
+        return bridgeUp(m)
+          ? 'One press did both! The wall sank and the bridge came out, because they share the switch\'s color.'
+          : 'Another press brought the wall back up and pulled the bridge in. Every press flips them, so touch it once more.';
+      }
+      if (bridgeUp(m)) return 'A lowered wall is just floor, so the block can stand on it. On to the goal.';
+      return 'See the thin colored line around the wall? It matches the round switch. Touch the switch to lower the wall.';
+    },
+    done: 'Walls stop a roll, and a press flips every wall and bridge of its color. That\'s all the basics: the Campaign is waiting.',
   },
 };
 

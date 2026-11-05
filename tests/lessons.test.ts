@@ -24,8 +24,8 @@ function play(id: string, moves: string): Moment {
 const say = (id: string, moves: string) => lessonPrompt(id, play(id, moves));
 
 describe('the Tutorial', () => {
-  it('has five lessons, each with a prompt and a takeaway, solved in about 12 moves or fewer', () => {
-    expect(TUTORIAL.levels).toHaveLength(5);
+  it('has six lessons, each with a prompt and a takeaway, solved in about 12 moves or fewer', () => {
+    expect(TUTORIAL.levels).toHaveLength(6);
     for (const { id, level } of TUTORIAL.levels) {
       expect(isLesson(id)).toBe(true);
       expect(lessonPrompt(id, play(id, ''))).not.toBe('');
@@ -59,6 +59,8 @@ describe('lesson locks', () => {
     expect(lessonUnlocked('tutorial-02', doneOnly('tutorial-01'))).toBe(true);
     expect(lessonUnlocked('tutorial-03', doneOnly('tutorial-01'))).toBe(false);
     expect(lessonUnlocked('tutorial-05', doneOnly('tutorial-01', 'tutorial-02', 'tutorial-03', 'tutorial-04'))).toBe(true);
+    expect(lessonUnlocked('tutorial-06', doneOnly('tutorial-05'))).toBe(true);
+    expect(lessonUnlocked('tutorial-06', doneOnly('tutorial-04'))).toBe(false);
   });
 });
 
@@ -94,5 +96,22 @@ describe('the prompts react', () => {
   it('to lying on a heavy switch, then standing on it', () => {
     expect(say('tutorial-05', 'R')).toContain('Lying across it does nothing');
     expect(say('tutorial-05', 'URRD')).toContain('bridge is up');
+  });
+
+  it('to bumping a wall, which is not a move', () => {
+    expect(say('tutorial-06', '')).toContain('roll right into it');
+    expect(play('tutorial-06', 'R').last?.outcome).toBe('bump');
+    expect(say('tutorial-06', 'R')).toContain('even two tiles ahead');
+  });
+
+  it('to one press flipping the wall and the bridge, and another flipping them back', () => {
+    expect(say('tutorial-06', 'D')).toContain('One press did both');
+    expect(say('tutorial-06', 'DU')).toContain('just floor');
+    expect(say('tutorial-06', 'DUD')).toContain('Another press');
+    expect(say('tutorial-06', 'DUDU')).toContain('Touch the switch');
+  });
+
+  it('to rolling off the edge beside the wall', () => {
+    expect(say('tutorial-06', 'U')).toContain('Off the edge');
   });
 });
