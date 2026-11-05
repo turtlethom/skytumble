@@ -99,6 +99,8 @@ const WALL_MERLON = 0.27;
 /** How far a sunk wall's top stands above the ground: barely, so it reads as flush. */
 const WALL_FLUSH = 0.02;
 const WALL_DECK_TINT = 0xa39b8e;
+/** A wall that never moves: under half a lying block, or a maze of them hides the lane behind each one. */
+const LOW_WALL_HEIGHT = 0.42;
 /** A bump: the whole tip and settle, and the part of it where the block arrives. */
 const BUMP_MS = 260;
 const BUMP_TOUCH = 0.3;
@@ -263,6 +265,8 @@ export class World {
   private switches = new Map<number, THREE.Object3D>();
   private bridges: BridgeView[] = [];
   private walls: WallView[] = [];
+  /** Walls that never move, per layer, gathered while building the tiles. */
+  private lowWalls: { x: number; y: number; edge: boolean }[][] = [[], []];
   /** Hedges by cell, in the same key as switches. */
   private hedges = new Map<number, HedgeView>();
   /** The hedge lying across each gap one has been knocked into, built when first needed. */
@@ -429,6 +433,7 @@ export class World {
     this.switches.clear();
     this.bridges = [];
     this.walls = [];
+    this.lowWalls = [[], []];
     this.hedges.clear();
     this.fallen.clear();
     this.goalMarker = null;
@@ -449,6 +454,13 @@ export class World {
           this.tiles.set(this.cellKey(layer, x, y, level.width, level.height), { obj, baseY: 0 });
         }
       }
+    }
+    for (const layer of layers) {
+      if (!this.lowWalls[layer].length) continue;
+      const mass = makeLowWalls(this.lowWalls[layer], theme);
+      this.layerGroups[layer].add(mass);
+      // Below every cell's key, so it joins the island's rise as one piece.
+      this.tiles.set(-1 - layer, { obj: mass, baseY: 0 });
     }
     // Landing marks ride on their tiles, so they rise in with the island and fall with a broken tile:
     // blue where a pad flight can land, violet where a flip lands (on the other floor, over the flip tile).
@@ -558,6 +570,12 @@ export class World {
     const jitter = Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1;
 
     if (isWall(tile)) {
+      // No switch in this level means it never moves: low enough to see over, with no color to name.
+      // They're all drawn as one mass, since a maze has dozens, with soil only at the island's edge.
+      if (!this.hasSwitch(group)) {
+        this.lowWalls[layer].push({ x, y, edge: this.onIslandEdge(layer, x, y) });
+        return null;
+      }
       const view = makeWall(GROUP_COLORS[group % GROUP_COLORS.length]);
       g.add(floorTile(jitter, this.theme, layer), earth(jitter, this.theme), view.frame, view.pillar);
       this.walls.push({ layer, x, y, tile, group, pillar: view.pillar, up: true });
@@ -1065,6 +1083,21 @@ export class World {
     obj.visible = on;
     if (on) this.tiles.set(key, { obj, baseY: 0 });
     else this.tiles.delete(key);
+  }
+
+  /** Whether this tile has empty sky beside it, or the edge of the grid. */
+  private onIslandEdge(layer: number, x: number, y: number): boolean {
+    const level = this.level;
+    if (!level) return true;
+    const view = layerView(level, layer);
+    return [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => levelTileAt(view, x + dx, y + dy) === Tile.Empty);
+  }
+
+  private hasSwitch(group: number): boolean {
+    const level = this.level;
+    if (!level) return false;
+    const presses = (t: Tile) => t === Tile.SoftSwitch || t === Tile.HeavySwitch || t === Tile.ExtraHeavy;
+    return [level, ...(level.ceiling ? [level.ceiling] : [])].some((l) => l.tiles.some((t, i) => presses(t) && l.groups[i] === group));
   }
 
   /** A wall due up stays down while the block is on its tile, and comes up when the block moves off. */
@@ -2022,6 +2055,25 @@ function makeWall(color: number): { frame: THREE.Object3D; pillar: THREE.Object3
   return { frame, pillar };
 }
 
+/** Walls that never move: plain low blocks of brick joined into one mass of stone, with one layer of soil under the island's edge. */
+function makeLowWalls(cells: { x: number; y: number; edge: boolean }[], theme: Theme): THREE.Object3D {
+  const merged = (parts: THREE.BufferGeometry[], material: THREE.Material) => {
+    const mesh = new THREE.Mesh(mergeGeometries(parts), material);
+    parts.forEach((p) => p.dispose());
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    return mesh;
+  };
+  const g = new THREE.Group();
+  g.add(merged(cells.map(({ x, y }) => brickGeometry(1, LOW_WALL_HEIGHT, 1).translate(x, LOW_WALL_HEIGHT / 2, y)), new THREE.MeshStandardMaterial({ map: brickMap(), roughness: 0.95 })));
+  const edges = cells.filter((c) => c.edge);
+  if (edges.length) {
+    const soil = new THREE.MeshStandardMaterial({ color: theme.earth.soil, roughness: 0.85 });
+    g.add(merged(edges.map(({ x, y }) => new THREE.BoxGeometry(0.9, 0.63, 0.9).translate(x, -0.31, y)), soil));
+  }
+  return g;
+}
+
 /** The top of a wall: a darker deck between four notched corners `height` tall, starting at `y`. */
 function wallTop(height: number, y: number): THREE.Object3D {
   const top = new THREE.Group();
@@ -2073,6 +2125,13 @@ function brickMap(): THREE.CanvasTexture {
 
 /** A box of bricks that all come out the same size, whatever the box's proportions. */
 function brickBox(w: number, h: number, d: number, tint = 0xffffff): THREE.Mesh {
+  const mesh = new THREE.Mesh(brickGeometry(w, h, d), new THREE.MeshStandardMaterial({ map: brickMap(), color: tint, roughness: 0.95 }));
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+function brickGeometry(w: number, h: number, d: number): THREE.BufferGeometry {
   const geometry = new THREE.BoxGeometry(w, h, d);
   const uv = geometry.attributes.uv;
   // Four corners per face, in the order +x, -x, +y, -y, +z, -z.
@@ -2080,10 +2139,7 @@ function brickBox(w: number, h: number, d: number, tint = 0xffffff): THREE.Mesh 
   faces.forEach(([across, up], face) => {
     for (let i = face * 4; i < face * 4 + 4; i++) uv.setXY(i, (uv.getX(i) * across) / BRICK_TILE, (uv.getY(i) * up) / BRICK_TILE);
   });
-  const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ map: brickMap(), color: tint, roughness: 0.95 }));
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  return mesh;
+  return geometry;
 }
 
 const LEAF_DARK = 0x234f24;

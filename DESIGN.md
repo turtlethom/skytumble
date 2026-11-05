@@ -682,7 +682,7 @@ heaviest world, and it runs at 59 to 61 fps on the user's laptop with no stutter
 
 That finishes the older worlds' pass. Next: see *Start menu, tutorial section and a new First Glade* below.
 
-**Pick up here** (2026-11-05). Stage 1 (main menu, Esc menu, Labs, Settings with reset), stage 2 (the Tutorial) and stage 3 (How To Play) are approved and committed. First Glade's wall and hedge rules and the four-level Glade Lab are built and waiting for the user's playtest: see *The Glade Lab as built* below. The Glade Lab is approved and committed, and the wall and hedge rules are frozen. Tutorial lesson 6 (walls) and How To Play's two new entries are committed. `glade-01`…`05` are approved and committed: see *First Glade's first five levels* below. `glade-06`…`10` are built and waiting for the user's playtest: see *First Glade's second five levels* below. `glade-06`…`10` and the sky map fix are approved and committed. `glade-11`…`15` are approved and committed. **Next: `glade-16`…`20` up to 17×11, with the maze as the finale. Still open: the first-timer test and the push, which the user hasn't scheduled.** Nothing is pushed, on purpose: see *Release* below.
+**Pick up here** (2026-11-05). Stage 1 (main menu, Esc menu, Labs, Settings with reset), stage 2 (the Tutorial) and stage 3 (How To Play) are approved and committed. First Glade's wall and hedge rules and the four-level Glade Lab are built and waiting for the user's playtest: see *The Glade Lab as built* below. The Glade Lab is approved and committed, and the wall and hedge rules are frozen. Tutorial lesson 6 (walls) and How To Play's two new entries are committed. `glade-01`…`05` are approved and committed: see *First Glade's first five levels* below. `glade-06`…`10` are built and waiting for the user's playtest: see *First Glade's second five levels* below. `glade-06`…`10` and the sky map fix are approved and committed. `glade-11`…`15` are approved and committed. `glade-16`…`20` are built and waiting for the user's playtest: see *First Glade's last five levels* below. **Next: playtest them, which finishes First Glade's 20. Then the first-timer test and the push, which the user hasn't scheduled, and the 12 new levels each for the other four biomes, with walls themed to each.** Nothing is pushed, on purpose: see *Release* below.
 
 **Now: main menu, Tutorial and How To Play** (settled in a grilling session 2026-11-03). Order of work: these three → First Glade as a real biome (its mechanic gets
 its own grilling, lab and rules freeze) → the 20-level batches → split + paint (assumed; not raised by the user). **Success:** a friend given only the link can solve
@@ -821,6 +821,21 @@ renderer; silent unlocks may go unnoticed; and the release is large and long-hel
 - **Watched for, and fine:** these four are less hand-shaped than 06 to 10, which could have made them easier to just try, but they're the ones the user liked best. 13 and 14 each need a soft switch touched an extra time, which could feel fiddly. Dead ends reach about a third in 11, 13 and 15. Every dead end comes after a hedge has fallen, since switches can always be pressed again, but in these levels a hedge can also fall at the wrong time, not only the wrong way, so "obvious from the board" needs checking.
 - **Layout:** 12 was flipped north to south after the first screenshots, when the block hid a switch, a wall hid the X and a hedge hid the goal.
 
+**First Glade's last five levels** (built 2026-11-05, awaiting playtest).
+
+| Level | Name | Par | States | Dead ends | Size | The idea |
+|---|---|---|---|---|---|---|
+| 16 | Upstream | 30 | 180 | 58 of 179 | 14×8 | Two colors, with switches passed more than once on the way to two hedges |
+| 17 | Combination | 30 | 322 | 0 of 466 | 13×8 | Three colors and three switches in one short lane: set the combination, then leave, because the walls at the end only take one setting |
+| 18 | Crossed Lines | 38 | 359 | 107 of 409 | 13×11 | From one spot, two hedges fall opposite ways, and round switches open the long way round |
+| 19 | The Long Road | 40 | 1715 | 518 of 2089 | 14×11 | Some hedges just stand in the way, so spending them is right. Knowing which ones is the puzzle |
+| 20 | The Hedge Maze | 39 | 2213 | 0 of 3467 | 16×10 | The finale: lanes between low stone, with tall walls and hedges changing the route. No dead ends at all, so the player can wander |
+
+- **Par:** 19 is one move longer than the finale. The finale is bigger by states, and it's a different kind of level: exploring, with nothing to fear.
+- **Low stone** (new, for the maze): a wall whose color has no switch in the level never moves, so it's drawn low (0.42 high, under half a lying block; at 0.8 it still hid the east-west lanes) with no colored line, and joined into one mass. Tall walls hide what's behind them, and a maze of them can't be read. The rules don't change: it's still a wall, and a bump is still free. `gladelab-01`'s walls now look like this too.
+- **Draw calls:** the finale took 1,127 draws at first, about three times `glade-15`. Merging the low stone and its soil brought it to 677 (`glade-15` 355, `glade-19` 602, `frost-08` 493). The frame rate on the user's laptop is still to be read.
+- **Tools:** `scripts/design/lattice.ts` and `strip.ts` are now in the repo, since the method that built 12 to 15 and these will serve the other biomes' new levels.
+
 **Every biome's shape:** 20 levels, the first few introductory and the last 15 ramping up in difficulty, so each biome can focus on its own creativity rather than on teaching the base rules.
 
 **After that: 20 levels per biome** (decided by the user 2026-11-02). Levels
@@ -828,10 +843,10 @@ come out in **batches of 5**, and each batch is playtested and tuned before the 
 
 | Chapter | Now | New levels | Batches |
 |---|---|---|---|
-| First Glade (a new chapter) | 15 | 5 | 5 |
+| First Glade (a new chapter) | 20 | 0 | done, awaiting playtest |
 | Frost Isle, Windy Peaks, Starfall, Toybox | 8 each | 12 each | 5, 5, 2 |
 
-That was planned as 68 new levels in 16 batches (53 and 13 to go), for 100 levels across these five biomes, with the five old First Glade levels moving to the tutorial. A new biome is built
+That was planned as 68 new levels in 16 batches (48 and 12 to go), for 100 levels across these five biomes, with the five old First Glade levels moving to the tutorial. A new biome is built
 to 20 the same way, after its lab.
 
 - **Proposed, to confirm when this starts:** add new levels after the current ones (`frost-09` onward),

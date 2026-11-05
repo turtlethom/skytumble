@@ -183,3 +183,81 @@ switches: 1 0 1 1 1 1
 ....#..&.......
 ....#o#x.......
 ...............
+
+=== glade-16
+par: 30
+name: Upstream
+idea: Two colors, and the walls you need answer to switches you have to pass more than once. Count before you cross.
+switches: 1 0 0
+....S..#H##...
+....#..#..#...
+....#..i..H...
+.##o####..##HG
+.......h......
+.&.....#......
+.xo##.&#......
+..............
+
+=== glade-17
+par: 30
+name: Combination
+idea: Three colors, and three switches in one short lane. Think of it as a combination lock: find the setting before you leave, because the walls at the end won't take any other.
+switches: 0 0 2 1 1
+#######......
+#.....#......
+#.....#......
+#..x#o#..G#I#
+#..o........#
+#..#........H
+S..x#o#&.#&.#
+.............
+
+=== glade-18
+par: 38
+name: Crossed Lines
+idea: From one spot, two hedges fall opposite ways, and you need both. The round switches decide which way round the board is open.
+switches: 0 1
+G...o###I#aa#
+#........1..#
+#........1..o
+#.&#.....#..#
+...#........#
+...#.....&..#
+...#.....##hS
+...#.....&...
+...H.........
+...#.&####...
+.............
+
+=== glade-19
+par: 40
+name: The Long Road
+idea: Not every hedge has to bridge something: some are just in the way, and it's fine to spend them. Which ones is the question.
+switches: 1 1 1 0 1
+.##o#H##..###G
+.0..#..o..&..#
+.0..h..#..#..#
+.#..#..#o###I#
+.#..#.........
+.&..#.........
+.##hS#i##H##o#
+.#..#..#..#..#
+.#..#..&..i..#
+.#.&x11####11#
+..............
+
+=== glade-20
+par: 39
+name: The Hedge Maze
+idea: The low stone never moves, so you can always see over it. Only the tall walls and the hedges change anything, and nothing here can leave you stuck, so wander.
+switches: 0 1 0 1
+#KKSI##KK#KK#KKG
+KKK#KK#KKKKKKKK#
+KKK#KK#KKKKKKKKh
+#KKxI####xi#xKK#
+KKK#KK#KKhKKKKK#
+KKKHKK&KK#KKKKK#
+#KK#I######&#H##
+KKK&KK.KKoKK&KK#
+KKK.KK&KK#KK#KK#
+#KK####KK#I#####

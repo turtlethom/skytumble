@@ -42,6 +42,10 @@ npm run -s sim -- <file|id> RRDL [name]   # replay moves; board at the end (SHOW
 npm run -s search -- <template> <palette> <parLo> <parHi> 1-4 2 "chain,belt→pad" > out.txt
                                           # seeds 1-4 in parallel, best first; stops at once with a
                                           #   diagnosis if the template can't be solved even all-floor
+npm run -s lattice -- 5 3 26 36 1 150 2 > out.txt
+                                          # routing puzzles: columns rows parLo parHi seed seconds colors;
+                                          #   MAZE=1 fills the rest with low stone. Run a few seeds at once
+npm run -s strip -- out.txt [name]        # remove what the solution doesn't need, keeping par
 npm run verify -- wind-                   # build, serve, play every solution in headless Chrome
 ```
 
@@ -73,6 +77,8 @@ switches, `X` an extra-heavy switch, `C`/`T` goals marked for a shape, and `shap
 (or `!shape` in a design block) sets the start shape. Traces print `cube`/`tall` before a pose.
 Walls and hedges: `H I J K` a wall starting up in group 0-3, `h i j k` starting down, `a b d e` a
 reversed bridge, `&` a toppling hedge (at most 9; pad the grid around them, or validation fails).
+A wall whose color has no switch in the level never moves: it's drawn low, with no colored line, and all
+of them merge into one mesh. Use `K` for these, so a maze can have dozens.
 They only mix with the basics for now (validation fails otherwise). A diagnosis lists where each hedge
 lands each way; traces print `TOPPLE` with what it bridged, or `wasted`. In `analyze`, a raised wall the solution never bumps still shows `*`: it can be doing its
 job, so don't strip it the way you would an unused tile. `sim` prints bumps and knocks, and doesn't
@@ -113,7 +119,10 @@ The process that produced the Frost chapter:
    the solution matters (an untouched bridge `*` means its switch press was incidental). In the
    reach map, flip-tile cells never show `S` on their own floor: a block standing there flips.
    For hard switch and hedge puzzles, lay the level out as lanes one tile wide between junctions three
-   tiles apart (`glade-09`, `glade-10`): the block can only go junction to junction, so par is routing.
+   tiles apart: the block can only go junction to junction, so par is routing. `lattice` searches for
+   these, counting a piece only if removing it changes the solution, and built `glade-12`...`20`. Read each
+   solution before keeping it, write the story from the trace, and check the opening view: if the block or
+   a wall hides what matters, flip the board north to south, since nothing behind a tall piece shows.
 6. **Fix the ending.** Searches often leave 3–6 moves of shuffling around a cramped goal island.
    Put the goal in line with how the block arrives (and remove start-island busywork the same way).
 7. **Check the story against the trace.** Write the `name`/`idea` text from the actual solution and
