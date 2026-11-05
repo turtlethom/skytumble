@@ -13,6 +13,8 @@
     "analyze": "vite-node scripts/design/analyze.ts",
     "sim": "vite-node scripts/design/sim.ts",
     "search": "vite-node scripts/design/search.ts",
+    "lattice": "vite-node scripts/design/lattice.ts",
+    "strip": "vite-node scripts/design/strip.ts",
     "verify": "scripts/design/verify.sh"
   },
   "dependencies": {
