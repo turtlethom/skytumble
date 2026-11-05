@@ -8,11 +8,13 @@ import toy from './toy.txt?raw';
 import wind from './wind.txt?raw';
 import windlab from './windlab.txt?raw';
 import tutorial from './tutorial.txt?raw';
+import glade from './glade.txt?raw';
 import gladelab from './gladelab.txt?raw';
 
 /** Every chapter: the Tutorial, then the campaign in play order, then the labs. Add a chapter by adding its .txt file here. */
 export const CHAPTERS: Chapter[] = [
   parseChapter('tutorial', tutorial),
+  parseChapter('glade', glade),
   parseChapter('frost', frost),
   parseChapter('wind', wind),
   parseChapter('star', star),

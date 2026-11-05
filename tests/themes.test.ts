@@ -16,6 +16,7 @@ describe('chapter themes', () => {
 
   it('fall back to neutral for chapters without a world', () => {
     expect(themeForLevel('lab-01')).toBe(NEUTRAL);
+    expect(themeForLevel('glade-01').id).toBe('forest');
   });
 
   it('are only assigned to chapters that exist', () => {

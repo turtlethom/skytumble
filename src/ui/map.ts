@@ -11,8 +11,8 @@ import { Progress } from './progress';
 const NATURAL_WIDTH = 1000;
 const W = 160;
 const H = 90;
-// The first slot on the campaign's path waits for First Glade's new chapter.
 const LAYOUT: Record<string, { x: number; y: number; theme: string }> = {
+  glade: { x: 20, y: 27, theme: 'glade' },
   frost: { x: 50, y: 62, theme: 'frost' },
   wind: { x: 80, y: 27, theme: 'peaks' },
   star: { x: 110, y: 62, theme: 'night' },
@@ -24,7 +24,7 @@ const LAYOUT: Record<string, { x: number; y: number; theme: string }> = {
   gladelab: { x: 110, y: 64, theme: 'lab' },
 };
 
-const SIGNATURE_LABEL: Record<string, string> = { ice: 'Ice & belts', pads: 'Launch pads', gravity: 'Gravity', shapes: 'Shapes' };
+const SIGNATURE_LABEL: Record<string, string> = { walls: 'Hedges', ice: 'Ice & belts', pads: 'Launch pads', gravity: 'Gravity', shapes: 'Shapes' };
 
 /** Map keys: Left/Right step through levels in play order, Up/Down hop between islands. */
 const STEP: Record<string, number> = { ArrowLeft: -1, KeyA: -1, ArrowRight: 1, KeyD: 1 };

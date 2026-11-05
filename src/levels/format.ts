@@ -40,7 +40,8 @@ export interface Chapter {
   levels: HandmadeLevel[];
 }
 
-export const SIGNATURES = ['ice', 'pads', 'gravity', 'shapes'] as const;
+/** `walls` only names First Glade's mechanics on the map: it has no one-trick guard. */
+export const SIGNATURES = ['ice', 'pads', 'gravity', 'shapes', 'walls'] as const;
 const START_SHAPES: Record<string, number> = { cube: 1, normal: 2, tall: 3 };
 export type Signature = (typeof SIGNATURES)[number];
 

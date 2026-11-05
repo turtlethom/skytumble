@@ -102,7 +102,7 @@ describe('How To Play unlocks', () => {
     expect(mechanicsIn(findLevel('star-01')!.level)).toContain('flips');
     expect(mechanicsIn(findLevel('toy-01')!.level)).toContain('tall');
     expect(mechanicsIn(findLevel('toy-02')!.level)).toContain('cube');
-    expect(mechanicsIn(findLevel('gladelab-04')!.level)).toContain('hedges');
+    expect(mechanicsIn(findLevel('glade-03')!.level)).toContain('hedges');
   });
 
   it('count a level that starts in a shape', () => {
@@ -116,7 +116,6 @@ describe('How To Play unlocks', () => {
 
   it('can open every entry from the campaign', () => {
     const reachable = new Set(CAMPAIGN.flatMap((c) => c.levels.flatMap((l) => mechanicsIn(l.level))));
-    // Hedges wait for First Glade's chapter: drop this exception when `glade-` levels use them.
-    for (const m of MECHANICS.filter((e) => !e.basic && e.id !== 'hedges')) expect(reachable).toContain(m.id);
+    for (const m of MECHANICS.filter((e) => !e.basic)) expect(reachable).toContain(m.id);
   });
 });

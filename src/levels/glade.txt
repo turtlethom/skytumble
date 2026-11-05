@@ -1,0 +1,49 @@
+title: First Glade
+signature: walls
+
+=== glade-01
+par: 10
+name: Garden Gate
+idea: A raised wall stops any roll that would land on it, at no cost. The X switch lowers this one, but only for a block standing on it, and rolling straight there just lies across it. The planks beyond break under a standing block.
+###.........
+###.........
+S#x#H#ff###G
+
+=== glade-02
+par: 10
+name: Fair Trade
+idea: The round switch trades the wall for the bridge: one press lowers the wall and pulls the bridge in. So fetch what's across the bridge while it's out.
+switches: 1 0
+bridges-on: 0
+G11#H#S00x
+......#...
+......o...
+
+=== glade-03
+par: 11
+name: Timber
+idea: A standing block rolling into a hedge topples it that way and stays put, even from two tiles off. It lands on the next tile, and a gap becomes floor for good. A lying block only bumps it.
+...........
+S#&.##&.##G
+...##......
+...##......
+
+=== glade-04
+par: 12
+name: Which Way
+idea: A hedge falls once, whichever way you push it. Your way lies east, so it has to be pushed from the west. Sent any other way, it's spent, and Z takes it back.
+###S....
+####....
+###&.##G
+...#....
+
+=== glade-05
+par: 14
+name: Behind the Wall
+idea: Only one side of the far hedge sends it east, and the wall is standing on that side. Clear the near hedge first and find the switch. Reach the far hedge too early, and you'll knock it the wrong way.
+..#.....
+#H&.##G.
+###.....
+###.....
+S#&.o#..
+........

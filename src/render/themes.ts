@@ -135,6 +135,7 @@ const STUDIO: Theme = {
 /** Chapters with a world of their own; any other chapter uses NEUTRAL. */
 export const CHAPTER_THEMES: Record<string, Theme> = {
   tutorial: STUDIO,
+  glade: FOREST,
   frost: FROST,
   wind: PEAKS,
   star: NIGHT,

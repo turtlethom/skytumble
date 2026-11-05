@@ -682,7 +682,7 @@ heaviest world, and it runs at 59 to 61 fps on the user's laptop with no stutter
 
 That finishes the older worlds' pass. Next: see *Start menu, tutorial section and a new First Glade* below.
 
-**Pick up here** (2026-11-05). Stage 1 (main menu, Esc menu, Labs, Settings with reset), stage 2 (the Tutorial) and stage 3 (How To Play) are approved and committed. First Glade's wall and hedge rules and the four-level Glade Lab are built and waiting for the user's playtest: see *The Glade Lab as built* below. The Glade Lab is approved and committed, and the wall and hedge rules are frozen. Tutorial lesson 6 (walls) and How To Play's two new entries are built and waiting for the user's playtest. **Next: `glade-01`…`05`.** Nothing is pushed, on purpose: see *Release* below.
+**Pick up here** (2026-11-05). Stage 1 (main menu, Esc menu, Labs, Settings with reset), stage 2 (the Tutorial) and stage 3 (How To Play) are approved and committed. First Glade's wall and hedge rules and the four-level Glade Lab are built and waiting for the user's playtest: see *The Glade Lab as built* below. The Glade Lab is approved and committed, and the wall and hedge rules are frozen. Tutorial lesson 6 (walls) and How To Play's two new entries are committed. `glade-01`…`05` are approved and committed: see *First Glade's first five levels* below. **Next: `glade-06`…`10`, harder than these. Still open: the first-timer test and the push, which the user hasn't scheduled.** Nothing is pushed, on purpose: see *Release* below.
 
 **Now: main menu, Tutorial and How To Play** (settled in a grilling session 2026-11-03). Order of work: these three → First Glade as a real biome (its mechanic gets
 its own grilling, lab and rules freeze) → the 20-level batches → split + paint (assumed; not raised by the user). **Success:** a friend given only the link can solve
@@ -746,7 +746,7 @@ renderer; silent unlocks may go unnoticed; and the release is large and long-hel
 | Block on a wall's tile | The wall waits until the block moves off (treated as lowered while the block is on it, so no timer or saved state) |
 | First Glade's twist | **Toppling hedges**, here only (changed 2026-11-05 after the first lab playtest, see the Playtest log; they used to just fall flat): bumped standing, a hedge topples that way for good, the block stays put, and it costs one move. An empty tile where it lands becomes floor. Bumped lying, it holds, with no move counted. Leafy, with no switch color: no color means no switch |
 | Other pieces | Basics only. **Belts stay in Frost Isle** (changed 2026-11-04, on Claude's recommendation: fewer new rules, belts are part of Frost's identity, and adding them later is easier than taking them out). If levels 11 to 15 feel thin in playtest, belts are the first thing to add |
-| Difficulty | First Glade only: mostly beginner friendly to level 10 (10 to 14 moves), then rising a lot to a gentle finale (25 to 30 moves) |
+| Difficulty | First Glade only: beginner friendly for the first five levels (10 to 14 moves), then clearly harder from level 6 (changed 2026-11-05 after playing them; it was gentle up to level 10) |
 | Getting stuck | Dead ends only if they're obvious from the board |
 | Walls in other worlds | Interactions with ice, pads, flips, shapes and belts are settled when each world first uses walls in its 12 new levels |
 | Frost Isle | Unchanged |
@@ -777,6 +777,20 @@ renderer; silent unlocks may go unnoticed; and the release is large and long-hel
 - **Also fixed:** an animation started by another animation was silently dropped, which froze the game after a knock. The fix is in the frame loop, so it applies everywhere.
 - **Risks to watch:** a wall can hide what's behind it from the default camera (accepted, but `gladelab-02` was re-laid east to west after its north lane vanished behind the block and a wall).
 
+**First Glade's first five levels** (built 2026-11-05, approved in playtest), in `src/levels/glade.txt`. First on the sky map, in the forest world, with a "Hedges" badge and no one-trick guard.
+
+| Level | Name | Par | States | Dead ends | The idea |
+|---|---|---|---|---|---|
+| 01 | Garden Gate | 10 | 47 | 0 of 52 | Walls recap: stand on the X to lower the wall, then lie across the planks beyond |
+| 02 | Fair Trade | 10 | 18 | 0 of 17 | One press lowers the wall and pulls the bridge in, so fetch the far switch first |
+| 03 | Timber | 11 | 22 | 0 of 25 | Hedges into gaps: the first falls at the first roll, the second needs you upright first |
+| 04 | Which Way | 12 | 78 | 31 of 95 | The roll straight down from the start wastes the hedge; it has to go east, from the west |
+| 05 | Behind the Wall | 14 | 124 | 69 of 213 | A hedge to reach the switch, which lowers the wall on the only side that sends the far hedge east. The open way up to the far hedge is the trap |
+
+- **Dead ends:** all of them come from wasting a hedge, which the board shows. The plan allows that only if it's obvious, so it's a playtest question, especially with 05 at about a third.
+- **Board layout:** what matters sits to the side of or in front of the block, since a standing block or raised wall hides what's directly north of it. One exception: 05's floor north of the far hedge, which only catches a hedge sent the wrong way.
+- **The maze level** the user wants belongs later: these five stay beginner friendly.
+
 **Every biome's shape:** 20 levels, the first few introductory and the last 15 ramping up in difficulty, so each biome can focus on its own creativity rather than on teaching the base rules.
 
 **After that: 20 levels per biome** (decided by the user 2026-11-02). Levels
@@ -784,7 +798,7 @@ come out in **batches of 5**, and each batch is playtested and tuned before the 
 
 | Chapter | Now | New levels | Batches |
 |---|---|---|---|
-| First Glade (a new chapter) | 0 | 20 | 5, 5, 5, 5 |
+| First Glade (a new chapter) | 5 | 15 | 5, 5, 5 |
 | Frost Isle, Windy Peaks, Starfall, Toybox | 8 each | 12 each | 5, 5, 2 |
 
 That is 68 new levels in 16 batches, for 100 levels across these five biomes, with the five old First Glade levels moving to the tutorial. A new biome is built
@@ -1031,6 +1045,8 @@ switch-and-bridge puzzle on a loop, on the real rules. The menus looked "kind of
 a crest. Hovering in Starfall's menu made the text nearly unreadable: a bug, every button turned white on hover even when the theme's text was white. Exit with no warning, felt in play: fine. The Labs screen works.
 
 **2026-11-05 — Glade Lab, first playtest.** "I really like the lab so far." The bumps "feel good". All three rule calls confirmed: a wall two tiles away stops a roll, a wall across a gap holds the block, and a hedge falls from two tiles away. An amber wall beside the amber block: "I'd prefer the block to look more like a stone color and I'd prefer the walls look more dirtish-grayish like stone brick" → First Glade's block is now pale stone, and walls are stone brick, keeping a band of their switch's color so they still name it. "We should see what the changes are before fully committing it to the campaign" → no lesson or campaign work until the new look is signed off. On seeing it: a sunk wall should show "the top of the wall... just flush with the ground" instead of the grass, and "get the orange off the wall" → both done; a thin colored line stays in the ground around the wall, which the user then approved ("the thin colored line works"). After playing the levels, on hedges: "the weirdest feature... it just doesn't really offer a challenge, just an annoying obstacle" → open. Claude's reading: knocking a hedge down is never the wrong choice (it only ever adds floor, and `gladelab-04` has 0 dead ends), so it's a toll, not a decision. Hedges aren't frozen, and First Glade's twist is back up for discussion. Options offered: toppling hedges that bridge gaps, flattened hedges that are fragile, pushable stones, or walls alone. The user chose toppling hedges → built, with `gladelab-04` rebuilt and `gladelab-05` added. On playing them: "I do like the new wall mechanic", wants a maze-like level with these features at some point, and "just a bit of a speed up on the walls going up and down" → 260 ms down to 170 ms, a roll's length. "Other than that, I approve of committing this" → rules frozen.
+
+**2026-11-05 — First Glade, first five levels.** "Those first 5 were simple and easy, however, the difficulty for the next 5 levels should be harder now" → approved and committed; levels 6 to 10 step up, instead of staying gentle until level 10 as planned.
 
 ## Architecture
 
