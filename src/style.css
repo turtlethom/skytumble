@@ -983,7 +983,8 @@ body.at-menu .bottom {
   --cliff: #b98352;
   --cliff-dark: #6f4a2d;
   position: absolute;
-  width: 250px;
+  /* Wide enough for its name, and for its row of stones with the island's padding. */
+  width: max(250px, calc(var(--cols, 4) * 42px + 40px));
   transform: translate(-50%, -50%) scale(var(--s, 1));
   animation: bob 7s ease-in-out var(--delay, 0s) infinite;
 }
@@ -1100,7 +1101,7 @@ body.at-menu .bottom {
 
 .sm-progress {
   /* Room above the first row for the "you are here" block. */
-  margin: 2px 0 20px;
+  margin: 2px 0 16px;
   font-size: 13px;
   color: var(--ink-soft);
 }
@@ -1111,21 +1112,21 @@ body.at-menu .bottom {
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: center;
-  gap: 14px 10px;
-  /* Four stones per row. */
-  max-width: 190px;
+  gap: 10px 8px;
+  /* --cols stones per row. */
+  max-width: calc(var(--cols, 4) * 42px);
   margin: 0 auto;
 }
 
 .sm-node {
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   padding: 0;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 900;
   background: #fff;
   border: 2px solid rgba(35, 48, 74, 0.14);
@@ -1134,7 +1135,7 @@ body.at-menu .bottom {
 }
 
 .sm-node:nth-child(even) {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .sm-node.solved {

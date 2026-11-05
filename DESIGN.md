@@ -682,7 +682,7 @@ heaviest world, and it runs at 59 to 61 fps on the user's laptop with no stutter
 
 That finishes the older worlds' pass. Next: see *Start menu, tutorial section and a new First Glade* below.
 
-**Pick up here** (2026-11-05). Stage 1 (main menu, Esc menu, Labs, Settings with reset), stage 2 (the Tutorial) and stage 3 (How To Play) are approved and committed. First Glade's wall and hedge rules and the four-level Glade Lab are built and waiting for the user's playtest: see *The Glade Lab as built* below. The Glade Lab is approved and committed, and the wall and hedge rules are frozen. Tutorial lesson 6 (walls) and How To Play's two new entries are committed. `glade-01`…`05` are approved and committed: see *First Glade's first five levels* below. `glade-06`…`10` are built and waiting for the user's playtest: see *First Glade's second five levels* below. **Next: playtest them. Before `glade-11`…`15`, the sky map has to fit more stones. Still open: the first-timer test and the push, which the user hasn't scheduled.** Nothing is pushed, on purpose: see *Release* below.
+**Pick up here** (2026-11-05). Stage 1 (main menu, Esc menu, Labs, Settings with reset), stage 2 (the Tutorial) and stage 3 (How To Play) are approved and committed. First Glade's wall and hedge rules and the four-level Glade Lab are built and waiting for the user's playtest: see *The Glade Lab as built* below. The Glade Lab is approved and committed, and the wall and hedge rules are frozen. Tutorial lesson 6 (walls) and How To Play's two new entries are committed. `glade-01`…`05` are approved and committed: see *First Glade's first five levels* below. `glade-06`…`10` are built and waiting for the user's playtest: see *First Glade's second five levels* below. `glade-06`…`10` and the sky map fix are approved and committed. **Next: `glade-11`…`15`, up to 15×11. Still open: the first-timer test and the push, which the user hasn't scheduled.** Nothing is pushed, on purpose: see *Release* below.
 
 **Now: main menu, Tutorial and How To Play** (settled in a grilling session 2026-11-03). Order of work: these three → First Glade as a real biome (its mechanic gets
 its own grilling, lab and rules freeze) → the 20-level batches → split + paint (assumed; not raised by the user). **Success:** a friend given only the link can solve
@@ -791,7 +791,7 @@ renderer; silent unlocks may go unnoticed; and the release is large and long-hel
 - **Board layout:** what matters sits to the side of or in front of the block, since a standing block or raised wall hides what's directly north of it. One exception: 05's floor north of the far hedge, which only catches a hedge sent the wrong way.
 - **The maze level** the user wants belongs later: these five stay beginner friendly.
 
-**First Glade's second five levels** (built 2026-11-05, awaiting playtest). The user asked for a clear step up after the first five. Their hints give the idea, not the route.
+**First Glade's second five levels** (built 2026-11-05, approved in playtest: "I like the levels"). The user asked for a clear step up after the first five. Their hints give the idea, not the route.
 
 | Level | Name | Par | States | Dead ends | The idea |
 |---|---|---|---|---|---|
@@ -803,7 +803,8 @@ renderer; silent unlocks may go unnoticed; and the release is large and long-hel
 
 - **Method:** lanes one tile wide between junctions three tiles apart. A lying block can't shift sideways in a lane, so par comes from routing, not parity shuffles. `scripts/design/search.ts` on open rooms did pad par that way (26 moves for two presses), and a random lane search found one good seed, 09, and nothing for the finale, so 10 is by hand.
 - **Par doesn't climb evenly:** 06 and 09 are short, because each turns on one idea rather than on length. The playtest should say whether they feel harder than 05 regardless.
-- **Sky map:** First Glade's island grows with its stones and already overlaps Frost Isle's corner at ten. This is the check noted under *After that*, and it has to be fixed before `glade-11`.
+- **Sky map** (fixed and approved 2026-11-05): stones are smaller, an island sets two rows up to 12 stones and three after that, growing wider rather than taller (7 across at 20), and the two rows of islands sit further apart. Checked with a throwaway build of five 20-stone islands at 1024×640, 1280×800, 1366×650, 1600×800 and 1920×950: no island overlaps another or the caption. The tails of the bottom row do slip behind the caption.
+- **Board size past level 10** (Claude's recommendation 2026-11-05; the user went ahead without changing it): the user wondered whether a lack of tiles will limit the puzzles, without wanting the board to look far away. First Glade has been well under what the other worlds use (`glade-10`: 13×9, 28 tiles; `frost-08`: 21×9, 79 tiles; `wind-08`: 20×13, 63 tiles). Calculated tile width at 1280×800, facing and after a quarter turn: 13×9 62/49 px, 15×11 55/42, 17×11 50/37, 21×9 44/30, 20×13 43/32, 25×13 36/25. Proposed caps: 15×11 for levels 11 to 15 and 17×11 for 16 to 20, with the maze at the larger size. In a lane layout that takes junctions from 15 to 24. Keep the camera as it is.
 - **The maze level** isn't in this batch. First attempts on open floor looked scattered rather than like a maze. It needs stone corridors, which tall walls can hide, so it's better planned as its own level in the second half.
 
 **Every biome's shape:** 20 levels, the first few introductory and the last 15 ramping up in difficulty, so each biome can focus on its own creativity rather than on teaching the base rules.
@@ -822,7 +823,7 @@ to 20 the same way, after its lab.
 - **Proposed, to confirm when this starts:** add new levels after the current ones (`frost-09` onward),
   each batch harder than the last, with a new finale at 20. Existing ids and saved progress stay valid,
   and the old finales become mid-chapter peaks. The first few levels of a chapter stay introductory, with the last 15 ramping up.
-- **To check first:** the sky map has to fit 20 level stones on each island.
+- **Checked:** the sky map fits 20 level stones on each island.
 
 **Later:** endless climb + daily seed, Frost in the generator, archipelago generation,
 more biomes from the backlog, visual level editor, full-level links (needed for handmade
@@ -1062,6 +1063,8 @@ a crest. Hovering in Starfall's menu made the text nearly unreadable: a bug, eve
 **2026-11-05 — Glade Lab, first playtest.** "I really like the lab so far." The bumps "feel good". All three rule calls confirmed: a wall two tiles away stops a roll, a wall across a gap holds the block, and a hedge falls from two tiles away. An amber wall beside the amber block: "I'd prefer the block to look more like a stone color and I'd prefer the walls look more dirtish-grayish like stone brick" → First Glade's block is now pale stone, and walls are stone brick, keeping a band of their switch's color so they still name it. "We should see what the changes are before fully committing it to the campaign" → no lesson or campaign work until the new look is signed off. On seeing it: a sunk wall should show "the top of the wall... just flush with the ground" instead of the grass, and "get the orange off the wall" → both done; a thin colored line stays in the ground around the wall, which the user then approved ("the thin colored line works"). After playing the levels, on hedges: "the weirdest feature... it just doesn't really offer a challenge, just an annoying obstacle" → open. Claude's reading: knocking a hedge down is never the wrong choice (it only ever adds floor, and `gladelab-04` has 0 dead ends), so it's a toll, not a decision. Hedges aren't frozen, and First Glade's twist is back up for discussion. Options offered: toppling hedges that bridge gaps, flattened hedges that are fragile, pushable stones, or walls alone. The user chose toppling hedges → built, with `gladelab-04` rebuilt and `gladelab-05` added. On playing them: "I do like the new wall mechanic", wants a maze-like level with these features at some point, and "just a bit of a speed up on the walls going up and down" → 260 ms down to 170 ms, a roll's length. "Other than that, I approve of committing this" → rules frozen.
 
 **2026-11-05 — First Glade, first five levels.** "Those first 5 were simple and easy, however, the difficulty for the next 5 levels should be harder now" → approved and committed; levels 6 to 10 step up, instead of staying gentle until level 10 as planned.
+
+**2026-11-05 — First Glade, second five levels and the sky map.** "I like the levels" → committed, with the sky map fix. Board caps of 15×11 for levels 11 to 15 and 17×11 for 16 to 20 stand.
 
 ## Architecture
 

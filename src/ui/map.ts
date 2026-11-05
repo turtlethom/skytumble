@@ -12,11 +12,12 @@ const NATURAL_WIDTH = 1000;
 const W = 160;
 const H = 90;
 const LAYOUT: Record<string, { x: number; y: number; theme: string }> = {
-  glade: { x: 20, y: 27, theme: 'glade' },
-  frost: { x: 50, y: 62, theme: 'frost' },
-  wind: { x: 80, y: 27, theme: 'peaks' },
-  star: { x: 110, y: 62, theme: 'night' },
-  toy: { x: 140, y: 27, theme: 'toy' },
+  // Two rows far enough apart for full islands of 20 stones: neighbors overlap sideways, so they can't overlap in height.
+  glade: { x: 20, y: 23, theme: 'glade' },
+  frost: { x: 50, y: 70, theme: 'frost' },
+  wind: { x: 80, y: 23, theme: 'peaks' },
+  star: { x: 110, y: 70, theme: 'night' },
+  toy: { x: 140, y: 23, theme: 'toy' },
   lab: { x: 30, y: 22, theme: 'lab' },
   windlab: { x: 80, y: 22, theme: 'lab' },
   gravlab: { x: 130, y: 22, theme: 'lab' },
@@ -72,7 +73,7 @@ export class SkyMap {
     // a small window nor float lost in a big one.
     const canvas = root.querySelector<HTMLElement>('.sm-canvas')!;
     new ResizeObserver(() => {
-      const s = Math.min(1.35, Math.max(0.8, canvas.clientWidth / NATURAL_WIDTH));
+      const s = Math.min(1.35, Math.max(0.7, canvas.clientWidth / NATURAL_WIDTH));
       canvas.style.setProperty('--s', s.toFixed(3));
     }).observe(canvas);
     // Hovering previews a level; clicking plays it.
@@ -163,7 +164,7 @@ export class SkyMap {
       .join('');
     return `
       <section class="sm-island ${theme}"
-               style="left:${(x / W) * 100}%;top:${(y / H) * 100}%;--delay:${-i * 1.7}s">
+               style="left:${(x / W) * 100}%;top:${(y / H) * 100}%;--delay:${-i * 1.7}s;--cols:${stoneColumns(c.levels.length)}">
         <div class="sm-top">
           <header>
             <h3>${esc(c.title.replace(/\s*\(.*\)$/, ''))}</h3>
@@ -193,6 +194,11 @@ export class SkyMap {
       </div>
       <button class="primary" data-play>Play <kbd>Enter</kbd></button>`;
   }
+}
+
+/** How many stones an island sets in a row: two rows while they fit in about the usual width, then three, so it grows wider rather than taller. */
+export function stoneColumns(stones: number): number {
+  return Math.ceil(stones / (stones <= 12 ? 2 : 3));
 }
 
 /** What an island's badge says on the sky map. */
