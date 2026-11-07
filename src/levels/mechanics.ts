@@ -7,7 +7,7 @@ import { Dir, Level, Tile } from '../game/types';
 
 export type MechanicId =
   | 'rolling' | 'lying' | 'planks' | 'soft' | 'heavy' | 'walls'
-  | 'ice' | 'belts' | 'pads' | 'flips' | 'cube' | 'tall' | 'extraHeavy' | 'hedges';
+  | 'ice' | 'belts' | 'iceWalls' | 'pads' | 'flips' | 'cube' | 'tall' | 'extraHeavy' | 'hedges';
 
 export interface Mechanic {
   id: MechanicId;
@@ -92,6 +92,16 @@ export const MECHANICS: Mechanic[] = [
     moves: moves('RRDRD'),
   },
   {
+    id: 'iceWalls',
+    name: 'Walls on ice and belts',
+    text: 'A slide stops on the tile before a raised wall. A lowered wall is floor, so a slide stops half on it. A belt can\'t push you into a raised wall, so you stay put on it until the wall goes down and you land on the belt again.',
+    basic: false,
+    // Held on the belt by the raised wall. One press lowers that wall and raises the one at the end of
+    // the ice. Back on the belt, it carries you onto the lowered wall, and the slide brakes before the other.
+    level: parseLevel(['S##>H~~~~~h', '...o....##G', '...#.......']),
+    moves: moves('RRDURDR'),
+  },
+  {
     id: 'pads',
     name: 'Launch pads',
     text: 'Stand on a pad and it flings you far along its arrow, landing lying. Lie fully on two pads for a short hop. Lying half on one is safe. Marks on the floor show where a flight can land, and a landing over nothing is a fall.',
@@ -151,7 +161,9 @@ export function mechanicsIn(level: Level): MechanicId[] {
   const found = new Set<MechanicId>();
   if (level.startShape === 1) found.add('cube');
   if (level.startShape === 3) found.add('tall');
+  const walls = tiles.some((t) => t === Tile.WallUp || t === Tile.WallDown);
   tiles.forEach((t, i) => {
+    if (walls && (t === Tile.Ice || t === Tile.Conveyor)) found.add('iceWalls');
     if (t === Tile.Ice) found.add('ice');
     else if (t === Tile.Conveyor) found.add('belts');
     else if (t === Tile.Pad) found.add('pads');
