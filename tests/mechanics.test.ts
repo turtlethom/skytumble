@@ -130,8 +130,6 @@ describe('How To Play unlocks', () => {
 
   it('can open every entry from the campaign', () => {
     const reachable = new Set(CAMPAIGN.flatMap((c) => c.levels.flatMap((l) => mechanicsIn(l.level))));
-    // Walls on ice and belts are only in Frost Lab until frost-09 onward are built: drop this then.
-    const pending: MechanicId[] = ['iceWalls'];
-    for (const m of MECHANICS.filter((e) => !e.basic && !pending.includes(e.id))) expect(reachable).toContain(m.id);
+    for (const m of MECHANICS.filter((e) => !e.basic)) expect(reachable).toContain(m.id);
   });
 });

@@ -683,7 +683,20 @@ heaviest world, and it runs at 59 to 61 fps on the user's laptop with no stutter
 
 That finishes the older worlds' pass. Next: see *Start menu, tutorial section and a new First Glade* below.
 
-**Pick up here** (paused 2026-11-05, at the user's request). First Glade's 20 levels, the menus, the Tutorial and How To Play are all live. The user's notes on `glade-16`…`20` and the maze are still open: whether it's the maze they pictured, whether low stone looks like a wall, and its frame rate on their laptop. The plan for walls in the other four worlds is settled: see *Walls in the other worlds* below. **Now (2026-11-07): Frost Isle's granite walls are live, and the rules for walls with ice and belts are frozen after Frost Lab (`frostlab-01`…`06`). How To Play has a *Walls on ice and belts* entry, opened by any level where walls meet ice or belts. Next: `frost-09`…`13`, with 6 of the 12 new levels using walls; once a campaign level opens the entry, drop the `pending` exemption in `tests/mechanics.test.ts`.**
+**Pick up here** (paused 2026-11-05, at the user's request). First Glade's 20 levels, the menus, the Tutorial and How To Play are all live. The user's notes on `glade-16`…`20` and the maze are still open: whether it's the maze they pictured, whether low stone looks like a wall, and its frame rate on their laptop. The plan for walls in the other four worlds is settled: see *Walls in the other worlds* below. **Now (2026-11-07): Frost Isle's granite walls are live, and the rules for walls with ice and belts are frozen after Frost Lab (`frostlab-01`…`06`). How To Play has a *Walls on ice and belts* entry. Frost Isle's first new batch, `frost-09`…`13`, is approved and live; see *Frost Isle's new levels* below.**
+
+**Frost Isle's new levels** (batch 1 approved and live 2026-11-07). Walls in 10, 11 and 13; the other three wall levels, the maze among them, come in 14–20. States climb through the batch, and the peak beats `frost-08` (22 moves, 387 states):
+
+| Level | Par | States | Idea |
+|---|---|---|---|
+| `frost-09` Chute | 20 | 83 | Belts drop you down an ice chute, one roll becoming a push and a long slide, but a column off for the goal: climb back and ride it again lined up |
+| `frost-10` Handbrake | 20 | 90 | The first wall level, teaching the brake: a lowered wall stops the first slide half on it, a slide onto the switch raises it, and the second slide stops a tile short, under the goal |
+| `frost-11` Ferry Crossing | 27 | 142 | Belt gates that trade: one orange press opens the first ferry and raises a wall on the far island; pressing there drops it and shuts the ferry behind you; a purple gate holds you so you can step off to its heavy switch |
+| `frost-12` Notch | 22 | 209 | No walls: a heavy switch in a notch in the ice that only a block dropping in from the north stands on, then a plank as the brake at the end of the bottom lane |
+| `frost-13` Double Duty | 25 | 464 | One orange wall works both ways: lowered to cross, raised again as a brake by a second press that also drops the walls ahead; purple opens the last gap |
+
+How they were made: skeletons fixed by hand around the idea, the search filling small patches, then stripped. A checker fixes each wall color permanently down and permanently up and re-solves: a color only counts if both change par, which threw out every free-form search (their walls never had to move). Then *regrowing*: tiles from the unstripped layout are added back one at a time, kept only if par holds and every color still has to move. That took Double Duty from 174 to 464 states and Notch from 64 to 214. Double Duty is flipped north to south so the purple wall doesn't hide the orange switch.
+
 
 **Now: main menu, Tutorial and How To Play** (settled in a grilling session 2026-11-03). Order of work: these three → First Glade as a real biome (its mechanic gets
 its own grilling, lab and rules freeze) → the 20-level batches → split + paint (assumed; not raised by the user). **Success:** a friend given only the link can solve
@@ -902,6 +915,8 @@ works and what doesn't. Claude writes the code and designs handmade levels from 
 feedback; batches of 5 levels per round.
 
 ## Playtest log
+
+**2026-11-07 — Frost Isle batch 1 (`frost-09`…`13`).** "I enjoyed all these levels." No changes; committed and pushed. The user asked about tooling that would make future levels faster and cheaper to build.
 
 **2026-11-07 — Frost Lab with switch walls.** Committed. Later the same day, Two Ferries and Launch were committed and the user raised Frost Isle's wall levels from 4 to 6 of its 12 new ones, then signed off: rules for walls with ice and belts frozen, and everything pushed. Stepping Stone's trick (a belt carrying you onto a lowered wall) feels fair and readable. Pressing orange twice in Two Colors is fine. The user wants a mixture of belt and ice puzzles with switch walls, with some levels making one of them the theme, and asked for more ice-and-switch-wall levels. A slide stopped by a wall played a tip-and-settle that delayed the next move, and the user disliked the delay → removed: the block just stops, and a held belt only flashes.
 

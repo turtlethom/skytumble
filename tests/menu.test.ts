@@ -34,7 +34,8 @@ describe('level tracks', () => {
 
   it('walk through chapters but stop at the end of the track', () => {
     expect(nextOnTrack('tutorial-01')?.id).toBe('tutorial-02');
-    expect(nextOnTrack('frost-08')?.id).toBe('wind-01');
+    const frost = CAMPAIGN.find((c) => c.id === 'frost')!.levels;
+    expect(nextOnTrack(frost[frost.length - 1].id)?.id).toBe('wind-01');
     expect(nextOnTrack(TUTORIAL.levels[TUTORIAL.levels.length - 1].id)).toBeNull();
     const lastCampaign = CAMPAIGN[CAMPAIGN.length - 1].levels;
     expect(nextOnTrack(lastCampaign[lastCampaign.length - 1].id)).toBeNull();
