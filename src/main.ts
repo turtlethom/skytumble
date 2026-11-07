@@ -2,7 +2,7 @@ import './style.css';
 import { randomSeed } from './game/rng';
 import { initialState, step } from './game/rules';
 import { solve } from './game/solver';
-import { DIRS, Dir, Level, State, TIERS, Tier } from './game/types';
+import { Block, DIRS, Dir, Level, State, TIERS, Tier } from './game/types';
 import { CAMPAIGN, LABS, TUTORIAL, chapterOf, findLevel, lessonUnlocked, nextOnTrack, trackOf } from './levels';
 import { isLesson, lessonDone, lessonPrompt } from './levels/lessons';
 import { HandmadeLevel } from './levels/format';
@@ -380,11 +380,17 @@ class Game {
   private async animateStep(from: State, result: ReturnType<typeof step>, dir: Dir, scene: number): Promise<void> {
     if (result.bumped) return this.world.bump(from.block, result.bumped, dir, !!result.knocked, result.bridged);
     await this.world.roll(from.block, result.rolled, dir);
+    // Walls that stopped a slide or held a belt, each shown right after the motion before it.
+    const holds = async (after: number, at: Block) => {
+      for (const h of result.held ?? []) if (h.after === after && scene === this.scene) await this.world.hold(at, h);
+    };
+    await holds(0, result.rolled);
     for (const [i, motion] of result.motions.entries()) {
       // A short beat between chained motions so slide → push → slide reads as three events.
       if (i > 0) await new Promise((r) => window.setTimeout(r, CHAIN_BEAT_MS));
       await this.world.move(motion);
       if (scene !== this.scene) return;
+      await holds(i + 1, motion.to);
     }
     if (scene !== this.scene) return;
     this.world.pressSwitches(result.pressed);

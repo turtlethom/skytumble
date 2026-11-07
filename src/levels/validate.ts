@@ -11,6 +11,8 @@ export type IceUse =
   | 'slide' // a lying block glided across ice
   | 'grip' // came to rest standing on ice
   | 'anchor' // rolled to rest lying half on ice, so the whole-block rule kept it from sliding
+  | 'brake' // a raised wall stopped a slide on the tile before it
+  | 'held' // a raised wall kept a belt from pushing
   | 'slide→belt' // a slide ended fully on conveyors, which then pushed
   | 'belt→slide' // a conveyor pushed the block onto ice, and it slid on
   | 'slide→switch'; // a slide's resting place pressed a switch
@@ -129,6 +131,7 @@ export function iceUses(level: Level, moves: Dir[]): { uses: IceUse[]; pushes: n
       if (kinds[i - 1] === 'push' && kinds[i] === 'slide') uses.add('belt→slide');
     }
     if (kinds[kinds.length - 1] === 'slide' && r.pressed.length > 0) uses.add('slide→switch');
+    for (const h of r.held ?? []) uses.add(h.belt ? 'held' : 'brake');
     const b = r.state.block;
     const onIce = blockCells(b).filter(([x, y]) => tileAt(level, x, y) === Tile.Ice).length;
     if (b.o === 'S' && onIce === 1) uses.add('grip');
@@ -163,18 +166,23 @@ export function padUses(level: Level, moves: Dir[]): PadUse[] {
   return [...uses];
 }
 
-/** What a wall or hedge does to a slide, a push, a flight, a flip or another shape isn't settled yet. */
-const NOT_WITH_WALLS = [Tile.Ice, Tile.Conveyor, Tile.Pad, Tile.Flip, Tile.ShapeSwitch, Tile.ExtraHeavy];
+/**
+ * What a wall does to a flight, a flip or another shape isn't settled yet (walls with ice and belts
+ * are: Frost Isle). Hedges stay in First Glade, with the basics only.
+ */
+const NOT_WITH_WALLS = [Tile.Pad, Tile.Flip, Tile.ShapeSwitch, Tile.ExtraHeavy];
+const NOT_WITH_HEDGES = [...NOT_WITH_WALLS, Tile.Ice, Tile.Conveyor];
 
 function mixesWalls(level: Level): boolean {
   const tiles = [...level.tiles, ...(level.ceiling?.tiles ?? [])];
-  const walled = tiles.some((t) => isWall(t) || t === Tile.Hedge);
-  return walled && (!!level.ceiling || !!level.startShape || tiles.some((t) => NOT_WITH_WALLS.includes(t)));
+  const unsettled = (not: Tile[]) => !!level.ceiling || !!level.startShape || tiles.some((t) => not.includes(t));
+  if (tiles.includes(Tile.Hedge) && unsettled(NOT_WITH_HEDGES)) return true;
+  return tiles.some(isWall) && unsettled(NOT_WITH_WALLS);
 }
 
 export function validateLevel(h: HandmadeLevel, chapter: Chapter): LevelReport {
   const errors: string[] = [];
-  if (mixesWalls(h.level)) errors.push('walls and hedges only mix with the basics until their other interactions are settled');
+  if (mixesWalls(h.level)) errors.push('walls only mix with the basics, ice and belts, and hedges only with the basics, until their other interactions are settled');
   // A hedge falling off the grid would just vanish, while one falling onto an empty tile bridges it,
   // and both look like open sky.
   for (const c of h.level.hedgeCells ?? []) {

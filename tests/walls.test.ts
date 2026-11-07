@@ -107,6 +107,71 @@ describe('walls', () => {
   });
 });
 
+describe('walls on Frost Isle', () => {
+  it('stop a slide on the tile before them', () => {
+    const level = parseLevel(['S~~~~~H#']);
+    const r = step(level, initialState(level), 'right');
+    expect(r.outcome).toBe('ok');
+    expect(r.state.block).toEqual({ x: 4, y: 0, o: 'X' });
+    expect(r.motions.map((m) => m.kind)).toEqual(['slide']);
+    expect(r.held).toEqual([{ x: 6, y: 0, dir: 'right', belt: false, after: 1 }]);
+  });
+
+  it('stop a slide before it starts when they stand right in front', () => {
+    const level = parseLevel(['S~~H#']);
+    const r = step(level, initialState(level), 'right');
+    expect(r.state.block).toEqual({ x: 1, y: 0, o: 'X' });
+    expect(r.motions).toEqual([]);
+    expect(r.held).toEqual([{ x: 3, y: 0, dir: 'right', belt: false, after: 0 }]);
+  });
+
+  it('stop a sideways slide when they touch only one end of the block', () => {
+    const level = parseLevel(['S~~~#', '#~~H#']);
+    const r = step(level, { block: { x: 1, y: 0, o: 'Y' }, bridges: 0, layer: 0 }, 'right');
+    // Lying along y on x=1, sliding right: the wall at (3,1) is in the way of its lower end at x=3.
+    expect(r.state.block).toEqual({ x: 2, y: 0, o: 'Y' });
+    expect(r.held?.[0]).toMatchObject({ x: 3, y: 1 });
+  });
+
+  it('let a slide pass once lowered, and low stone holds like a raised wall', () => {
+    const sunk = parseLevel(['S~~~h#']);
+    expect(step(sunk, initialState(sunk), 'right').state.block).toEqual({ x: 3, y: 0, o: 'X' });
+    // No switch for its color: it never moves, and it still holds.
+    const low = parseLevel(['S~~~K#']);
+    expect(step(low, initialState(low), 'right').state.block).toEqual({ x: 2, y: 0, o: 'X' });
+  });
+
+  it('stand in for a switch: a press lowers the brake and the next slide runs on', () => {
+    const level = parseLevel(['S~~~~H~~.', '#o#######']);
+    const first = step(level, initialState(level), 'right');
+    expect(first.state.block).toEqual({ x: 3, y: 0, o: 'X' });
+    const lowered = { ...first.state, bridges: first.state.bridges ^ 1 };
+    expect(step(level, lowered, 'right').outcome).toBe('ok');
+  });
+
+  it('keep a belt from pushing, and the block stays put', () => {
+    const level = parseLevel(['S#>H#']);
+    const r = step(level, { block: { x: 0, y: 0, o: 'X' }, bridges: 0, layer: 0 }, 'right');
+    expect(r.outcome).toBe('ok');
+    expect(r.state.block).toEqual({ x: 2, y: 0, o: 'S' });
+    expect(r.motions).toEqual([]);
+    expect(r.held).toEqual([{ x: 3, y: 0, dir: 'right', belt: true, after: 0 }]);
+  });
+
+  it('stop a slide that a belt started', () => {
+    const level = parseLevel(['Svv#', '#~~#', '#~~#', '#~~#', '#H##']);
+    const r = step(level, initialState(level), 'right');
+    expect(r.motions.map((m) => m.kind)).toEqual(['push', 'slide']);
+    expect(r.state.block).toEqual({ x: 1, y: 3, o: 'X' });
+    expect(r.held).toEqual([{ x: 1, y: 4, dir: 'down', belt: false, after: 2 }]);
+  });
+
+  it('do not stop flights or anything else that never touches them', () => {
+    const level = parseLevel(['S~~~~#', '######']);
+    expect(step(level, initialState(level), 'right').held).toBeUndefined();
+  });
+});
+
 describe('reversed bridges', () => {
   it('are out when a digit bridge of their color is in', () => {
     const reversed = parseLevel(['S#a']);
@@ -299,7 +364,11 @@ describe('validation', () => {
   });
 
   it('refuses walls and hedges with mechanics whose interactions are not settled', () => {
-    for (const grid of ['SH~G', 'S&>G', 'SHRG', 'S&+G', 'SHcG', 'S&XG']) expect(report(grid)).toMatch(/only mix/);
+    for (const grid of ['S&~G', 'S&>G', 'SHRG', 'S&+G', 'SHcG', 'S&XG']) expect(report(grid)).toMatch(/only mix/);
     expect(report('S&#G\n---\n....')).toMatch(/only mix/);
+  });
+
+  it('accepts walls with ice and belts (Frost Isle)', () => {
+    for (const grid of ['SH~G', 'SK>G', 'Sh~>G']) expect(report(grid)).not.toMatch(/only mix/);
   });
 });

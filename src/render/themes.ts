@@ -164,6 +164,8 @@ export const CHAPTER_THEMES: Record<string, Theme> = {
   toy: TOYBOX,
   // A lab, but walls and hedges are for this world, and a green hedge has to read on its grass.
   gladelab: FOREST,
+  // Frost Isle's walls are granite in the snow, and they have to be judged there.
+  frostlab: FROST,
 };
 
 /** Every theme by id, so `?theme=forest` can preview one on any level or on the tile sheet. */

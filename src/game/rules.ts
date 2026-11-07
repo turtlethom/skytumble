@@ -36,6 +36,20 @@ export interface StepResult {
   knocked?: boolean;
   /** The empty tile a toppled hedge landed on, which is floor from now on. */
   bridged?: { x: number; y: number };
+  /**
+   * Raised walls that stopped a slide on the tile before them, or kept a belt from pushing, in order.
+   * `after` counts the motions that came before it.
+   */
+  held?: Held[];
+}
+
+export interface Held {
+  x: number;
+  y: number;
+  dir: Dir;
+  /** A belt that couldn't push, rather than a slide that stopped. */
+  belt: boolean;
+  after: number;
 }
 
 export function initialState(level: Level): State {
@@ -166,7 +180,7 @@ function standsUp(level: Level, x: number, y: number, state: State): boolean {
 
 /**
  * The first thing in the way of a roll that would land on `to`, nearest the block first: a raised
- * wall or an upright hedge. Only the roll checks this; slides, pushes and flights don't.
+ * wall or an upright hedge. Slides and belt pushes check `inTheWay` instead; flights fly over.
  */
 function obstacle(level: Level, state: State, to: Block, dir: Dir): { x: number; y: number; hedge: boolean } | null {
   const cells = blockCells(to);
@@ -197,14 +211,31 @@ function shift(b: Block, dir: Dir): Block {
   return { ...b, x: b.x + dx, y: b.y + dy };
 }
 
-/** Slide a lying block along `dir` while it is fully on ice; stops on leaving ice or losing support. */
-function slide(level: Level, b: Block, dir: Dir, bridges: number): Block {
+/**
+ * What stands on a cell `to` would move onto that `from` isn't already on: a raised wall or an upright
+ * hedge stops a slide or a push on the tile before it. A wall that came up under the block doesn't
+ * hold it, since the block is already there.
+ */
+function inTheWay(level: Level, state: State, from: Block, to: Block): { x: number; y: number } | null {
+  const on = new Set(blockCells(from).map(([x, y]) => y * level.width + x));
+  const hit = blockCells(to).find(([x, y]) => !on.has(y * level.width + x) && standsUp(level, x, y, state));
+  return hit ? { x: hit[0], y: hit[1] } : null;
+}
+
+/**
+ * Slide a lying block along `dir` while it is fully on ice; stops on leaving ice or losing support,
+ * or on the tile before a raised wall (`hit`).
+ */
+function slide(level: Level, state: State, b: Block, dir: Dir): { block: Block; hit: { x: number; y: number } | null } {
   let cur = b;
   while (cur.o !== 'S' && fullyOn(level, cur, Tile.Ice)) {
-    cur = shift(cur, dir);
-    if (!supported(level, cur, bridges)) break;
+    const next = shift(cur, dir);
+    const hit = inTheWay(level, state, cur, next);
+    if (hit) return { block: cur, hit };
+    cur = next;
+    if (!supported(level, cur, state.bridges)) break;
   }
-  return cur;
+  return { block: cur, hit: null };
 }
 
 /** The direction conveyors push the block, if it is fully on conveyors that all agree. */
@@ -310,11 +341,18 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
     motions,
     toggled: state.bridges ^ bridges,
     pressed: [],
+    ...(held.length ? { held } : {}),
     ...extra,
   });
 
+  const held: Held[] = [];
+  const slideOn = (d: Dir) => {
+    const { block: to, hit } = slide(view, state, block, d);
+    moveTo('slide', d, to);
+    if (hit) held.push({ ...hit, dir: d, belt: false, after: motions.length });
+  };
   const still = () => supported(view, block, state.bridges, state.hedges ?? 0);
-  if (still()) moveTo('slide', dir, slide(view, block, dir, state.bridges));
+  if (still()) slideOn(dir);
   // Then belts, pads and flip tiles act wherever the block rests, until none does. At most one
   // belt push per move, and each pad or flip tile fires at most once, so every move ends.
   let pushed = false;
@@ -324,8 +362,15 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
     const push = pushed ? null : conveyorPush(view, block);
     if (push) {
       pushed = true;
+      // A wall where the belt would push holds the block where it is. The belt tries again only the
+      // next time the block lands on it.
+      const hit = inTheWay(view, state, block, shift(block, push));
+      if (hit) {
+        held.push({ ...hit, dir: push, belt: true, after: motions.length });
+        continue;
+      }
       moveTo('push', push, shift(block, push));
-      if (still()) moveTo('slide', push, slide(view, block, push, state.bridges));
+      if (still()) slideOn(push);
       continue;
     }
     const launch = padLaunch(view, block);
@@ -396,6 +441,7 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
     toggled: state.bridges ^ bridges,
     pressed,
     ...(reshaped ? { reshaped } : {}),
+    ...(held.length ? { held } : {}),
   };
 }
 

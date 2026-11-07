@@ -1164,6 +1164,15 @@ export class World {
   }
 
   /**
+   * A raised wall stopped a slide on the tile before it, or kept a belt from pushing: the block tips
+   * against it and settles back, as when rolling into one, and a held belt flares under the block.
+   */
+  hold(b: Block, h: { x: number; y: number; dir: Dir; belt: boolean }): Promise<void> {
+    if (h.belt) this.flareBelts(b, h.dir);
+    return this.bump(b, h, h.dir, false);
+  }
+
+  /**
    * The hedge goes over on its far edge and leaves the mat that was under it. Over a gap it falls all
    * the way and drops into the gap, level with the floor. Onto anything else it crumples where it falls.
    */

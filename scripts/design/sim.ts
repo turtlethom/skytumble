@@ -50,7 +50,8 @@ for (const [i, dir] of moves.entries()) {
   const r = step(d.level, s, dir);
   const b = r.state.block;
   const hit = r.bumped ? `${r.knocked ? 'TOPPLED' : 'BUMPED'}(${r.bumped.x},${r.bumped.y})${r.bridged ? ` →bridged(${r.bridged.x},${r.bridged.y})` : ''}` : '';
-  const extra = [describeMotions(r.motions), r.pressed.length ? 'PRESS' : '', r.broke ? 'BROKE' : '', hit].filter(Boolean);
+  const held = (r.held ?? []).map((h) => `${h.belt ? 'HELD' : 'BRAKE'}(${h.x},${h.y})`).join(' ');
+  const extra = [describeMotions(r.motions), held, r.pressed.length ? 'PRESS' : '', r.broke ? 'BROKE' : '', hit].filter(Boolean);
   const up = d.level.ceiling ? (r.state.layer ? ' ceiling' : ' ground') : '';
   const shape = b.n === 1 ? 'cube ' : b.n === 3 ? 'tall ' : '';
   console.log(`${String(i + 1).padStart(3)} ${dir[0].toUpperCase()} → ${shape}${b.o}(${b.x},${b.y})${up} ${r.outcome}${extra.length ? `  ${extra.join(' ')}` : ''}`);
