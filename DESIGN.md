@@ -843,7 +843,7 @@ renderer; silent unlocks may go unnoticed; and the release is large and long-hel
 | Area | Decision |
 |---|---|
 | Purpose | Walls combine with each world's mechanic |
-| Amount | 4 of each world's 12 new levels: three wall levels and a maze. The user first chose about half, then came down to protect each world's identity |
+| Amount | Frost Isle: 6 of its 12 new levels, five switch-wall levels and a maze (raised from 4 on 2026-11-07, after the user enjoyed Frost Lab's switch walls). The other worlds: 4 of 12, three wall levels and a maze, to be revisited at each world's lab. The user first chose about half, then came down to protect each world's identity |
 | Look | The same notched shape in a new material per world. The user approves samples on the tile sheet, up, sunk and in black and white, before each lab. Readability beats theme: an ice wall could look like a slippery tile, and slate would melt into Windy Peaks' floor |
 | Mazes | One per world, in low stone of its material, one of the 4, mid-way through the last levels and not the finale, with the world's mechanic inside so it only works in that world |
 | Hidden tiles | Walls stay two tall. Careful layout handles it, over fading or shorter walls |
@@ -902,7 +902,7 @@ feedback; batches of 5 levels per round.
 
 ## Playtest log
 
-**2026-11-07 — Frost Lab with switch walls.** Committed. Stepping Stone's trick (a belt carrying you onto a lowered wall) feels fair and readable. Pressing orange twice in Two Colors is fine. The user wants a mixture of belt and ice puzzles with switch walls, with some levels making one of them the theme, and asked for more ice-and-switch-wall levels. A slide stopped by a wall played a tip-and-settle that delayed the next move, and the user disliked the delay → removed: the block just stops, and a held belt only flashes.
+**2026-11-07 — Frost Lab with switch walls.** Committed. Later the same day, Two Ferries and Launch were committed and the user raised Frost Isle's wall levels from 4 to 6 of its 12 new ones. Stepping Stone's trick (a belt carrying you onto a lowered wall) feels fair and readable. Pressing orange twice in Two Colors is fine. The user wants a mixture of belt and ice puzzles with switch walls, with some levels making one of them the theme, and asked for more ice-and-switch-wall levels. A slide stopped by a wall played a tip-and-settle that delayed the next move, and the user disliked the delay → removed: the block just stops, and a held belt only flashes.
 
 **2026-11-07 — Frost Isle's walls, samples and first lab.** The granite wall samples were approved. On the first lab the user prefers walls that switches raise and lower over static walls: "that should be very limited to some levels, like the maze level". → The static-stone levels (Brake, Held, Chain) are replaced with switch-wall levels; static stone stays for the Rink and the maze. In Frost Isle's new levels, walls are switch walls by default, and low stone is kept for the maze.
 
