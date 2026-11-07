@@ -23,10 +23,24 @@ export interface Theme {
    * this world's background needs it fainter than usual.
    */
   finish: { switchBase?: number; wood?: boolean; snow?: number; iceSheen?: boolean; brass?: number; padVents?: boolean; plastic?: boolean; rail?: number; bridgeGhost?: number };
+  /**
+   * Walls' stone, if not First Glade's dirt-grey brick. `ashlar` is big cut stones in uneven courses.
+   * `snow` sits on the ledges, caps a raised wall's top and dusts low stone, but never the top of a
+   * sunk wall, which has to read as stone in the snow. `deck` tints a wall's top, darker than its sides.
+   */
+  wall?: WallStone;
   /** Where a pad flight lands, if this floor needs a color other than the usual deep blue. */
   landingMark?: number;
   /** Where a flip lands, if this floor needs a color other than the usual violet. */
   flipMark?: number;
+}
+
+export interface WallStone {
+  style: 'brick' | 'ashlar';
+  shades: string[];
+  mortar: string;
+  deck: number;
+  snow?: number;
 }
 
 /** The ground and block every world starts from until it restyles them. */
@@ -88,6 +102,14 @@ const FROST: Theme = {
   earth: { soil: 0x7f93ab, hanging: 0xb5d8ef, style: 'icicles' },
   fragile: { light: 0x5f4d40, dark: 0x4a3c32, weathered: true },
   finish: { switchBase: 0x8d95a6, snow: 0xf1eee8, iceSheen: true },
+  // Dark blue-grey granite: far below the snow, and nothing like ice, which is pale and glassy.
+  wall: {
+    style: 'ashlar',
+    shades: ['#5d6776', '#66707f', '#6f7988', '#58616f', '#77818f', '#626b79'],
+    mortar: '#363c47',
+    deck: 0xa9adb6,
+    snow: 0xf1eee8,
+  },
 };
 
 /** Windy Peaks: bright grey stone in a strong wind. The slate stays sunlit, so the world doesn't feel heavy. */

@@ -8,7 +8,7 @@ import { isLesson, lessonDone, lessonPrompt } from './levels/lessons';
 import { HandmadeLevel } from './levels/format';
 import { MECHANICS, Mechanic, mechanicsIn } from './levels/mechanics';
 import { MENU_LEVEL } from './levels/menuScene';
-import { tileSheet, toySampleFloor } from './levels/sheet';
+import { tileSheet, toySampleFloor, wallSampleFloor } from './levels/sheet';
 import { NEUTRAL, THEMES, Theme, themeForLevel } from './render/themes';
 import { World } from './render/world';
 import { ChapterArrival } from './ui/arrival';
@@ -163,6 +163,10 @@ class Game {
     }
     if (params.has('aerie') && params.has('sheet')) {
       void this.start(toySampleFloor(), 0).then(() => this.world.showAerie());
+      return;
+    }
+    if (params.has('walls') && params.has('sheet')) {
+      void this.start(wallSampleFloor(), 0);
       return;
     }
     if (params.has('toys')) {

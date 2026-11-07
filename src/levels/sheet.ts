@@ -32,3 +32,21 @@ export function tileSheet(bridgesOn: number): Level {
 export function toySampleFloor(): Level {
   return parseLevel(['#############', '#############', '#############', 'S############', '#############']);
 }
+
+/**
+ * A world's walls up close (`?sheet=frost&walls`), for approving their stone: two raised and two sunk
+ * walls, low stone that never moves (group 1 has no switch), and the tiles walls must not be mistaken
+ * for (ice, fragile, a switch) beside them. Not a puzzle.
+ */
+export function wallSampleFloor(): Level {
+  return parseLevel([
+    '##############',
+    '#HH##hh##~~~##',
+    '#######IIII~##',
+    '#o#######I##f#',
+    '###~~#######f#',
+    'S##~I#IIIII###',
+    '###~I#####I###',
+    '##########I~~#',
+  ]);
+}

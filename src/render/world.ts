@@ -11,7 +11,7 @@ import { Stardust } from './stardust';
 import { ReindeerCloseUp } from './ridge';
 import { StarfallScenery } from './starfall';
 import { StudioScenery } from './studio';
-import { NEUTRAL, Theme } from './themes';
+import { NEUTRAL, Theme, WallStone } from './themes';
 import { ToyboxScenery } from './toybox';
 import { makeToySamples, plasticEnvironment } from './toys';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
@@ -576,7 +576,7 @@ export class World {
         this.lowWalls[layer].push({ x, y, edge: this.onIslandEdge(layer, x, y) });
         return null;
       }
-      const view = makeWall(GROUP_COLORS[group % GROUP_COLORS.length]);
+      const view = makeWall(GROUP_COLORS[group % GROUP_COLORS.length], wallStone(this.theme));
       g.add(floorTile(jitter, this.theme, layer), earth(jitter, this.theme), view.frame, view.pillar);
       this.walls.push({ layer, x, y, tile, group, pillar: view.pillar, up: true });
       return g;
@@ -2036,7 +2036,7 @@ function blockPosition(b: Block): THREE.Vector3 {
  * A raised stone wall, with a thin line of its switch's color set in the ground around it. When it
  * sinks, its top stays flush with the ground inside that line.
  */
-function makeWall(color: number): { frame: THREE.Object3D; pillar: THREE.Object3D } {
+function makeWall(color: number, stone: WallStone): { frame: THREE.Object3D; pillar: THREE.Object3D } {
   const frame = new THREE.Group();
   const [outer, bar] = [WALL_WIDTH + 0.08, 0.05];
   for (const [dx, dz, w, d] of [[0, -outer / 2 + bar / 2, outer, bar], [0, outer / 2 - bar / 2, outer, bar], [-outer / 2 + bar / 2, 0, bar, outer - 2 * bar], [outer / 2 - bar / 2, 0, bar, outer - 2 * bar]]) {
@@ -2046,17 +2046,21 @@ function makeWall(color: number): { frame: THREE.Object3D; pillar: THREE.Object3
     frame.add(edge);
   }
   // The same top twice: in the floor, flush with the ground, and on the pillar that rises over it.
-  frame.add(wallTop(WALL_FLUSH, 0));
+  frame.add(wallTop(WALL_FLUSH, 0, stone, false));
   const pillar = new THREE.Group();
   const shoulder = WALL_HEIGHT - WALL_NOTCH;
-  const body = brickBox(WALL_WIDTH, shoulder, WALL_WIDTH);
+  const body = stoneBox(WALL_WIDTH, shoulder, WALL_WIDTH, stone);
   body.position.y = shoulder / 2;
-  pillar.add(body, wallTop(WALL_NOTCH, shoulder));
+  pillar.add(body, wallTop(WALL_NOTCH, shoulder, stone, true));
   return { frame, pillar };
 }
 
-/** Walls that never move: plain low blocks of brick joined into one mass of stone, with one layer of soil under the island's edge. */
+/**
+ * Walls that never move: plain low blocks of stone joined into one mass, with one layer of soil under
+ * the island's edge. In a snowy world their tops are only dusted, so a maze still reads from above.
+ */
 function makeLowWalls(cells: { x: number; y: number; edge: boolean }[], theme: Theme): THREE.Object3D {
+  const stone = wallStone(theme);
   const merged = (parts: THREE.BufferGeometry[], material: THREE.Material) => {
     const mesh = new THREE.Mesh(mergeGeometries(parts), material);
     parts.forEach((p) => p.dispose());
@@ -2065,7 +2069,18 @@ function makeLowWalls(cells: { x: number; y: number; edge: boolean }[], theme: T
     return mesh;
   };
   const g = new THREE.Group();
-  g.add(merged(cells.map(({ x, y }) => brickGeometry(1, LOW_WALL_HEIGHT, 1).translate(x, LOW_WALL_HEIGHT / 2, y)), new THREE.MeshStandardMaterial({ map: brickMap(), roughness: 0.95 })));
+  g.add(merged(cells.map(({ x, y }) => stoneGeometry(1, LOW_WALL_HEIGHT, 1).translate(x, LOW_WALL_HEIGHT / 2, y)), new THREE.MeshStandardMaterial({ map: stoneMap(stone), roughness: 0.95 })));
+  if (stone.snow !== undefined) {
+    const top = (x: number, y: number) => {
+      const plane = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2).translate(x, LOW_WALL_HEIGHT + 0.002, y);
+      // Each cell takes its own quarter of the texture, so the dusting doesn't repeat tile to tile.
+      const uv = plane.attributes.uv;
+      const [u, v] = [(Math.abs(x) % 2) / 2, (Math.abs(y) % 2) / 2];
+      for (let i = 0; i < uv.count; i++) uv.setXY(i, u + uv.getX(i) / 2, v + uv.getY(i) / 2);
+      return plane;
+    };
+    g.add(merged(cells.map(({ x, y }) => top(x, y)), new THREE.MeshStandardMaterial({ map: dustedMap(stone), roughness: 0.95 })));
+  }
   const edges = cells.filter((c) => c.edge);
   if (edges.length) {
     const soil = new THREE.MeshStandardMaterial({ color: theme.earth.soil, roughness: 0.85 });
@@ -2074,40 +2089,105 @@ function makeLowWalls(cells: { x: number; y: number; edge: boolean }[], theme: T
   return g;
 }
 
-/** The top of a wall: a darker deck between four notched corners `height` tall, starting at `y`. */
-function wallTop(height: number, y: number): THREE.Object3D {
+/**
+ * The top of a wall: a darker deck between four notched corners `height` tall, starting at `y`.
+ * A raised top in a snowy world holds snow on its deck and corners.
+ */
+function wallTop(height: number, y: number, stone: WallStone, raised: boolean): THREE.Object3D {
   const top = new THREE.Group();
-  const deck = brickBox(WALL_WIDTH, WALL_FLUSH / 2, WALL_WIDTH, WALL_DECK_TINT);
+  const deck = stoneBox(WALL_WIDTH, WALL_FLUSH / 2, WALL_WIDTH, stone, stone.deck);
   deck.position.y = y + WALL_FLUSH / 4;
   top.add(deck);
+  const snow = raised ? stone.snow : undefined;
+  if (snow !== undefined) {
+    const drift = box(WALL_WIDTH - 0.04, 0.05, WALL_WIDTH - 0.04, snow, { roughness: 1 });
+    drift.position.y = y + 0.025;
+    top.add(drift);
+  }
   const offset = WALL_WIDTH / 2 - WALL_MERLON / 2;
   for (const [dx, dz] of [[-offset, -offset], [offset, -offset], [-offset, offset], [offset, offset]]) {
-    const merlon = brickBox(WALL_MERLON, height, WALL_MERLON);
+    const merlon = stoneBox(WALL_MERLON, height, WALL_MERLON, stone);
     merlon.position.set(dx, y + height / 2, dz);
     top.add(merlon);
+    if (snow !== undefined) {
+      const cap = box(WALL_MERLON + 0.02, 0.045, WALL_MERLON + 0.02, snow, { roughness: 1 });
+      cap.position.set(dx, y + height + 0.0225, dz);
+      top.add(cap);
+    }
   }
   return top;
 }
 
-/** One texture's worth of brick, in tiles: two bricks long and four courses high. */
+/** One texture's worth of wall, in tiles: two bricks long and four courses high. */
 const BRICK_TILE = 0.8;
-const BRICK_SHADES = ['#8f8574', '#857b6b', '#7a7263', '#97897a', '#8a7a68', '#807a6e'];
-const BRICK_MORTAR = '#5d5548';
-let brickTexture: THREE.CanvasTexture | null = null;
+/** First Glade's walls, and any world that hasn't chosen its own stone. */
+const BRICK: WallStone = {
+  style: 'brick',
+  shades: ['#8f8574', '#857b6b', '#7a7263', '#97897a', '#8a7a68', '#807a6e'],
+  mortar: '#5d5548',
+  deck: WALL_DECK_TINT,
+};
+const wallStone = (theme: Theme): WallStone => theme.wall ?? BRICK;
+/** Made once per stone and shared by every wall. */
+const stoneMaps = new Map<WallStone, THREE.CanvasTexture>();
+const dustedMaps = new Map<WallStone, THREE.CanvasTexture>();
 
-/** Dirt-grey stone bricks in a running bond, repeating seamlessly, made once and shared by every wall. */
-function brickMap(): THREE.CanvasTexture {
-  if (brickTexture) return brickTexture;
+function stoneMap(stone: WallStone): THREE.CanvasTexture {
+  let map = stoneMaps.get(stone);
+  if (!map) stoneMaps.set(stone, (map = canvasMap(stone.style === 'ashlar' ? ashlarCanvas(stone) : brickCanvas(stone), true)));
+  return map;
+}
+
+/** The stone's texture under a dusting of snow: drifts in some joints and a few patches, never a full cover. */
+function dustedMap(stone: WallStone): THREE.CanvasTexture {
+  let map = dustedMaps.get(stone);
+  if (map) return map;
+  const base = stone.style === 'ashlar' ? ashlarCanvas(stone, false) : brickCanvas(stone);
+  const ctx = base.getContext('2d')!;
+  const size = base.width;
+  let s = 7919;
+  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const hex = stone.snow ?? 0xffffff;
+  const [r, g, b] = [hex >> 16, (hex >> 8) & 255, hex & 255];
+  // Soft-edged drifts, stretched along the wind, fading out rather than ending in a hard rim.
+  for (let i = 0; i < 7; i++) {
+    const [x, y, rad] = [rnd() * size, rnd() * size, 14 + rnd() * 18];
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(1, 0.35 + rnd() * 0.2);
+    const drift = ctx.createRadialGradient(0, 0, 0, 0, 0, rad);
+    drift.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.75)`);
+    drift.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 0.4)`);
+    drift.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+    ctx.fillStyle = drift;
+    ctx.fillRect(-rad, -rad, rad * 2, rad * 2);
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+  dustedMaps.set(stone, (map = canvasMap(base, false)));
+  return map;
+}
+
+function canvasMap(canvas: HTMLCanvasElement, repeat: boolean): THREE.CanvasTexture {
+  const map = new THREE.CanvasTexture(canvas);
+  map.colorSpace = THREE.SRGBColorSpace;
+  if (repeat) map.wrapS = map.wrapT = THREE.RepeatWrapping;
+  map.anisotropy = 4;
+  return map;
+}
+
+/** Stone bricks in a running bond, repeating seamlessly. */
+function brickCanvas(stone: WallStone): HTMLCanvasElement {
   const size = 256;
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = size;
   const ctx = canvas.getContext('2d')!;
-  ctx.fillStyle = BRICK_MORTAR;
+  ctx.fillStyle = stone.mortar;
   ctx.fillRect(0, 0, size, size);
   const [courses, perRow, mortar] = [4, 2, 5];
   const [h, w] = [size / courses, size / perRow];
   let n = 0;
-  const shade = () => BRICK_SHADES[Math.floor(Math.abs(Math.sin(++n * 12.9898) * 43758.5453) % 1 * BRICK_SHADES.length)];
+  const shade = () => stone.shades[Math.floor(Math.abs(Math.sin(++n * 12.9898) * 43758.5453) % 1 * stone.shades.length)];
   for (let row = 0; row < courses; row++) {
     const shift = row % 2 ? w / 2 : 0;
     for (let col = 0; col < perRow; col++) {
@@ -2116,22 +2196,84 @@ function brickMap(): THREE.CanvasTexture {
       for (const wrap of [0, -size]) ctx.fillRect(col * w + shift + wrap + mortar / 2, row * h + mortar / 2, w - mortar, h - mortar);
     }
   }
-  brickTexture = new THREE.CanvasTexture(canvas);
-  brickTexture.colorSpace = THREE.SRGBColorSpace;
-  brickTexture.wrapS = brickTexture.wrapT = THREE.RepeatWrapping;
-  brickTexture.anisotropy = 4;
-  return brickTexture;
+  return canvas;
 }
 
-/** A box of bricks that all come out the same size, whatever the box's proportions. */
-function brickBox(w: number, h: number, d: number, tint = 0xffffff): THREE.Mesh {
-  const mesh = new THREE.Mesh(brickGeometry(w, h, d), new THREE.MeshStandardMaterial({ map: brickMap(), color: tint, roughness: 0.95 }));
+/**
+ * Big cut stones in uneven courses, each a little lighter at the top, flecked like granite, repeating
+ * seamlessly. In a snowy world, snow lies along the top of some stones (`ledges`).
+ */
+function ashlarCanvas(stone: WallStone, ledges = true): HTMLCanvasElement {
+  const size = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  let s = 4271;
+  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  ctx.fillStyle = stone.mortar;
+  ctx.fillRect(0, 0, size, size);
+  const mortar = 6;
+  const courses = [92, 78, 86];
+  let top = 0;
+  for (const h of courses) {
+    // Stone widths for this course, scaled so they fill the width exactly and the texture tiles.
+    const widths: number[] = [];
+    for (let sum = 0; sum < size; ) sum += widths[widths.push(60 + rnd() * 70) - 1];
+    const total = widths.reduce((a, b) => a + b, 0);
+    let x = rnd() * size;
+    for (const raw of widths) {
+      const w = (raw * size) / total;
+      const shade = stone.shades[Math.floor(rnd() * stone.shades.length)];
+      const ledge = ledges && stone.snow !== undefined && rnd() < 0.45;
+      const ledgeFrom = rnd() * 0.3;
+      const ledgeTo = 0.6 + rnd() * 0.4;
+      for (const wrap of [0, -size]) {
+        const [sx, sy, sw, sh] = [x + wrap + mortar / 2, top + mortar / 2, w - mortar, h - mortar];
+        const face = ctx.createLinearGradient(0, sy, 0, sy + sh);
+        face.addColorStop(0, lighten(shade, 0.12));
+        face.addColorStop(0.35, shade);
+        face.addColorStop(1, lighten(shade, -0.1));
+        ctx.fillStyle = face;
+        ctx.beginPath();
+        ctx.roundRect(sx, sy, sw, sh, 7);
+        ctx.fill();
+        if (ledge) {
+          ctx.fillStyle = cssColor(stone.snow!);
+          ctx.beginPath();
+          ctx.roundRect(sx + sw * ledgeFrom, sy - 1, sw * (ledgeTo - ledgeFrom), 5, 2.5);
+          ctx.fill();
+        }
+      }
+      x += w;
+    }
+    top += h;
+  }
+  // Granite flecks: tiny light and dark grains all over.
+  for (let i = 0; i < 900; i++) {
+    ctx.globalAlpha = 0.25 + rnd() * 0.25;
+    ctx.fillStyle = rnd() < 0.5 ? '#2c313a' : '#c7ccd4';
+    ctx.fillRect(rnd() * size, rnd() * size, 1.5, 1.5);
+  }
+  ctx.globalAlpha = 1;
+  return canvas;
+}
+
+/** A CSS color lightened (or, below zero, darkened) by a fraction. */
+function lighten(css: string, by: number): string {
+  const n = parseInt(css.slice(1), 16);
+  const f = (c: number) => Math.round(by >= 0 ? c + (255 - c) * by : c * (1 + by));
+  return `rgb(${f(n >> 16)}, ${f((n >> 8) & 255)}, ${f(n & 255)})`;
+}
+
+/** A box of stone whose bricks all come out the same size, whatever the box's proportions. */
+function stoneBox(w: number, h: number, d: number, stone: WallStone, tint = 0xffffff): THREE.Mesh {
+  const mesh = new THREE.Mesh(stoneGeometry(w, h, d), new THREE.MeshStandardMaterial({ map: stoneMap(stone), color: tint, roughness: 0.95 }));
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   return mesh;
 }
 
-function brickGeometry(w: number, h: number, d: number): THREE.BufferGeometry {
+function stoneGeometry(w: number, h: number, d: number): THREE.BufferGeometry {
   const geometry = new THREE.BoxGeometry(w, h, d);
   const uv = geometry.attributes.uv;
   // Four corners per face, in the order +x, -x, +y, -y, +z, -z.

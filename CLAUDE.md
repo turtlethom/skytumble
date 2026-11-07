@@ -59,7 +59,7 @@ goal reachable only lying. **Dead ends** counts states you can reach but never w
 
 `/levels.html` is the level index (mini-maps, validation status, play links); `/?level=<id>` opens
 one level. `/?sheet=<theme>` shows every tile in a theme (`&bridges=0` retracts the bridges), for
-approving readability before scenery; `/?sheet=toybox&toys` stands Toybox's sample toys on its floor; `/?sheet=peaks&aerie` shows Windy Peaks' rock structures and birds up close; `/?sheet=frost&summit` shows Frost Isle's reindeer up close; `&theme=<theme>` previews a theme on any level; `&gray` shows
+approving readability before scenery; `/?sheet=toybox&toys` stands Toybox's sample toys on its floor; `/?sheet=peaks&aerie` shows Windy Peaks' rock structures and birds up close; `/?sheet=frost&summit` shows Frost Isle's reindeer up close; `/?sheet=<theme>&walls` shows a world's walls (raised, sunk, low stone) beside the tiles they mustn't be mistaken for; `&theme=<theme>` previews a theme on any level; `&gray` shows
 the page in black and white, to check a tile reads without color. In the game,
 F (or `?fps`) toggles a hidden frame-rate readout, which also shows triangles and draw calls.
 
