@@ -18,6 +18,9 @@ as decisions are made or levels change.
 - **Deploys:** every push to `main` runs the tests, then publishes the game to
   <https://turtlethom.github.io/skytumble/> (`.github/workflows/deploy.yml`). The repo is public.
   A commit stays private until pushed, so "commit it" does not mean "push it": ask before pushing.
+- **Tools grow with the game:** when a new mechanic or feature lands, extend the design tools to
+  cover it (its checks in `lint`, its role in `make`'s report, a test in `tests/design-tools.test.ts`),
+  so level-making stays cheap as the game grows. The puzzle ideas still come from the user and Claude.
 - **Feature decisions:** for anything big, grill the user first (they asked for `/grill-me` style
   sessions), then record the outcome in DESIGN.md before building.
 
@@ -46,6 +49,15 @@ npm run -s lattice -- 5 3 26 36 1 150 2 > out.txt
                                           # routing puzzles: columns rows parLo parHi seed seconds colors;
                                           #   MAZE=1 fills the rest with low stone. Run a few seeds at once
 npm run -s strip -- out.txt [name]        # remove what the solution doesn't need, keeping par
+npm run -s make -- <template> <palette> <parLo> <parHi> [1-4] [want] [out]
+                                          # the whole loop in one command: lint, search, strip, wall
+                                          #   check, regrow, flip if a wall hides something; prints a
+                                          #   short ranked summary, writes finished blocks to <out>
+npm run -s lint -- <file|id>...           # before solving: switches in reading order with colors,
+                                          #   skippable belts, goal only reachable lying, what raised
+                                          #   walls hide (and whether a north-south flip fixes it)
+npm run -s walls -- <file|id>...          # each switch-wall color fixed down / up: must both change par
+npm run -s regrow -- stripped.txt full.txt # add back decoys that keep par and every moving wall
 npm run verify -- wind-                   # build, serve, play every solution in headless Chrome
 ```
 
@@ -94,14 +106,23 @@ The process that produced the Frost chapter:
    the way out). Single-gimmick levels on small maps playtested as "meh".
 2. **Sketch a template by hand** with the fixed pieces (start island, switches, belts, bridges,
    goal island) and leave `?` cells for the search (`%` = ice or empty). Use `!switches 0 1` lines
-   when switches target different bridge groups.
+   when switches target different bridge groups. **Run `lint` on every hand draft** before solving it:
+   it shows each switch's color in reading order (a heavy switch earlier in reading order silently
+   takes the first group), a belt with floor behind it, and a goal the block only reaches lying.
+   With fixed pieces in place, `make` runs steps 3–5 in one go and prints a few lines per candidate;
+   read its summary first and analyze only the candidates worth it.
 3. **Search:** `npm run -s search -- <template> "~~~#.f" <parLo> <parHi> 1-3 4
    "slide→switch,belt→slide"`. It hill-climbs layouts with the solver and penalizes tiles the
    solution never touches; the seed range runs in parallel.
 4. **Analyze:** `TRACE=1 npm run -s analyze -- <file>` prints par, explored states, dead ends,
    ice and pad uses, switch presses, the move trace, and the grid with `*` on untouched tiles.
    To check a route you have in mind, replay it with `sim` instead of tracing it by hand.
-5. **Strip and judge.** Remove the `*` tiles and re-analyze: a high state count that collapses when
+5. **Strip and judge.** For switch walls, run `walls`: fix each color down for good and up for good,
+   and a color earns its place only if both change par (the search penalizes colors that don't, via
+   `WALLS`). Free-form searches with walls in the palette mostly find walls that never have to move;
+   fix the idea's walls by hand instead. After stripping, `regrow` adds back the decoys that keep par
+   and every moving wall: that took frost-13 from 174 to 464 states.
+   Remove the `*` tiles and re-analyze: a high state count that collapses when
    stripped was maze clutter, not a puzzle. Then reframe by hand, keeping decoys only if they add
    real choices (states go up, par stays).
    For pad levels, place the pads by hand from the flight geometry: a
@@ -174,7 +195,7 @@ src/render/    Three.js world (tiles, animations, push cue), palette.ts (belt co
 src/ui/        progress (localStorage), map (the sky map and Labs screen; island layout per chapter),
                menu (a keyboard-driven button list: main menu, Esc menu, Settings)
 src/main.ts    game controller: modes, the stack of open screens, HUD, splash, key focus sink (for Vimium)
-scripts/       check-levels.ts; design/ (lib, explore, analyze, sim, search, solutions, play, verify)
+scripts/       check-levels.ts; design/ (lib, explore, checks, analyze, sim, search, strip, lattice, make, lint, walls, regrow, solutions, play, verify)
 ```
 
 Rules are frozen for ice and conveyors, and for walls with them (see DESIGN.md *Mechanics*); changing them breaks

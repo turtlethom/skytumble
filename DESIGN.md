@@ -695,7 +695,7 @@ That finishes the older worlds' pass. Next: see *Start menu, tutorial section an
 | `frost-12` Notch | 22 | 209 | No walls: a heavy switch in a notch in the ice that only a block dropping in from the north stands on, then a plank as the brake at the end of the bottom lane |
 | `frost-13` Double Duty | 25 | 464 | One orange wall works both ways: lowered to cross, raised again as a brake by a second press that also drops the walls ahead; purple opens the last gap |
 
-How they were made: skeletons fixed by hand around the idea, the search filling small patches, then stripped. A checker fixes each wall color permanently down and permanently up and re-solves: a color only counts if both change par, which threw out every free-form search (their walls never had to move). Then *regrowing*: tiles from the unstripped layout are added back one at a time, kept only if par holds and every color still has to move. That took Double Duty from 174 to 464 states and Notch from 64 to 214. Double Duty is flipped north to south so the purple wall doesn't hide the orange switch.
+These steps are now tools (2026-11-07, after the user asked for cheaper level-making): `make` runs lint → search → strip → wall check → regrow → flip in one command with a short ranked summary; `lint`, `walls` and `regrow` work alone; the search penalizes wall colors that don't have to move. How they were made: skeletons fixed by hand around the idea, the search filling small patches, then stripped. A checker fixes each wall color permanently down and permanently up and re-solves: a color only counts if both change par, which threw out every free-form search (their walls never had to move). Then *regrowing*: tiles from the unstripped layout are added back one at a time, kept only if par holds and every color still has to move. That took Double Duty from 174 to 464 states and Notch from 64 to 214. Double Duty is flipped north to south so the purple wall doesn't hide the orange switch.
 
 
 **Now: main menu, Tutorial and How To Play** (settled in a grilling session 2026-11-03). Order of work: these three → First Glade as a real biome (its mechanic gets
@@ -915,6 +915,8 @@ works and what doesn't. Claude writes the code and designs handmade levels from 
 feedback; batches of 5 levels per round.
 
 ## Playtest log
+
+**2026-11-07 — level-design tools.** `make`, `lint`, `walls` and `regrow` built and committed. The user asked that tools keep growing with the game: each new mechanic or feature should get its checks and its place in the tools (recorded in CLAUDE.md's *How we work*). The puzzle ideas still come from the user and Claude.
 
 **2026-11-07 — Frost Isle batch 1 (`frost-09`…`13`).** "I enjoyed all these levels." No changes; committed and pushed. The user asked about tooling that would make future levels faster and cheaper to build.
 

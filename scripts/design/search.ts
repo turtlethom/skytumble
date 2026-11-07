@@ -4,7 +4,9 @@
 // character to weight it, e.g. "~~~#.f") and whose '%' cells become ice or empty. Hill-climbs to
 // reward: par in range, distinct ice and pad uses (and each one listed in <want>, e.g. "slide→switch", "chain"),
 // switches pressed, belt pushes, explored states; and penalizes tiles the solution never touches.
-// Env: CLUTTER (penalty per untouched filled cell, default 0.5), PRESSES (bonus per switch, default 10).
+// Env: CLUTTER (penalty per untouched filled cell, default 0.5), PRESSES (bonus per switch, default 10),
+// WALLS (penalty per switch-wall color the level doesn't need to move, default 40; 0 turns the check off).
+// Without that penalty, searches with switch walls mostly find walls that never have to move.
 // Prints the best layout as a design block, ready for analyze.ts.
 // A seed range (`1-4`) or list (`1,5,9`) runs one search per seed in parallel and prints every result,
 // best first: save the output to a file and run analyze.ts on it.
@@ -18,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { initialState, step } from '../../src/game/rules';
 import { solve } from '../../src/game/solver';
 import { flipUses, iceUses, padUses, shapeUses } from '../../src/levels/validate';
+import { wallColors } from './checks';
 import { diagnose } from './explore';
 import { build, parseBlock, touched } from './lib';
 
@@ -29,6 +32,7 @@ const want = wantArg.split(',').filter(Boolean);
 const { rows: template, switches, on, shape } = parseBlock(readFileSync(file, 'utf8').trim().split('\n'));
 const clutter = Number(process.env.CLUTTER ?? 0.5);
 const pressBonus = Number(process.env.PRESSES ?? 10);
+const wallPenalty = Number(process.env.WALLS ?? 40);
 let seed = Number(seedArg);
 const rand = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
 const pick = (xs: string) => xs[Math.floor(rand() * xs.length)];
@@ -49,7 +53,8 @@ const render = (choice: string[]) => {
   return grid.map((r) => r.join(''));
 };
 
-function score(rows: string[]): number {
+/** `floor`: a score this one must reach to matter; below it, the costly wall check is skipped. */
+function score(rows: string[], floor = -Infinity): number {
   let level;
   try {
     level = build(rows, switches, on, shape);
@@ -75,7 +80,10 @@ function score(rows: string[]): number {
   s += want.filter((w) => uses.includes(w)).length * 15;
   s += uses.length * 8 + Math.min(pushes, 5) * 1.5 + pressed.size * pressBonus;
   s += Math.min(sol.explored, 600) * 0.05;
-  return s - untouched * clutter;
+  s -= untouched * clutter;
+  // The wall check re-solves twice per color, so only pay for it when the score could still count.
+  if (wallPenalty && s >= floor) s -= wallColors(level, par).filter((c) => !c.moves).length * wallPenalty;
+  return s;
 }
 
 const skeleton = render(slots.map((_, i) => (slotPalette[i] === palette ? '#' : '~')));
@@ -121,7 +129,7 @@ for (let r = 0; r < Number(restartsArg); r++) {
       const j = Math.floor(rand() * slots.length);
       next[j] = pick(slotPalette[j]);
     }
-    const sc = score(render(next));
+    const sc = score(render(next), best);
     if (sc >= best) {
       best = sc;
       cur = next;
