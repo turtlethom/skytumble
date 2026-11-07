@@ -1164,12 +1164,11 @@ export class World {
   }
 
   /**
-   * A raised wall stopped a slide on the tile before it, or kept a belt from pushing: the block tips
-   * against it and settles back, as when rolling into one, and a held belt flares under the block.
+   * A raised wall kept a belt from pushing: the belt flares under the block, which doesn't move. A slide
+   * a wall stopped shows nothing more, since any reaction there delays the next move (playtest 2026-11-07).
    */
-  hold(b: Block, h: { x: number; y: number; dir: Dir; belt: boolean }): Promise<void> {
+  hold(b: Block, h: { dir: Dir; belt: boolean }): void {
     if (h.belt) this.flareBelts(b, h.dir);
-    return this.bump(b, h, h.dir, false);
   }
 
   /**

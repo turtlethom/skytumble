@@ -45,3 +45,33 @@ switches: 1 0
 ...#~#~#~...
 S#~~........
 ............
+
+=== frostlab-05
+par: 19
+name: Two Ferries
+idea: Two belt gates, both orange: the first starts raised and the second lowered. The switch on the start island trades them. Ride the first belt onto its lowered gate and across to the middle island, find the second gate shut, and press orange again there to open it for the last ride.
+......G..
+......#..
+......#..
+......h..
+.#####^#.
+.#o###.#.
+.######..
+.######..
+...H.....
+.##^####.
+.##.##o#.
+.S######.
+
+=== frostlab-06
+par: 21
+name: Launch
+idea: Lie across the belts and they push you onto the ice. The orange walls start lowered, so the first launch runs onto them, and the switch is east of there. Raise them, climb back to the top and launch again: now they brake you a row short, which lines you up for the path south.
+...........
+.S###vv#...
+.....~~###.
+.....~~###.
+.....hh#.o.
+.......#...
+....#~~##..
+.......~#G.
