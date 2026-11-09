@@ -2,7 +2,8 @@
 
 An original rolling-block puzzle game (Vite + TypeScript + Three.js). **`DESIGN.md` is the source of
 truth** for decisions, rules, the roadmap, and the playtest log. Read it first, and keep it updated
-as decisions are made or levels change.
+as decisions are made or levels change. Finished history (shipped release plans, build notes, older
+playtest notes) moves word for word to `DESIGN-archive.md`; search it when a past decision's reason matters.
 
 ## How we work
 
