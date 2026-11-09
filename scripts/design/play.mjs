@@ -5,6 +5,8 @@
 // Env: STEPS=1 also saves a screenshot after every move (<id>-NN.png); PEEK_AT=n holds Space after
 // move n and saves <id>-peek;
 // ROTATE=n turns the view n quarter turns (E) before playing, to check controls follow the screen.
+// PAGES='sheet=peaks&walls;sheet=peaks&walls&gray' skips playing: it opens each query, waits for the
+// world to settle and saves page-1.png, page-2.png... (for tile sheets and samples; solutions unused).
 // Uses CHROME (path to a Chrome/Chromium binary) or Playwright's cached Chromium. Talks to Chrome over
 // the DevTools protocol with a tiny built-in WebSocket client, so it needs no npm dependencies.
 import { spawn } from 'node:child_process';
@@ -107,7 +109,15 @@ const untilTitle = async () => {
   for (let i = 0; i < 50 && !(await titleUp()); i++) await sleep(100);
   return titleUp();
 };
-if (process.env.TITLE_CHECK === '1') {
+if (process.env.PAGES) {
+  const pages = process.env.PAGES.split(';').filter(Boolean);
+  for (const [i, q] of pages.entries()) {
+    await send('Page.navigate', { url: `${base}/?${q}` });
+    await sleep(Number(process.env.SETTLE ?? 4000));
+    await shot(`page-${i + 1}`);
+    console.log(`page-${i + 1}.png  ?${q}`);
+  }
+} else if (process.env.TITLE_CHECK === '1') {
   // Walk through when the chapter title should and shouldn't show.
   const check = (what, ok) => {
     console.log(`${ok ? 'ok    ' : 'FAILED'} ${what}`);

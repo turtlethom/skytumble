@@ -123,6 +123,14 @@ const PEAKS: Theme = {
   earth: { soil: 0x525a6b, hanging: 0x5f6778, style: 'shards' },
   fragile: { light: 0xd2cec4, dark: 0xaeaaa0, weathered: true },
   finish: { switchBase: 0x94969a, brass: 0xdcae50, padVents: true },
+  // Rust-brown ironstone (approved 2026-11-08 over dark basalt): a warm hue far from the blue slate, and
+  // well below the pale block, so a raised wall never reads as a standing block.
+  wall: {
+    style: 'ashlar',
+    shades: ['#6b4a3a', '#74503e', '#7d5a45', '#654537', '#84604a', '#6f4d3c'],
+    mortar: '#3b2a22',
+    deck: 0xb3a196,
+  },
   landingMark: 0x5cc8ff,
 };
 

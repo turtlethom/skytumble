@@ -158,8 +158,7 @@ Shipped releases and finished build notes are in `DESIGN-archive.md`, word for w
 
 - **Done this stretch (2026-11-07…08):** Frost Isle's granite walls; the wall rules with ice and belts, frozen after Frost Lab (`frostlab-01`…`06`); How To Play's *Walls on ice and belts* entry; `frost-09`…`18` in two batches, both liked, with all six of Frost Isle's wall levels (10, 11, 13, 15, 17 and the maze, 18). `frost-18` Ice Cave was eased after the user found it too hard (29 moves, 202 states, purple only). See *Frost Isle's new levels* below.
 - **Level tools** (`scripts/design/`, documented in CLAUDE.md): `make` (lint → search → strip → wall and bridge check → regrow → unneeded walls to floor → unreachable tiles dropped → flip, with a short ranked summary), `lint`, `walls`, `regrow` and `ease`. The user asked that the tools grow with every new mechanic.
-- **Now: Frost Isle is complete at 20** (`frost-19` Carousel and `frost-20` Grand Tour approved 2026-11-08). Next: the push (ask first).
-- **After Frost Isle:** walls in Windy Peaks, the next world in map order (*Walls in the other worlds* below): wall samples on the tile sheet, then its lab, with the tools extended for pads first (`lint` flagging a pad aimed at a wall, a fling landing short, a sideways hop onto a wall).
+- **Now: Windy Peaks walls.** Frost Isle is complete at 20 and live (pushed 2026-11-08). Windy Peaks' wall stone is approved: rust-brown ironstone, chosen over dark basalt. Next: the rules for walls with pads, the tools for them, then the lab.
 - **Open questions for the user:** whether to add a slide-end preview on ice (marks where each roll would leave a lying block), which would make every ice level more readable but also easier; whether to tighten `glade-13`, `15` and `18`, each with one wall color that never has to move (found by `walls`); their notes on `glade-16`…`20` and the Glade maze, and its frame rate on their laptop.
 - **Pushing** goes through the `gh` login (`git -c credential.helper= -c credential.helper='!gh auth git-credential' push origin main`); always ask first.
 
@@ -504,6 +503,8 @@ feedback; batches of 5 levels per round.
 ## Playtest log
 
 Older notes (2026-10-31 to 2026-11-03) are in `DESIGN-archive.md`.
+
+**2026-11-08 — Windy Peaks wall stone, and the title.** Of two samples, rust-brown ironstone and dark basalt, the user chose ironstone (Claude's pick). The user asked for the title to read *SkyTumble* everywhere it shows. Frost Isle pushed live.
 
 **2026-11-08 — Frost Isle batch 3 (`frost-19`, `frost-20`).** "Both levels play well. The conveyor belt level and the grand tour rink was really well done and unique." No changes; committed. Frost Isle is complete at 20.
 

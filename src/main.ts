@@ -907,7 +907,7 @@ function bootFailed(title: string, html: string): void {
 if (!hasWebGL()) {
   bootFailed(
     'Your browser has 3D graphics turned off',
-    `Skytumble needs WebGL, and this browser didn't provide it.<br><br>
+    `SkyTumble needs WebGL, and this browser didn't provide it.<br><br>
      <b>Firefox:</b> open <code>about:support</code> and check the <i>WebGL 2 Driver Renderer</i> line.
      If it says blocked or unavailable, enable hardware acceleration in Settings → General → Performance,
      and if Firefox is a Flatpak, run <code>flatpak update</code> to install matching graphics drivers.<br>
@@ -919,6 +919,6 @@ if (!hasWebGL()) {
     new Game();
   } catch (err) {
     console.error(err);
-    bootFailed('Skytumble failed to start', `<code>${String(err)}</code><br><br>Check the browser console for details.`);
+    bootFailed('SkyTumble failed to start', `<code>${String(err)}</code><br><br>Check the browser console for details.`);
   }
 }

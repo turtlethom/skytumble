@@ -179,7 +179,7 @@ SHOTS=<scratch dir> npm run verify -- frost-
 It plays every optimal solution with real key events, reports WON/NOT WON at par, and saves start
 and end screenshots to read. Controls follow the screen, so the driver asks the game which arrow
 rolls which way (`window.skytumbleKeyFor`). Options for `verify`/`play.mjs`: `STEPS=1` (a shot
-after every move), `PEEK_AT=n` (hold Space after move n), `ROTATE=n` (quarter turns before playing), `TITLE_CHECK=1` (check when the chapter title shows, instead of playing). For the main menu, a plain headless screenshot of `/`
+after every move), `PEEK_AT=n` (hold Space after move n), `ROTATE=n` (quarter turns before playing), `TITLE_CHECK=1` (check when the chapter title shows, instead of playing), `PAGES='sheet=peaks&walls;sheet=peaks&walls&gray'` (screenshot each page instead of playing, as page-1.png…; `SETTLE` ms per page, default 4000; base URL is `http://localhost:<port>` with no `/skytumble`). For the main menu, a plain headless screenshot of `/`
 with `--virtual-time-budget=20000` is enough; the sky map and other screens need the driver, to click through to them. Gotchas:
 
 - `--virtual-time-budget` screenshots freeze CSS transitions mid-way; use the driver instead.
