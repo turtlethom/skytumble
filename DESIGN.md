@@ -683,7 +683,7 @@ heaviest world, and it runs at 59 to 61 fps on the user's laptop with no stutter
 
 That finishes the older worlds' pass. Next: see *Start menu, tutorial section and a new First Glade* below.
 
-**Pick up here** (paused 2026-11-05, at the user's request). First Glade's 20 levels, the menus, the Tutorial and How To Play are all live. The user's notes on `glade-16`…`20` and the maze are still open: whether it's the maze they pictured, whether low stone looks like a wall, and its frame rate on their laptop. The plan for walls in the other four worlds is settled: see *Walls in the other worlds* below. **Now (2026-11-07): Frost Isle's granite walls are live, and the rules for walls with ice and belts are frozen after Frost Lab (`frostlab-01`…`06`). How To Play has a *Walls on ice and belts* entry. Frost Isle's first new batch, `frost-09`…`13`, is approved and live; see *Frost Isle's new levels* below.**
+**Pick up here** (paused 2026-11-05, at the user's request). First Glade's 20 levels, the menus, the Tutorial and How To Play are all live. The user's notes on `glade-16`…`20` and the maze are still open: whether it's the maze they pictured, whether low stone looks like a wall, and its frame rate on their laptop. The plan for walls in the other four worlds is settled: see *Walls in the other worlds* below. **Now (2026-11-07): Frost Isle's granite walls are live, and the rules for walls with ice and belts are frozen after Frost Lab (`frostlab-01`…`06`). How To Play has a *Walls on ice and belts* entry. Frost Isle's first new batch, `frost-09`…`13`, is approved and live, and batch 2, `frost-14`…`18`, is live; see *Frost Isle's new levels* below.**
 
 **Frost Isle's new levels** (batch 1 approved and live 2026-11-07). Walls in 10, 11 and 13; the other three wall levels, the maze among them, come in 14–20. States climb through the batch, and the peak beats `frost-08` (22 moves, 387 states):
 
@@ -695,7 +695,19 @@ That finishes the older worlds' pass. Next: see *Start menu, tutorial section an
 | `frost-12` Notch | 22 | 209 | No walls: a heavy switch in a notch in the ice that only a block dropping in from the north stands on, then a plank as the brake at the end of the bottom lane |
 | `frost-13` Double Duty | 25 | 464 | One orange wall works both ways: lowered to cross, raised again as a brake by a second press that also drops the walls ahead; purple opens the last gap |
 
-These steps are now tools (2026-11-07, after the user asked for cheaper level-making): `make` runs lint → search → strip → wall check → regrow → flip in one command with a short ranked summary; `lint`, `walls` and `regrow` work alone; the search penalizes wall colors that don't have to move. How they were made: skeletons fixed by hand around the idea, the search filling small patches, then stripped. A checker fixes each wall color permanently down and permanently up and re-solves: a color only counts if both change par, which threw out every free-form search (their walls never had to move). Then *regrowing*: tiles from the unstripped layout are added back one at a time, kept only if par holds and every color still has to move. That took Double Duty from 174 to 464 states and Notch from 64 to 214. Double Duty is flipped north to south so the purple wall doesn't hide the orange switch.
+**Batch 2** (built 2026-11-07, liked and live 2026-11-08; Ice Cave played as very hard). Walls in 15, 17 and 18, which completes Frost Isle's six; 19 and 20 will have none. States climb through the batch, and every switch color has to move:
+
+| Level | Par | States | Idea |
+|---|---|---|---|
+| `frost-14` Floes | 28 | 114 | Pure ice, holes and a few dry tiles: with the ice as floor it's 13 moves |
+| `frost-15` Toll Gate | 30 | 152 | A belt line ends at an orange gate that holds you; dropping it raises the wall on the way to the goal, and a slide back onto the switch trades them again |
+| `frost-16` Freight | 29 | 299 | Belts drop you down a chute; stand on the heavy switch for the bridge home, then two slides take you to it |
+| `frost-17` Signal Box | 28 | 489 | A two-color rink: orange raises a brake, a long slide lands on purple to open the middle column, a slide back onto orange trades them again |
+| `frost-18` Ice Cave | 32 | 563 | The maze: a cave of low stone over ice where every slide runs until stone or a raised wall stops it, with orange and purple walls moving the stops |
+
+The maze: lattice layouts (one-wide lanes, junctions three apart) didn't work on ice, because slides went junction to junction like walking. What worked was an ice cave walled and cut up by low stone, with the search placing stone, floor and switch walls (`KEEP=K` so stripping kept the stone).
+
+These steps are now tools (2026-11-07, after the user asked for cheaper level-making): `make` runs lint → search → strip → wall and bridge check → regrow → unneeded walls to floor → drop unreachable tiles → flip in one command with a short ranked summary (batch 2 added the bridge check, the two clean-up steps, `KEEP`, `FROM`, lattice's `HEDGES=0`, and a stop on a wrong switches line); `lint`, `walls` and `regrow` work alone; the search penalizes wall colors that don't have to move. How they were made: skeletons fixed by hand around the idea, the search filling small patches, then stripped. A checker fixes each wall color permanently down and permanently up and re-solves: a color only counts if both change par, which threw out every free-form search (their walls never had to move). Then *regrowing*: tiles from the unstripped layout are added back one at a time, kept only if par holds and every color still has to move. That took Double Duty from 174 to 464 states and Notch from 64 to 214. Double Duty is flipped north to south so the purple wall doesn't hide the orange switch.
 
 
 **Now: main menu, Tutorial and How To Play** (settled in a grilling session 2026-11-03). Order of work: these three → First Glade as a real biome (its mechanic gets
@@ -915,6 +927,8 @@ works and what doesn't. Claude writes the code and designs handmade levels from 
 feedback; batches of 5 levels per round.
 
 ## Playtest log
+
+**2026-11-08 — Frost Isle batch 2 (`frost-14`…`18`).** "I do like the levels." Committed and pushed. `frost-18` Ice Cave was "quite difficult to figure out what to do", and the user wasn't sure it was solvable (it is: par 32, verified in headless Chrome, no dead ends).
 
 **2026-11-07 — level-design tools.** `make`, `lint`, `walls` and `regrow` built and committed. The user asked that tools keep growing with the game: each new mechanic or feature should get its checks and its place in the tools (recorded in CLAUDE.md's *How we work*). The puzzle ideas still come from the user and Claude.
 
