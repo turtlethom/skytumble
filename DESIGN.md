@@ -703,7 +703,7 @@ That finishes the older worlds' pass. Next: see *Start menu, tutorial section an
 | `frost-15` Toll Gate | 30 | 152 | A belt line ends at an orange gate that holds you; dropping it raises the wall on the way to the goal, and a slide back onto the switch trades them again |
 | `frost-16` Freight | 29 | 299 | Belts drop you down a chute; stand on the heavy switch for the bridge home, then two slides take you to it |
 | `frost-17` Signal Box | 28 | 489 | A two-color rink: orange raises a brake, a long slide lands on purple to open the middle column, a slide back onto orange trades them again |
-| `frost-18` Ice Cave | 32 | 563 | The maze: a cave of low stone over ice where every slide runs until stone or a raised wall stops it, with orange and purple walls moving the stops |
+| `frost-18` Ice Cave | 29 | 202 | The maze: a cave of low stone over ice where every slide runs until stone or the purple wall stops it. Eased 2026-11-08 (was 32 moves, 563 states, two colors): unused ice became stone, and orange went, since its only job was a press undone two moves later |
 
 The maze: lattice layouts (one-wide lanes, junctions three apart) didn't work on ice, because slides went junction to junction like walking. What worked was an ice cave walled and cut up by low stone, with the search placing stone, floor and switch walls (`KEEP=K` so stripping kept the stone).
 
@@ -927,6 +927,8 @@ works and what doesn't. Claude writes the code and designs handmade levels from 
 feedback; batches of 5 levels per round.
 
 ## Playtest log
+
+**2026-11-08 — easing Ice Cave.** The user chose to ease `frost-18`. The new `ease` tool filled the tiles the solution never uses with stone (563 → 396 states, same 32 moves), but the press trick stayed: orange was only ever pressed in a pair two moves apart, a toll rather than a puzzle. With orange gone it plays in 29 moves with 202 states, no dead ends, and one purple wall that has to move. `make` now flags a press undone within two moves and ranks it lower.
 
 **2026-11-08 — Frost Isle batch 2 (`frost-14`…`18`).** "I do like the levels." Committed and pushed. `frost-18` Ice Cave was "quite difficult to figure out what to do", and the user wasn't sure it was solvable (it is: par 32, verified in headless Chrome, no dead ends).
 

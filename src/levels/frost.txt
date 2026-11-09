@@ -222,18 +222,18 @@ S#~~~~~~~~~~~~..
 ................
 
 === frost-18
-par: 32
+par: 29
 name: Ice Cave
-idea: A cave of low stone over ice, and every slide runs until stone or a raised wall stops it. Orange and purple walls move the stops: read where each slide will end before you start it.
-switches: 0 1
+idea: A cave of low stone over ice, and every slide runs until stone or the purple wall stops it. Slide down the east side onto the purple switch to drop the wall in the middle, then work your way west and back through the gap it leaves.
+switches: 1
 KKKKKKKKKKKKKKKKK
 S#~~~~~~~~~~~#.~K
-KKK~##.K~~K~~#K~K
-K~~#~~~~~~~~~~~~K
-K~#~~~#~oIK~#~.~K
-K~#~~~~~K~##~~.~K
-K~.~.~~#.~K~~~K~K
-K~K~.KK~~K~~o~~~K
-K~.KK~~K~h~~K~K~K
-K~~~~~~~~~~~~~~#G
+KKKKKK.K~KK~~#K~K
+KK~#~~~~~~~~~~~~K
+KK#~~~#~~IK~#~.~K
+KK#~~~~~K~##~~.~K
+K~.~.~K#.~K~~~K~K
+K~KK.KKK~KK~o~K~K
+K~.KK~~KK~~~K~K~K
+K~~~~K~~~~~~~~~#G
 KKKKKKKKKKKKKKKKK
