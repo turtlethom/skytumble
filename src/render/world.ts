@@ -135,10 +135,24 @@ const FLY_MS_BASE = 260;
 const FLY_MS_PER_TILE = 55;
 const FLY_ARC_BASE = 1.1;
 const FLY_ARC_PER_TILE = 0.3;
-/** A flight that hits a wall: how far into the tile before it the block gets (tiles), how far through its tip, and the knock back. */
-const FLY_WALL_LEAN = 0.3;
-const FLY_WALL_TIP = 0.55;
-const FLY_WALL_KNOCK_MS = 220;
+/**
+ * A flight that hits a wall: how far through its tip it gets when it meets the wall (a fling, a
+ * crash, a hop along the pads), its pace against a free flight, the settle, and for a crash the bounce
+ * (with how far it drops meanwhile) and the speed the fall carries on at.
+ */
+const FLY_WALL_TIP_FLING = 0.55;
+const FLY_WALL_TIP_CRASH = 0.45;
+const FLY_WALL_TIP_HOP = 0.75;
+/** How far past the stop tile's center a fling gets as it hits the wall (tiles). */
+const FLY_WALL_FLING_REACH = 0.3;
+const FLY_WALL_PACE = 0.75;
+const FLY_WALL_KNOCK_MS = 280;
+const FLY_WALL_CRASH_MS = 150;
+const FLY_WALL_CRASH_DROP = 0.4;
+const FLY_WALL_FALL_SPEED = 5;
+/** The block's half width and half height (its box is 0.98 by 1.96). */
+const BLOCK_HALF_W = 0.49;
+const BLOCK_HALF_H = 0.98;
 /** Gust streaks drift across a pad once per this many ms. */
 const GUST_MS = 900;
 /** Camera framing: elevation (rise per unit of ground distance), the closest it comes, and how much
@@ -269,6 +283,11 @@ export class World {
   private switches = new Map<number, THREE.Object3D>();
   private bridges: BridgeView[] = [];
   private walls: WallView[] = [];
+  /** Pad landing marks by cell, and the level and color they are drawn for (see showLandings). */
+  private landingMarks = new Map<number, THREE.Object3D>();
+  private marksFor: { level: Level; color?: number } | null = null;
+  /** Set by a crash into a wall: how fast the block is already falling when fall() takes over. */
+  private fallSpeed = 0;
   /** Walls that never move, per layer, gathered while building the tiles. */
   private lowWalls: { x: number; y: number; edge: boolean }[][] = [[], []];
   /** Hedges by cell, in the same key as switches. */
@@ -471,11 +490,13 @@ export class World {
     const tileAt = (layer: number, x: number, y: number) => this.tiles.get(this.cellKey(layer, x, y, level.width, level.height));
     for (const layer of layers) {
       const view = layerView(level, layer);
-      for (const { x, y } of flightLandings(view)) tileAt(layer, x, y)?.obj.add(makeLandingMark(theme.landingMark));
       view.tiles.forEach((t, i) => {
         if (t === Tile.Flip) tileAt(1 - layer, i % level.width, Math.floor(i / level.width))?.obj.add(makeLandingMark(theme.flipMark ?? COLORS.flipMark));
       });
     }
+    this.landingMarks.clear();
+    this.marksFor = { level, color: theme.landingMark };
+    this.showLandings(state);
     for (const layer of layers) {
       this.layerGroups[layer].traverse((o) => {
         if (o.userData.earth) this.earths[layer].push(o);
@@ -1032,6 +1053,8 @@ export class World {
   /** Snap everything to a state with no animation (load, undo, restart). */
   syncState(state: State): void {
     this.flipTurn = null;
+    this.showLandings(state);
+    this.fallSpeed = 0;
     this.layer = state.layer ?? 0;
     this.buildBlueprints(state.bridges);
     this.frames[this.layer].add(this.block);
@@ -1112,7 +1135,33 @@ export class World {
   }
 
   /** Raise and lower walls to match this state. Call it after every move: one may have been waiting for the block to leave. */
+  /**
+   * Blue marks where pad flights land, as the walls stand in `state`: a raised wall on a landing moves
+   * the mark to where the flight stops short, or takes it away if the flight would crash. Marks ride on
+   * their tiles, made the first time a cell needs one and hidden when it doesn't.
+   */
+  private showLandings(state: State): void {
+    const level = this.marksFor?.level;
+    if (!level) return;
+    const want = new Set<number>();
+    for (const layer of level.ceiling ? [0, 1] : [0]) {
+      for (const { x, y } of flightLandings(layerView(level, layer), state)) {
+        const key = this.cellKey(layer, x, y, level.width, level.height);
+        const tile = this.tiles.get(key);
+        if (!tile) continue;
+        want.add(key);
+        if (!this.landingMarks.has(key)) {
+          const mark = makeLandingMark(this.marksFor!.color);
+          tile.obj.add(mark);
+          this.landingMarks.set(key, mark);
+        }
+      }
+    }
+    for (const [key, mark] of this.landingMarks) mark.visible = want.has(key);
+  }
+
   setWalls(state: State): Promise<void> {
+    this.showLandings(state);
     const changes = this.walls.filter((w) => w.up !== this.wallShows(w, state));
     if (changes.length === 0) return Promise.resolve();
     for (const w of changes) {
@@ -1325,29 +1374,71 @@ export class World {
   }
 
   /**
-   * A flight a raised wall got in the way of: it tumbles as usual until it hits the wall's face, the
-   * wall shakes, and the block is knocked back to `to`. A fling stopped short rocks back upright; a
-   * hop finishes its tip there (and a sideways one then falls, in front of the wall).
+   * A flight a raised wall got in the way of: it tumbles as usual until its leading edge meets the
+   * wall's face, the wall shakes, and the block is knocked to `to`. A fling stopped short rocks back
+   * upright; a hop along the pads finishes tipping up against the wall; a crash bounces back and is
+   * already dropping when the fall takes over. The contact comes from the block's real size at its
+   * tilt for a hop or a crash, so no part of it passes into the wall or the floor; a fling keeps the
+   * harder hit the user preferred (peakslab-06), mid-tumble against the wall.
    */
   private async flyIntoWall(m: Motion, start: THREE.Vector3, end: THREE.Vector3, turn: (a: number) => void): Promise<void> {
     const { dx, dy } = DIR_DELTA[m.dir];
-    const contact = end.clone().add(new THREE.Vector3(dx * FLY_WALL_LEAN, 0, dy * FLY_WALL_LEAN));
+    const ahead = new THREE.Vector3(dx, 0, dy);
+    const crash = m.to.o !== 'S';
+    const upright = m.from.o === 'S' && !crash;
+    const final = upright ? 0 : Math.PI / 2;
+    // The block's half sizes along the flight and upright, before it turns.
+    const lyingAlong = m.from.o !== 'S' && (m.from.o === 'X') === (dy === 0);
+    const [a, b] = m.from.o === 'S' ? [BLOCK_HALF_W, BLOCK_HALF_H] : lyingAlong ? [BLOCK_HALF_H, BLOCK_HALF_W] : [BLOCK_HALF_W, BLOCK_HALF_W];
+    const reach = (θ: number) => a * Math.abs(Math.cos(θ)) + b * Math.abs(Math.sin(θ));
+    const rise = (θ: number) => a * Math.abs(Math.sin(θ)) + b * Math.abs(Math.cos(θ));
+    const face = (m.wall!.x * dx + m.wall!.y * dy) - 0.5;
+    // Keep the leading edge at or before the wall's face, and (unless it's falling) the block above the floor.
+    const fit = (pos: THREE.Vector3, θ: number, floor: boolean) => {
+      const over = pos.dot(ahead) + reach(θ) - face;
+      if (over > 0) pos.addScaledVector(ahead, -over);
+      if (floor) pos.y = Math.max(pos.y, rise(θ));
+    };
+    // A fling comes down hard against the wall: mid-tumble, on the floor, its body meeting the wall
+    // (the look the user chose). A hop or a crash meets the wall's face exactly with its leading edge,
+    // since a lying block tipping up would otherwise pass right into it.
+    const θc = (Math.PI / 2) * (upright ? FLY_WALL_TIP_FLING : crash ? FLY_WALL_TIP_CRASH : FLY_WALL_TIP_HOP);
+    const contact = end.clone();
+    if (upright) contact.addScaledVector(ahead, FLY_WALL_FLING_REACH);
+    else {
+      contact.addScaledVector(ahead, face - reach(θc) - contact.dot(ahead));
+      contact.y = Math.max(end.y, rise(θc));
+    }
     const tiles = Math.hypot(contact.x - start.x, contact.z - start.z);
     const arc = FLY_ARC_BASE + FLY_ARC_PER_TILE * tiles;
-    const lean = (Math.PI / 2) * FLY_WALL_TIP;
-    const final = m.from.o === 'S' && m.to.o === 'S' ? 0 : Math.PI / 2;
-    await this.tween(FLY_MS_BASE + FLY_MS_PER_TILE * tiles, (t) => {
-      this.block.position.lerpVectors(start, contact, t);
-      // The arc comes down onto the wall's face rather than past it.
+    // Quicker than a free flight, and picking up speed into the wall, so the hit reads as an impact.
+    await this.tween((FLY_MS_BASE + FLY_MS_PER_TILE * tiles) * FLY_WALL_PACE, (t) => {
+      const θ = θc * t;
+      this.block.position.lerpVectors(start, contact, t * (0.6 + 0.4 * t));
       this.block.position.y += arc * 4 * t * (1 - t) * (1 - 0.35 * t);
-      turn(lean * easeInOut(t));
+      if (!upright) fit(this.block.position, θ, false);
+      turn(θ);
     });
     const wall = this.walls.find((w) => w.layer === this.layer && w.x === m.wall!.x && w.y === m.wall!.y);
     if (wall) void this.shake(wall.pillar, dx, dy);
+    if (crash) {
+      await this.tween(FLY_WALL_CRASH_MS, (t) => {
+        const θ = θc + (final - θc) * t;
+        this.block.position.lerpVectors(contact, end, easeOut(t));
+        this.block.position.y -= FLY_WALL_CRASH_DROP * t * t;
+        fit(this.block.position, θ, false);
+        turn(θ);
+      });
+      this.fallSpeed = FLY_WALL_FALL_SPEED;
+      return;
+    }
+    // Settles: a fling rocks back upright with the slightest overshoot away from the wall; a hop
+    // tips the rest of the way up against it, without overshooting into it.
     await this.tween(FLY_WALL_KNOCK_MS, (t) => {
-      const e = easeOut(t);
-      this.block.position.lerpVectors(contact, end, e);
-      turn(lean + (final - lean) * e);
+      const θ = upright ? θc * (1 - easeOutBack(t)) : θc + (final - θc) * easeInOut(t);
+      this.block.position.lerpVectors(contact, end, easeInOut(t));
+      if (!upright) fit(this.block.position, θ, true);
+      turn(θ);
     });
     this.placeBlock(m.to);
   }
@@ -1537,8 +1628,11 @@ export class World {
     const lean = new THREE.Vector3();
     for (const [x, y] of unsupported) lean.add(new THREE.Vector3(x - start.x, 0, y - start.z));
 
+    // A crash into a wall is already falling when this starts.
+    const speed = this.fallSpeed;
+    this.fallSpeed = 0;
     await this.tween(900, (t) => {
-      const drop = 14 * t * t;
+      const drop = 14 * t * t + speed * t;
       this.block.position.set(start.x + lean.x * t * 1.2, start.y - drop, start.z + lean.z * t * 1.2);
       this.block.rotation.set(rot.x + spinX * t * 2, rot.y, rot.z + spinZ * t * 2);
       if (tile) {

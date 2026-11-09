@@ -482,7 +482,8 @@ Rules, to be frozen per world (Frost Isle's slide and belt rows frozen 2026-11-0
 | `peakslab-06` Raise to Land | The reverse of Short Stop: the wall starts down, and raising it is what makes the landing |
 
 - **Calls Claude made beyond the plan:** a short stop needs the tile before the wall clear; a second raised wall there makes the block fall, since it can't stand inside a wall. A flight a wall gets in the way of tumbles as usual until it hits the wall's face, which shakes, then is knocked back: a fling stopped short rocks back upright, a hop finishes its tip, and a crash bounces back in front of the wall and falls there (changed after the first playtest, below).
-- **Questions for the playtest:** whether falling on a sideways hop feels fair (Claude would have the pad not fire, see above); whether the blue landing mark should move to the short spot while a wall stands on a landing (now it marks the full-length landing, partly behind the wall).
+- **Landing marks follow the walls** (the user's call, 2026-11-09): while a raised wall stands on a landing, the blue mark sits where the flight stops short, and a flight that would crash marks nothing. Marks update with every wall change.
+- **Still open:** whether falling on a sideways hop feels fair (Claude would have the pad not fire).
 - **Tools:** `lint` lists every pad aimed at a wall with where it stops, and warns when a short stop has nothing to stand on or a sideways hop lands on a wall; the diagnosis's pad list says what a landing wall does at the start and once its switch is pressed; `analyze` and `sim` print `SHORT` and `CRASH`; a new pad use, `short`, counts for the search's `want` list.
 
 **Every biome's shape:** 20 levels, the first few introductory and the last 15 ramping up in difficulty, so each biome can focus on its own creativity rather than on teaching the base rules.
@@ -516,6 +517,12 @@ works and what doesn't. Claude writes the code and designs handmade levels from 
 feedback; batches of 5 levels per round.
 
 ## Playtest log
+
+**2026-11-09 — Peaks Lab, `peakslab-06`.** The no-overlap fit had made the long fling strange ("the bottom part is angled and doesn't hit the wall"): for a forward-tumbling standing block only the top corner can touch the wall, so the fit held it half a tile back and lifted. The user liked the earlier fling and asked for an animation per kind of jump. Now a fling stopped short (one or two tiles past where it would land) keeps the harder hit, mid-tumble against the wall; a hop stopped short (`peakslab-04`) and a crash keep the fit from the block's real size.
+
+**2026-11-09 — Peaks Lab, `peakslab-04`.** The hop stopped short "killed the immersion": the block turned sideways, blinked upright and passed into the wall. The knock back had assumed every short stop starts standing, so a hop (which starts lying) un-tipped and then snapped upright. Now the contact comes from the block's real size at its tilt (its leading edge stops at the wall's face, and it never dips below the floor), a hop finishes tipping upright against the wall, and a fling rocks back.
+
+**2026-11-09 — Peaks Lab, second look.** "I do like the way it works more now." The landing mark moves to the stop. The flight into a wall was too slow and floated before a crash fell, and the knock back onto a goal wasn't smooth: the approach is now a quarter quicker and speeds up into the wall, a crash is already dropping as it bounces back and the fall carries on at that speed, and a short stop rocks back upright with a slight eased overshoot.
 
 **2026-11-09 — Peaks Lab, first look.** The user wants the normal tumble kept, with a visible collision when a wall is in the way (the first build flew a short fling upright). In `peakslab-05` a crash looked wrong: the block landed inside the raised wall, which seemed to come down, and fell through the floor. Now the block hits the wall's face, the wall shakes, and the block is knocked back (upright for a short fling) or bounces back and falls in the gap in front of the wall.
 

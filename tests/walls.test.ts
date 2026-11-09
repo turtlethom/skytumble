@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatLevel, parseLevel } from '../src/game/ascii';
-import { hedgeFell, initialState, isBridged, isSolid, step, wallUp } from '../src/game/rules';
+import { flightLandings, hedgeFell, initialState, isBridged, isSolid, step, wallUp } from '../src/game/rules';
 import { solve } from '../src/game/solver';
 import { Dir, Level, State, Tile } from '../src/game/types';
 import { parseChapter } from '../src/levels/format';
@@ -208,6 +208,18 @@ describe('walls on Windy Peaks', () => {
 
   it("a block can't stand short inside a second wall: it falls", () => {
     expect(fling('S##R..KK#').outcome).toBe('fall');
+  });
+
+  it('landing marks follow the walls: the stop while one is up, nothing for a crash', () => {
+    const level = parseLevel(['S##R..#H#']);
+    const at = (s: State) => flightLandings(level, s).map(({ x }) => x).sort();
+    expect(at(initialState(level))).toEqual([6]);
+    const lowered = { ...initialState(level), bridges: 1 };
+    expect(at(lowered)).toEqual([7, 8]);
+    const side = parseLevel(['SR.H#', '#R.##']);
+    // The sideways hop would crash into the wall at 3,0, so nothing marks column 3 (flings land past it).
+    expect(flightLandings(side, initialState(side)).filter(({ x }) => x === 3)).toEqual([]);
+    expect(flightLandings(side).filter(({ x }) => x === 3)).toHaveLength(2);
   });
 
   it('a hop along the pads stops short the same way', () => {

@@ -300,8 +300,11 @@ export function landing(level: Level, state: State, b: Block, dir: Dir): { to: B
   return { to: { ...to, x: wall[0] - dx, y: wall[1] - dy, o: 'S' }, hit, crashed: false };
 }
 
-/** Every grid cell some flight in this level can land on, for the landing marks. */
-export function flightLandings(level: Level): { x: number; y: number }[] {
+/**
+ * Every grid cell some flight in this level can land on, for the landing marks. With a state, walls
+ * count: a flight a raised wall stops short marks where it stops, and one that would crash marks nothing.
+ */
+export function flightLandings(level: Level, state?: State): { x: number; y: number }[] {
   const cells = new Map<number, { x: number; y: number }>();
   const launches: Block[] = [];
   for (let y = 0; y < level.height; y++) {
@@ -313,7 +316,9 @@ export function flightLandings(level: Level): { x: number; y: number }[] {
   for (const b of launches) {
     const dir = padLaunch(level, b);
     if (!dir) continue;
-    for (const [x, y] of blockCells(flight(b, dir))) cells.set(y * level.width + x, { x, y });
+    const to = state ? landing(level, state, b, dir) : { to: flight(b, dir), crashed: false };
+    if (to.crashed) continue;
+    for (const [x, y] of blockCells(to.to)) cells.set(y * level.width + x, { x, y });
   }
   return [...cells.values()];
 }
