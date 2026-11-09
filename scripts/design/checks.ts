@@ -2,8 +2,8 @@
 // a solution doesn't need, regrow decoys that keep the puzzle, flip a board north to south, find what a
 // raised wall hides from the opening camera, and lint a draft for the mistakes that cost the most rounds.
 import { formatLevel, parseLevel } from '../../src/game/ascii';
-import { DIR_DELTA, DIRS, Level, Tile } from '../../src/game/types';
-import { blockCells, findGoal } from '../../src/game/rules';
+import { DIR_DELTA, DIRS, Dir, Level, Tile } from '../../src/game/types';
+import { blockCells, findGoal, initialState, step } from '../../src/game/rules';
 import { solve } from '../../src/game/solver';
 import { flipUses, iceUses, padUses, shapeUses } from '../../src/levels/validate';
 import { closest, explore } from './explore';
@@ -316,6 +316,26 @@ export function openTemplate(rows: string[]): string[] {
   return rows.map((r) => r.replace(/\?/g, '#').replace(/%/g, '~'));
 }
 
+/**
+ * How often the solution presses a switch and presses it again within two moves: a press undone straight
+ * away, which only repositions the block and reads as arbitrary (frost-18's first version had one).
+ */
+export function quickRepresses(level: Level, moves: Dir[]): number {
+  let state = initialState(level);
+  const last = new Map<string, number>();
+  let count = 0;
+  moves.forEach((d, i) => {
+    const r = step(level, state, d);
+    for (const c of r.pressed) {
+      const k = `${c.x},${c.y}`;
+      if (last.has(k) && i - last.get(k)! <= 2) count++;
+      last.set(k, i);
+    }
+    state = r.state;
+  });
+  return count;
+}
+
 export interface Report {
   par: number;
   states: number;
@@ -328,6 +348,8 @@ export interface Report {
   moves: string;
   walls: WallColor[];
   hidden: string[];
+  /** Presses undone within two moves (see quickRepresses). */
+  represses: number;
 }
 
 const LETTER = { up: 'U', down: 'D', left: 'L', right: 'R' } as const;
@@ -351,6 +373,7 @@ export function report(d: Draft): Report | null {
     moves: sol.moves.map((m) => LETTER[m]).join(''),
     walls: wallColors(level, sol.moves.length),
     hidden: hidden(level),
+    represses: quickRepresses(level, sol.moves),
   };
 }
 

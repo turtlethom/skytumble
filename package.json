@@ -19,6 +19,7 @@
     "regrow": "vite-node scripts/design/regrow.ts",
     "lint": "vite-node scripts/design/lint.ts",
     "make": "vite-node scripts/design/make.ts",
+    "ease": "vite-node scripts/design/ease.ts",
     "verify": "scripts/design/verify.sh"
   },
   "dependencies": {

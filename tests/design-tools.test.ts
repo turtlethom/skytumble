@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { findLevel } from '../src/levels';
-import { Draft, dropUnreachable, flipNS, hidden, lint, plainWalls, regrow, strip, toLevel, wallColors } from '../scripts/design/checks';
+import { Draft, dropUnreachable, quickRepresses, flipNS, hidden, lint, plainWalls, regrow, strip, toLevel, wallColors } from '../scripts/design/checks';
 
 const draft = (rows: string[], switches: number[] = []): Draft => ({ rows, switches, on: [], shape: 2 });
 
@@ -60,5 +60,12 @@ describe('design tools', () => {
   it('drop plain tiles the block can never reach', () => {
     const out = dropUnreachable(draft(['S##G', '....', '...#']));
     expect(out.rows[2]).toBe('....');
+  });
+
+  it('spot a press undone straight away', () => {
+    const level = toLevel(draft(['S#o#G']));
+    // Onto the switch, off it, onto it again: two presses two moves apart.
+    expect(quickRepresses(level, ['right', 'left', 'right'])).toBe(1);
+    expect(quickRepresses(level, ['right'])).toBe(0);
   });
 });

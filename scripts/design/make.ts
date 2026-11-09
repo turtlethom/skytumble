@@ -75,8 +75,9 @@ for (const text of found.split(/\n\s*\n/).map((b) => b.trim()).filter((b) => b.s
   if (r) candidates.push({ name: `seed ${seed}`, draft, flipped, stripped: { par: sr.par, states: sr.states }, r });
 }
 
-// 4. Rank: every wall color has to move, then no dead ends, then the most states.
-const wallsOk = (c: Candidate) => c.r.walls.every((w) => w.moves);
+// 4. Rank: every wall color has to move and no press is undone straight away, then no dead ends, then
+// the most states.
+const wallsOk = (c: Candidate) => c.r.walls.every((w) => w.moves) && c.r.represses === 0;
 candidates.sort(
   (a, b) => Number(wallsOk(b)) - Number(wallsOk(a)) || Number(b.r.deadEnds === 0) - Number(a.r.deadEnds === 0) || b.r.states - a.r.states,
 );
@@ -92,6 +93,7 @@ const summary = candidates.map((c, i) => {
       `  floor par ${c.r.floorPar ?? 'X'}  ${walls}${c.flipped ? '  [flipped N-S]' : ''}`,
     `   uses: ${c.r.uses.join(' ') || 'none'}${c.r.pushes ? `  pushes ${c.r.pushes}` : ''}`,
     ...c.r.hidden.map((h) => `   HIDDEN: ${h}`),
+    ...(c.r.represses ? [`   QUICK RE-PRESS ×${c.r.represses}: a press undone within two moves, only to reposition (try ease)`] : []),
     `   moves: ${c.r.moves}`,
   ].join('\n');
 });

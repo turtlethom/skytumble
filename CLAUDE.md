@@ -63,6 +63,10 @@ npm run -s lint -- <file|id>...           # before solving: switches in reading 
 npm run -s walls -- <file|id>...          # each switch color's walls and bridges fixed one way, then the
                                           #   other: must both change par. PLAIN=1 turns unneeded walls to floor
 npm run -s regrow -- stripped.txt full.txt # add back decoys that keep par and every moving wall
+FILL=K npm run -s ease -- <file|id>      # make a level easier, same idea: fill tiles the solution never
+                                          #   uses (stone with FILL=K) while it lowers states, keeps par ±2
+                                          #   (PAR=lo-hi), keeps every moving color, and drops presses
+                                          #   undone within two moves. TARGET=<states> stops early
 npm run verify -- wind-                   # build, serve, play every solution in headless Chrome
 ```
 
