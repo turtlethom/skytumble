@@ -82,7 +82,11 @@ export async function loadDesigns(arg: string): Promise<Design[]> {
       .filter(Boolean)
       .map((block, i) => {
         const lines = block.split('\n');
-        const { rows, switches, on, shape } = parseBlock(lines);
+        const parsed = parseBlock(lines);
+        const { switches, on, shape } = parsed;
+        // A template reads as its most open version (`?` floor, `%` ice), as lint reads it, so the
+        // diagnosis lint points to works on the same file.
+        const rows = parsed.rows.map((r) => r.replace(/\?/g, '#').replace(/%/g, '~'));
         const name = lines.find((l) => l.startsWith('@'))?.slice(1) ?? `#${i + 1}`;
         const level = build(rows, switches, on, shape);
         // Re-print the rows from the parsed level so every layer is full height and width, and the

@@ -261,6 +261,10 @@ export function lint(d: Draft): string[] {
     }
   }
   const l = level!;
+  // Board size: past the largest boards played so far (23x5 star-08, 20x13 wind-08), the camera pulls
+  // back too far. First Glade's later levels also keep to 15x11 (11-15) and 17x11 (16-20), but long thin
+  // boards past that played fine elsewhere, so only the outer bound is a warning.
+  if (l.width > 23 || l.height > 13) out.push(`WARN: ${l.width}x${l.height} is bigger than any board played so far (23 wide, 13 tall): the camera pulls back too far`);
   // Switches, in the reading order that `switches:` follows.
   const list: string[] = [];
   let count = 0;

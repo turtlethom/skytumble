@@ -33,6 +33,7 @@ describe('design tools', () => {
     expect(lint(draft(['..G..', '..#..', '..H..', 'S#^#o', '..#..'])).join('\n')).toMatch(/skips the ride/);
     // A goal the block only ever reaches lying.
     expect(lint(draft(['S###G#'])).join('\n')).toMatch(/only ever reached lying/);
+    expect(lint(draft(['S' + '#'.repeat(23) + 'G'])).join('\n')).toMatch(/bigger than any board/);
   });
 
   it('strip what the solution does not need, then regrow decoys that keep the puzzle', () => {

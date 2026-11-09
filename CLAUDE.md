@@ -39,7 +39,7 @@ Design tools (`scripts/design/`). Each takes a draft file of design blocks, or a
 prefix (`wind-`) for a whole chapter, so playtest notes can be acted on directly:
 
 ```
-npm run -s analyze -- <file|id>...        # par, states, dead ends, pad/ice uses, untouched tiles (*);
+npm run -s analyze -- <file|id>...        # templates read as all-open; par, states, dead ends, pad/ice uses, untouched tiles (*);
                                           #   unsolvable → diagnosis. TRACE=1 moves · DIAG=1 diagnosis
                                           #   always · BLOCK=1 print as a design block (copy to a draft)
 npm run -s sim -- <file|id> RRDL [name]   # replay moves; board at the end (SHOW=1: after every move)
@@ -60,7 +60,8 @@ npm run -s make -- <template> <palette> <parLo> <parHi> [1-4] [want] [out]
                                           #   FROM=<raw> re-finishes without searching again
 npm run -s lint -- <file|id>...           # before solving: switches in reading order with colors,
                                           #   skippable belts, goal only reachable lying, what raised
-                                          #   walls hide (and whether a north-south flip fixes it)
+                                          #   walls hide (and whether a north-south flip fixes it), a board
+                                          #   too big for the camera
 npm run -s walls -- <file|id>...          # each switch color's walls and bridges fixed one way, then the
                                           #   other: must both change par. PLAIN=1 turns unneeded walls to floor
 npm run -s regrow -- stripped.txt full.txt # add back decoys that keep par and every moving wall
