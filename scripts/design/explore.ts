@@ -1,7 +1,7 @@
 // Whole-level exploration for the design tools: every reachable state, which of them can still
 // win, where each pad sends the block, and a map of where the block can get to. diagnose() turns
 // it into a report that says *why* a draft is unsolvable instead of just "UNSOLVABLE".
-import { blockCells, bridgeOut, findGoal, flight, initialState, isSolid, layerView, step, tileAt } from '../../src/game/rules';
+import { blockCells, bridgeOut, findGoal, flight, initialState, isSolid, isWall, landing, layerView, step, tileAt } from '../../src/game/rules';
 import { Block, DIR_DELTA, DIRS, Dir, Level, State, Tile } from '../../src/game/types';
 
 const keyOf = (s: State) => `${s.block.x},${s.block.y},${s.block.o},${s.block.n ?? 2},${s.bridges},${s.layer ?? 0},${s.hedges ?? 0}`;
@@ -80,7 +80,7 @@ const SHAPE: Record<number, string> = { 1: 'cube ', 2: '', 3: 'tall block ' };
 const cellsText = (b: Block) => blockCells(b).map(([x, y]) => `${x},${y}`).join(' + ');
 
 /** The arrow pads fire with under `b`, mirroring rules.ts: standing on one, or lying fully on two that agree. */
-function padArrow(level: Level, b: Block): Dir | null {
+export function padArrow(level: Level, b: Block): Dir | null {
   const cells = blockCells(b);
   if (!cells.every(([x, y]) => tileAt(level, x, y) === Tile.Pad)) return null;
   const arrows = new Set(cells.map(([x, y]) => level.groups[y * level.width + x]));
@@ -127,6 +127,14 @@ export function padReport(full: Level, ex: Exploration): string[] {
         if (land.o === 'S' && tileAt(level, land.x, land.y) === Tile.Fragile) notes.push('✗ BREAKS the fragile tile');
         if (land.o === 'S' && tileAt(level, land.x, land.y) === Tile.Goal) notes.push('wins');
         if (padArrow(level, land)) notes.push('chains');
+        // A wall on the landing: what it does while up (it's floor while down).
+        if (blockCells(land).some(([cx, cy]) => isWall(tileAt(level, cx, cy)))) {
+          const raised = landing(level, { block: b, bridges: level.bridgesOn, layer }, b, dir);
+          const up = landing(level, { block: b, bridges: ~level.bridgesOn, layer }, b, dir);
+          const say = (r: typeof up) =>
+            r.crashed ? '✗ FALLS (sideways hop onto it)' : r.hit ? `stops short, standing on ${r.to.x},${r.to.y} [${tileName(level, r.to.x, r.to.y, level.bridgesOn)}]` : 'lands on it';
+          notes.push(`wall in the landing: ${say(raised)} at start${say(up) !== say(raised) ? `, ${say(up)} once its switch is pressed` : ''}`);
+        }
         notes.push(ex.launched.has(blockKey(b, layer)) ? 'fired in play' : 'never fired in play');
         lines.push(
           `${where}${dir.padEnd(5)} ${POSE[o].padEnd(13)} from ${cellsText(b).padEnd(11)} → ${POSE[land.o]} on ` +

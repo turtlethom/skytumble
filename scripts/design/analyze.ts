@@ -35,7 +35,7 @@ for (const arg of process.argv.slice(2)) {
       const b = r.state.block;
       const up = level.ceiling && r.state.layer ? '↑' : '';
       const shape = b.n === 1 ? 'cube ' : b.n === 3 ? 'tall ' : '';
-      trace.push(`${dir[0].toUpperCase()}:${shape}${b.o}(${b.x},${b.y})${up}${m ? ` [${m}]` : ''}${(r.held ?? []).map((h) => ` ${h.belt ? 'HELD' : 'BRAKE'}(${h.x},${h.y})`).join('')}${r.pressed.length ? ' PRESS' : ''}${r.knocked ? ` TOPPLE(${r.bumped!.x},${r.bumped!.y})${r.bridged ? ` bridges(${r.bridged.x},${r.bridged.y})` : ' wasted'}` : ''}`);
+      trace.push(`${dir[0].toUpperCase()}:${shape}${b.o}(${b.x},${b.y})${up}${m ? ` [${m}]` : ''}${(r.held ?? []).map((h) => ` ${h.belt ? 'HELD' : r.motions[h.after - 1]?.kind === 'fly' ? (r.outcome === 'fall' ? 'CRASH' : 'SHORT') : 'BRAKE'}(${h.x},${h.y})`).join('')}${r.pressed.length ? ' PRESS' : ''}${r.knocked ? ` TOPPLE(${r.bumped!.x},${r.bumped!.y})${r.bridged ? ` bridges(${r.bridged.x},${r.bridged.y})` : ' wasted'}` : ''}`);
       st = r.state;
     }
     const plain = solve(build(rows.map((l) => (/^-{3,}/.test(l) ? l : l.replace(/[~^v<>UDLR+]/g, '#'))), switches, on, level.startShape ?? 2));

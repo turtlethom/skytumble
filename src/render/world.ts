@@ -135,6 +135,10 @@ const FLY_MS_BASE = 260;
 const FLY_MS_PER_TILE = 55;
 const FLY_ARC_BASE = 1.1;
 const FLY_ARC_PER_TILE = 0.3;
+/** A flight that hits a wall: how far into the tile before it the block gets (tiles), how far through its tip, and the knock back. */
+const FLY_WALL_LEAN = 0.3;
+const FLY_WALL_TIP = 0.55;
+const FLY_WALL_KNOCK_MS = 220;
 /** Gust streaks drift across a pad once per this many ms. */
 const GUST_MS = 900;
 /** Camera framing: elevation (rise per unit of ground distance), the closest it comes, and how much
@@ -1310,11 +1314,40 @@ export class World {
     const tumble = new THREE.Quaternion();
     const axis = new THREE.Vector3(dy, 0, -dx);
     const base = this.block.quaternion.clone();
+    const turn = (a: number) => this.block.quaternion.copy(base).premultiply(tumble.setFromAxisAngle(axis, a));
+    if (m.wall) return this.flyIntoWall(m, start, end, turn);
     await this.tween(FLY_MS_BASE + FLY_MS_PER_TILE * tiles, (t) => {
       this.block.position.lerpVectors(start, end, t);
       this.block.position.y += arc * 4 * t * (1 - t);
-      tumble.setFromAxisAngle(axis, (Math.PI / 2) * easeInOut(t));
-      this.block.quaternion.copy(base).premultiply(tumble);
+      turn((Math.PI / 2) * easeInOut(t));
+    });
+    this.placeBlock(m.to);
+  }
+
+  /**
+   * A flight a raised wall got in the way of: it tumbles as usual until it hits the wall's face, the
+   * wall shakes, and the block is knocked back to `to`. A fling stopped short rocks back upright; a
+   * hop finishes its tip there (and a sideways one then falls, in front of the wall).
+   */
+  private async flyIntoWall(m: Motion, start: THREE.Vector3, end: THREE.Vector3, turn: (a: number) => void): Promise<void> {
+    const { dx, dy } = DIR_DELTA[m.dir];
+    const contact = end.clone().add(new THREE.Vector3(dx * FLY_WALL_LEAN, 0, dy * FLY_WALL_LEAN));
+    const tiles = Math.hypot(contact.x - start.x, contact.z - start.z);
+    const arc = FLY_ARC_BASE + FLY_ARC_PER_TILE * tiles;
+    const lean = (Math.PI / 2) * FLY_WALL_TIP;
+    const final = m.from.o === 'S' && m.to.o === 'S' ? 0 : Math.PI / 2;
+    await this.tween(FLY_MS_BASE + FLY_MS_PER_TILE * tiles, (t) => {
+      this.block.position.lerpVectors(start, contact, t);
+      // The arc comes down onto the wall's face rather than past it.
+      this.block.position.y += arc * 4 * t * (1 - t) * (1 - 0.35 * t);
+      turn(lean * easeInOut(t));
+    });
+    const wall = this.walls.find((w) => w.layer === this.layer && w.x === m.wall!.x && w.y === m.wall!.y);
+    if (wall) void this.shake(wall.pillar, dx, dy);
+    await this.tween(FLY_WALL_KNOCK_MS, (t) => {
+      const e = easeOut(t);
+      this.block.position.lerpVectors(contact, end, e);
+      turn(lean + (final - lean) * e);
     });
     this.placeBlock(m.to);
   }

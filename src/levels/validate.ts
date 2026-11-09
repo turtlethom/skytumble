@@ -26,7 +26,8 @@ export type PadUse =
   | 'flight→goal' // a flight landed upright on the goal
   | 'anchor' // came to rest lying half on a pad, so it didn't fire
   | 'belt→pad' // a belt pushed the block onto pads that fired
-  | 'flight→belt'; // a flight landed on belts that pushed it
+  | 'flight→belt' // a flight landed on belts that pushed it
+  | 'short'; // a raised wall on the landing stopped a flight short, standing before it
 
 /** Distinct ways a solution can use gravity flips; the `gravity` signature asks for two. */
 export type FlipUse =
@@ -131,7 +132,7 @@ export function iceUses(level: Level, moves: Dir[]): { uses: IceUse[]; pushes: n
       if (kinds[i - 1] === 'push' && kinds[i] === 'slide') uses.add('belt→slide');
     }
     if (kinds[kinds.length - 1] === 'slide' && r.pressed.length > 0) uses.add('slide→switch');
-    for (const h of r.held ?? []) uses.add(h.belt ? 'held' : 'brake');
+    for (const h of r.held ?? []) if (r.motions[h.after - 1]?.kind !== 'fly') uses.add(h.belt ? 'held' : 'brake');
     const b = r.state.block;
     const onIce = blockCells(b).filter(([x, y]) => tileAt(level, x, y) === Tile.Ice).length;
     if (b.o === 'S' && onIce === 1) uses.add('grip');
@@ -150,6 +151,7 @@ export function padUses(level: Level, moves: Dir[]): PadUse[] {
     const flights = r.motions.filter((m) => m.kind === 'fly');
     for (const f of flights) uses.add(f.from.o === 'S' ? 'fling' : 'hop');
     if (flights.length > 1) uses.add('chain');
+    for (const h of r.held ?? []) if (!h.belt && r.outcome !== 'fall' && r.motions[h.after - 1]?.kind === 'fly') uses.add('short');
     for (let i = 1; i < r.motions.length; i++) {
       const [a, b] = [r.motions[i - 1].kind, r.motions[i].kind];
       if (a === 'push' && b === 'fly') uses.add('belt→pad');
@@ -167,11 +169,11 @@ export function padUses(level: Level, moves: Dir[]): PadUse[] {
 }
 
 /**
- * What a wall does to a flight, a flip or another shape isn't settled yet (walls with ice and belts
- * are: Frost Isle). Hedges stay in First Glade, with the basics only.
+ * What a wall does to a flip or another shape isn't settled yet (walls with ice and belts are: Frost
+ * Isle; with pads: Windy Peaks, in its lab). Hedges stay in First Glade, with the basics only.
  */
-const NOT_WITH_WALLS = [Tile.Pad, Tile.Flip, Tile.ShapeSwitch, Tile.ExtraHeavy];
-const NOT_WITH_HEDGES = [...NOT_WITH_WALLS, Tile.Ice, Tile.Conveyor];
+const NOT_WITH_WALLS = [Tile.Flip, Tile.ShapeSwitch, Tile.ExtraHeavy];
+const NOT_WITH_HEDGES = [...NOT_WITH_WALLS, Tile.Pad, Tile.Ice, Tile.Conveyor];
 
 function mixesWalls(level: Level): boolean {
   const tiles = [...level.tiles, ...(level.ceiling?.tiles ?? [])];
@@ -182,7 +184,7 @@ function mixesWalls(level: Level): boolean {
 
 export function validateLevel(h: HandmadeLevel, chapter: Chapter): LevelReport {
   const errors: string[] = [];
-  if (mixesWalls(h.level)) errors.push('walls only mix with the basics, ice and belts, and hedges only with the basics, until their other interactions are settled');
+  if (mixesWalls(h.level)) errors.push('walls only mix with the basics, ice, belts and pads, and hedges only with the basics, until their other interactions are settled');
   // A hedge falling off the grid would just vanish, while one falling onto an empty tile bridges it,
   // and both look like open sky.
   for (const c of h.level.hedgeCells ?? []) {

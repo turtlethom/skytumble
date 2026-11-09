@@ -158,7 +158,7 @@ Shipped releases and finished build notes are in `DESIGN-archive.md`, word for w
 
 - **Done this stretch (2026-11-07…08):** Frost Isle's granite walls; the wall rules with ice and belts, frozen after Frost Lab (`frostlab-01`…`06`); How To Play's *Walls on ice and belts* entry; `frost-09`…`18` in two batches, both liked, with all six of Frost Isle's wall levels (10, 11, 13, 15, 17 and the maze, 18). `frost-18` Ice Cave was eased after the user found it too hard (29 moves, 202 states, purple only). See *Frost Isle's new levels* below.
 - **Level tools** (`scripts/design/`, documented in CLAUDE.md): `make` (lint → search → strip → wall and bridge check → regrow → unneeded walls to floor → unreachable tiles dropped → flip, with a short ranked summary), `lint`, `walls`, `regrow` and `ease`. The user asked that the tools grow with every new mechanic.
-- **Now: Windy Peaks walls.** Frost Isle is complete at 20 and live (pushed 2026-11-08). Windy Peaks' wall stone is approved: rust-brown ironstone, chosen over dark basalt. Next: the rules for walls with pads, the tools for them, then the lab.
+- **Now: Windy Peaks walls.** Ironstone approved; the rules for walls with pads and Peaks Lab (`peakslab-01`…`06`) are built and await the user's playtest (see *Peaks Lab* below). After sign-off: freeze the rules, How To Play's line and scene, then `wind-09`…`13`.
 - **Open questions for the user:** whether to add a slide-end preview on ice (marks where each roll would leave a lying block), which would make every ice level more readable but also easier; whether to tighten `glade-13`, `15` and `18`, each with one wall color that never has to move (found by `walls`); their notes on `glade-16`…`20` and the Glade maze, and its frame rate on their laptop.
 - **Pushing** goes through the `gh` login (`git -c credential.helper= -c credential.helper='!gh auth git-credential' push origin main`); always ask first.
 
@@ -470,6 +470,21 @@ Rules, to be frozen per world (Frost Isle's slide and belt rows frozen 2026-11-0
 - **Risks:** identity rests on 4 levels in 12 and on the mazes, since a new material is the lightest look on offer. Hidden tiles rest on layout alone, and Starfall is the worst case. Five behaviors to learn across the worlds. Toybox may have little for walls to combine with: its lab decides, and a rule can be added then.
 - **Where Claude differs:** a sideways hop falling is the only place a wall can make the block fall, and Claude would have the pad not fire, as with rings. A fling standing up short is the rule most likely to fail in a lab, though it could give the best puzzles. Careful layout is the cheapest answer to one of the user's top fears, so revisit it if Starfall's lab feels hidden.
 
+**Peaks Lab** (built 2026-11-08, awaiting playtest), in Windy Peaks' theme with its ironstone walls. One rule question per level, all short (par 3 to 8):
+
+| Level | Question |
+|---|---|
+| `peakslab-01` Short Stop | A raised wall on a fling's landing stops it short, standing on the tile before it (here the goal); lowered, the fling strands you lying across the goal |
+| `peakslab-02` Over the Top | Flights pass over walls: low stone you can't roll past is nothing to a fling |
+| `peakslab-03` Heavy Landing | Stopped short, a fling lands standing: the only way onto a heavy switch across a gap |
+| `peakslab-04` Hop Short | A hop along two pads stops short the same way, onto the switch that lowers the wall |
+| `peakslab-05` Crash | A sideways hop onto a raised wall falls: lower it first |
+| `peakslab-06` Raise to Land | The reverse of Short Stop: the wall starts down, and raising it is what makes the landing |
+
+- **Calls Claude made beyond the plan:** a short stop needs the tile before the wall clear; a second raised wall there makes the block fall, since it can't stand inside a wall. A flight a wall gets in the way of tumbles as usual until it hits the wall's face, which shakes, then is knocked back: a fling stopped short rocks back upright, a hop finishes its tip, and a crash bounces back in front of the wall and falls there (changed after the first playtest, below).
+- **Questions for the playtest:** whether falling on a sideways hop feels fair (Claude would have the pad not fire, see above); whether the blue landing mark should move to the short spot while a wall stands on a landing (now it marks the full-length landing, partly behind the wall).
+- **Tools:** `lint` lists every pad aimed at a wall with where it stops, and warns when a short stop has nothing to stand on or a sideways hop lands on a wall; the diagnosis's pad list says what a landing wall does at the start and once its switch is pressed; `analyze` and `sim` print `SHORT` and `CRASH`; a new pad use, `short`, counts for the search's `want` list.
+
 **Every biome's shape:** 20 levels, the first few introductory and the last 15 ramping up in difficulty, so each biome can focus on its own creativity rather than on teaching the base rules.
 
 **After that: 20 levels per biome** (decided by the user 2026-11-02). Levels
@@ -501,6 +516,8 @@ works and what doesn't. Claude writes the code and designs handmade levels from 
 feedback; batches of 5 levels per round.
 
 ## Playtest log
+
+**2026-11-09 — Peaks Lab, first look.** The user wants the normal tumble kept, with a visible collision when a wall is in the way (the first build flew a short fling upright). In `peakslab-05` a crash looked wrong: the block landed inside the raised wall, which seemed to come down, and fell through the floor. Now the block hits the wall's face, the wall shakes, and the block is knocked back (upright for a short fling) or bounces back and falls in the gap in front of the wall.
 
 Older notes (2026-10-31 to 2026-11-03) are in `DESIGN-archive.md`.
 

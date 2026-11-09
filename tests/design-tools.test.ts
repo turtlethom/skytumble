@@ -34,6 +34,10 @@ describe('design tools', () => {
     // A goal the block only ever reaches lying.
     expect(lint(draft(['S###G#'])).join('\n')).toMatch(/only ever reached lying/);
     expect(lint(draft(['S' + '#'.repeat(23) + 'G'])).join('\n')).toMatch(/bigger than any board/);
+    // Pads aimed at walls (Windy Peaks): a short landing, one over nothing, and a sideways hop's crash.
+    expect(lint(draft(['S##R..#H#', '..o.....G'], [0])).join('\n')).toContain('the orange wall at 7,0 stops it on 6,0 while up');
+    expect(lint(draft(['S##R...K#G'])).join('\n')).toMatch(/stopped short by the fixed wall at 7,0 has nothing to stand on/);
+    expect(lint(draft(['SR.K#G', '#R.##.'])).join('\n')).toMatch(/sideways hop from 1,0\+1,1 lands on the fixed wall at 3,0: the block falls/);
   });
 
   it('strip what the solution does not need, then regrow decoys that keep the puzzle', () => {

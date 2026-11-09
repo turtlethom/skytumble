@@ -3,10 +3,12 @@
 // raised wall hides from the opening camera, and lint a draft for the mistakes that cost the most rounds.
 import { formatLevel, parseLevel } from '../../src/game/ascii';
 import { DIR_DELTA, DIRS, Dir, Level, Tile } from '../../src/game/types';
-import { blockCells, findGoal, initialState, step } from '../../src/game/rules';
+import { blockCells, findGoal, flight, initialState, isSolid, landing, step, wallUp } from '../../src/game/rules';
 import { solve } from '../../src/game/solver';
 import { flipUses, iceUses, padUses, shapeUses } from '../../src/levels/validate';
-import { closest, explore } from './explore';
+import { closest, explore, padArrow } from './explore';
+
+const cellsOf = (b: { x: number; y: number; o: 'S' | 'X' | 'Y' }) => blockCells(b).map(([x, y]) => `${x},${y}`).join('+');
 
 /** A level as the tools hold it: text rows plus the options a design block carries. */
 export interface Draft {
@@ -295,6 +297,28 @@ export function lint(d: Draft): string[] {
     const sameBelt = behind === Tile.Conveyor && l.groups[(y - dy) * l.width + (x - dx)] === l.groups[i];
     if (isWall(at(x + dx, y + dy)) && behind !== Tile.Empty && !sameBelt) {
       out.push(`WARN: the belt at ${x},${y} pushes at a wall with floor behind it (${x - dx},${y - dy}): lying across the two skips the ride`);
+    }
+  });
+  // Pads aimed at walls. A wall on a landing stops a fling or a hop along the pads short, standing on
+  // the tile before it; on a sideways hop's landing it makes the block fall.
+  const moving = switchGroups(l);
+  l.tiles.forEach((t, i) => {
+    if (t !== Tile.Pad) return;
+    const [x, y] = [i % l.width, Math.floor(i / l.width)];
+    for (const o of ['S', 'X', 'Y'] as const) {
+      const b = { x, y, o };
+      const dir = padArrow(l, b);
+      if (!dir) continue;
+      const land = flight(b, dir);
+      const wall = blockCells(land).find(([cx, cy]) => cx >= 0 && cy >= 0 && cx < l.width && cy < l.height && isWall(l.tiles[cy * l.width + cx]));
+      if (!wall) continue;
+      const g = l.groups[wall[1] * l.width + wall[0]];
+      const name = `${moving.has(g) ? COLOR[g] ?? `group ${g}` : 'fixed'} wall at ${wall[0]},${wall[1]}`;
+      const what = o === 'S' ? 'fling' : 'hop';
+      const r = landing(l, { block: b, bridges: l.bridgesOn ^ (wallUp(l.tiles[wall[1] * l.width + wall[0]], g, l.bridgesOn, l.bridgesOn) ? 0 : 1 << g), layer: 0 }, b, dir);
+      if (r.crashed) out.push(`WARN: a sideways hop from ${cellsOf(b)} lands on the ${name}: the block falls while it's up`);
+      else if (!isSolid(l, r.to.x, r.to.y, ~0)) out.push(`WARN: a ${what} from ${cellsOf(b)} stopped short by the ${name} has nothing to stand on at ${r.to.x},${r.to.y}`);
+      else out.push(`${what} from ${cellsOf(b)}: the ${name} stops it on ${r.to.x},${r.to.y} while up`);
     }
   });
   // The goal has to take a standing block: one only ever reached lying is a parity problem.

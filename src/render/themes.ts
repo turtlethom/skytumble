@@ -174,6 +174,8 @@ export const CHAPTER_THEMES: Record<string, Theme> = {
   gladelab: FOREST,
   // Frost Isle's walls are granite in the snow, and they have to be judged there.
   frostlab: FROST,
+  // Windy Peaks' ironstone walls, judged on its slate.
+  peakslab: PEAKS,
 };
 
 /** Every theme by id, so `?theme=forest` can preview one on any level or on the tile sheet. */

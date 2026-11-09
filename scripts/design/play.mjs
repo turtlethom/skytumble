@@ -3,7 +3,8 @@
 //   npx vite-node scripts/design/solutions.ts frost- > /tmp/solutions.json
 //   node scripts/design/play.mjs http://localhost:4179 /tmp/solutions.json <screenshot dir>
 // Env: STEPS=1 also saves a screenshot after every move (<id>-NN.png); PEEK_AT=n holds Space after
-// move n and saves <id>-peek;
+// move n and saves <id>-peek; FRAMES=n saves n shots during the last move (<id>-frameNN.png), FRAME_MS
+// apart (default 150), to see an animation mid-way (slow its constants in a throwaway build first);
 // ROTATE=n turns the view n quarter turns (E) before playing, to check controls follow the screen.
 // PAGES='sheet=peaks&walls;sheet=peaks&walls&gray' skips playing: it opens each query, waits for the
 // world to settle and saves page-1.png, page-2.png... (for tile sheets and samples; solutions unused).
@@ -102,6 +103,7 @@ const keyFor = async (dir) => {
   return k >= 0 ? screenCodes[k] : codes[dir];
 };
 const peekAt = process.env.PEEK_AT ? Number(process.env.PEEK_AT) : -1;
+const frames = Number(process.env.FRAMES ?? 0);
 await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
 let failed = 0;
 const titleUp = () => evalJs("document.getElementById('arrival').classList.contains('show')");
@@ -170,7 +172,13 @@ for (const [id, moves] of Object.entries(solutions)) {
   // Generous gaps: long slides and chained motions take over a second to animate.
   for (const [i, m] of moves.entries()) {
     await key(await keyFor(m));
-    await sleep(1300);
+    if (frames && i === moves.length - 1) {
+      // FRAMES=n: n shots during the last move, FRAME_MS apart, to see an animation mid-way.
+      for (let f = 1; f <= frames; f++) {
+        await sleep(Number(process.env.FRAME_MS ?? 150));
+        await shot(`${id}-frame${String(f).padStart(2, '0')}`);
+      }
+    } else await sleep(1300);
     if (process.env.STEPS === '1') await shot(`${id}-${String(i + 1).padStart(2, '0')}`);
     if (i + 1 === peekAt) {
       await key('Space');

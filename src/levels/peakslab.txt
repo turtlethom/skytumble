@@ -1,0 +1,62 @@
+title: Peaks Lab (prototypes)
+
+=== peakslab-01
+par: 3
+name: Short Stop
+idea: A raised wall where a fling would land stops it short: you stand up on the tile before it, here the goal. Drop the wall with the switch and the fling carries on, leaving you lying across the goal with nowhere to go.
+switches: 0
+.###o
+.#S##
+.####R..GH
+
+
+=== peakslab-02
+par: 5
+name: Over the Top
+idea: Flights pass over walls: only where you land matters. The low stone you can't roll past is nothing to a fling.
+###.K
+S##RK..###
+###.K..###
+....K..##G
+
+=== peakslab-03
+par: 6
+name: Heavy Landing
+idea: A fling lands lying, which can't press a heavy switch. Stopped short by the wall, it lands standing, right on the switch, which drops the wall and brings out the bridge home.
+switches: 0
+.G#00
+....#
+....H
+....x
+.
+.
+....U
+....#
+....#
+....S
+
+=== peakslab-04
+par: 3
+name: Hop Short
+idea: Lying along two pads you hop and land standing. The wall stops the hop a tile short, on the switch that lowers it.
+switches: 0
+#SRRoH#G
+
+=== peakslab-05
+par: 8
+name: Crash
+idea: Lying across two pads, you hop sideways. A raised wall where you'd land knocks you off the island, so lower it first.
+switches: 0
+#o#
+S##R.H
+###R.#
+.....G
+
+=== peakslab-06
+par: 4
+name: Raise to Land
+idea: The wall starts down, so the fling leaves you lying across the goal, stuck. Raise it first, and it stops the fling short, standing on the goal.
+switches: 0
+.#o#
+#S##R...Gh
+###

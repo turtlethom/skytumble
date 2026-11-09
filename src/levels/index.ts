@@ -11,6 +11,7 @@ import tutorial from './tutorial.txt?raw';
 import glade from './glade.txt?raw';
 import gladelab from './gladelab.txt?raw';
 import frostlab from './frostlab.txt?raw';
+import peakslab from './peakslab.txt?raw';
 
 /** Every chapter: the Tutorial, then the campaign in play order, then the labs. Add a chapter by adding its .txt file here. */
 export const CHAPTERS: Chapter[] = [
@@ -32,9 +33,11 @@ export const CHAPTERS: Chapter[] = [
   parseChapter('gladelab', gladelab),
   // Walls with ice and belts, for the Frost Isle wall lab playtest.
   parseChapter('frostlab', frostlab),
+  // Walls with launch pads, for the Windy Peaks wall lab playtest.
+  parseChapter('peakslab', peakslab),
 ];
 
-const LAB_IDS = new Set(['lab', 'windlab', 'gravlab', 'shapelab', 'gladelab', 'frostlab']);
+const LAB_IDS = new Set(['lab', 'windlab', 'gravlab', 'shapelab', 'gladelab', 'frostlab', 'peakslab']);
 
 /** Outside the story and off the sky map, opened from the main menu. */
 export const TUTORIAL: Chapter = CHAPTERS.find((c) => c.id === 'tutorial')!;

@@ -13,6 +13,8 @@ export interface Motion {
   dir: Dir;
   from: Block;
   to: Block;
+  /** The raised wall a flight hit: it stopped short at `to`, or bounced back there and fell. */
+  wall?: { x: number; y: number };
 }
 
 export interface StepResult {
@@ -37,7 +39,8 @@ export interface StepResult {
   /** The empty tile a toppled hedge landed on, which is floor from now on. */
   bridged?: { x: number; y: number };
   /**
-   * Raised walls that stopped a slide on the tile before them, or kept a belt from pushing, in order.
+   * Raised walls that stopped a slide on the tile before them, kept a belt from pushing, or stopped a
+   * flight short (or crashed a sideways hop), in order.
    * `after` counts the motions that came before it.
    */
   held?: Held[];
@@ -271,6 +274,32 @@ export function flight(b: Block, dir: Dir): Block {
   return roll({ ...b, x: b.x + dx * n, y: b.y + dy * n }, dir);
 }
 
+/**
+ * A flight with walls (frozen for Windy Peaks after its lab): it flies over them, and only the landing
+ * matters. A raised wall where a fling or a hop along the pads would land stops it short, standing on
+ * the tile before the wall (`hit`); with nothing there, it falls like any landing. A raised wall where
+ * a sideways hop would land, or a second raised wall just before it, makes the block fall (`crashed`):
+ * it bounces back off the wall and falls there.
+ */
+export function landing(level: Level, state: State, b: Block, dir: Dir): { to: Block; hit: { x: number; y: number } | null; crashed: boolean } {
+  const to = flight(b, dir);
+  const { dx, dy } = DIR_DELTA[dir];
+  // Nearest first, along the flight.
+  const cells = blockCells(to).sort(([ax, ay], [bx, by]) => (ax - bx) * dx + (ay - by) * dy);
+  const wall = cells.find(([x, y]) => standsUp(level, x, y, state));
+  if (!wall) return { to, hit: null, crashed: false };
+  const hit = { x: wall[0], y: wall[1] };
+  const along = b.o === 'S' || (b.o === 'X') === (dy === 0);
+  // Standing short needs the tile before the wall clear: a block can't stand inside another wall.
+  if (!along || standsUp(level, wall[0] - dx, wall[1] - dy, state)) {
+    // It hits the wall and bounces back, in its landing pose, until it's clear of walls, and falls there.
+    let back = to;
+    for (let i = 0; i < FLING && blockCells(back).some(([x, y]) => standsUp(level, x, y, state)); i++) back = { ...back, x: back.x - dx, y: back.y - dy };
+    return { to: back, hit, crashed: true };
+  }
+  return { to: { ...to, x: wall[0] - dx, y: wall[1] - dy, o: 'S' }, hit, crashed: false };
+}
+
 /** Every grid cell some flight in this level can land on, for the landing marks. */
 export function flightLandings(level: Level): { x: number; y: number }[] {
   const cells = new Map<number, { x: number; y: number }>();
@@ -380,7 +409,12 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
     if (cells.some((c) => fired.has(c))) break;
     cells.forEach((c) => fired.add(c));
     if (launch) {
-      moveTo('fly', launch, flight(block, launch));
+      const { to, hit, crashed } = landing(view, state, block, launch);
+      moveTo('fly', launch, to);
+      const flown = motions[motions.length - 1];
+      if (hit && flown?.to === to) flown.wall = hit;
+      if (hit) held.push({ ...hit, dir: launch, belt: false, after: motions.length });
+      if (crashed) return fell(state.bridges);
       continue;
     }
     // Gravity flips: the block drops "up" to the tiles directly over it, in the same pose, and

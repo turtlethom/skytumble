@@ -172,6 +172,60 @@ describe('walls on Frost Isle', () => {
   });
 });
 
+describe('walls on Windy Peaks', () => {
+  // Rolling right twice stands the block on the pad at x=3, which flings it to lie on x=7 and 8.
+  const fling = (row: string) => {
+    const level = parseLevel([row]);
+    return step(level, play(level, ['right']), 'right');
+  };
+
+  it('a fling flies over raised walls: only the landing matters', () => {
+    expect(fling('S##RHH.##').state.block).toEqual({ x: 7, y: 0, o: 'X' });
+  });
+
+  it('a raised wall on the landing stops a fling short, standing on the tile before it', () => {
+    const near = fling('S##R..#H#');
+    expect(near.state.block).toEqual({ x: 6, y: 0, o: 'S' });
+    expect(near.motions).toEqual([{ kind: 'fly', dir: 'right', from: { x: 3, y: 0, o: 'S' }, to: { x: 6, y: 0, o: 'S' }, wall: { x: 7, y: 0 } }]);
+    expect(near.held).toEqual([{ x: 7, y: 0, dir: 'right', belt: false, after: 1 }]);
+    // A wall on the far landing tile only: it stands on the near one.
+    expect(fling('S##R...#H').state.block).toEqual({ x: 7, y: 0, o: 'S' });
+  });
+
+  it('a fling stopped short over nothing falls', () => {
+    expect(fling('S##R...H#').outcome).toBe('fall');
+  });
+
+  it('a sunk wall is floor to land on', () => {
+    expect(fling('S##R...h#').state.block).toEqual({ x: 7, y: 0, o: 'X' });
+  });
+
+  it('a short landing on a switch presses it, like any landing', () => {
+    const r = fling('S##R..oH#');
+    expect(r.state.block).toEqual({ x: 6, y: 0, o: 'S' });
+    expect(r.pressed).toEqual([{ x: 6, y: 0 }]);
+  });
+
+  it("a block can't stand short inside a second wall: it falls", () => {
+    expect(fling('S##R..KK#').outcome).toBe('fall');
+  });
+
+  it('a hop along the pads stops short the same way', () => {
+    const level = parseLevel(['SRR#H']);
+    expect(step(level, initialState(level), 'right').state.block).toEqual({ x: 3, y: 0, o: 'S' });
+  });
+
+  it("a raised wall on a sideways hop's landing makes the block fall", () => {
+    const level = parseLevel(['SR.H#', '#R.##']);
+    const r = step(level, { block: { x: 0, y: 0, o: 'Y' }, bridges: 0 }, 'right');
+    expect(r.outcome).toBe('fall');
+    expect(r.held).toEqual([{ x: 3, y: 0, dir: 'right', belt: false, after: 1 }]);
+    // It bounces back off the wall and falls in front of it, not through it.
+    expect(r.state.block).toEqual({ x: 2, y: 0, o: 'Y' });
+    expect(r.motions[0].wall).toEqual({ x: 3, y: 0 });
+  });
+});
+
 describe('reversed bridges', () => {
   it('are out when a digit bridge of their color is in', () => {
     const reversed = parseLevel(['S#a']);
@@ -364,11 +418,11 @@ describe('validation', () => {
   });
 
   it('refuses walls and hedges with mechanics whose interactions are not settled', () => {
-    for (const grid of ['S&~G', 'S&>G', 'SHRG', 'S&+G', 'SHcG', 'S&XG']) expect(report(grid)).toMatch(/only mix/);
+    for (const grid of ['S&~G', 'S&>G', 'S&RG', 'S&+G', 'SHcG', 'S&XG']) expect(report(grid)).toMatch(/only mix/);
     expect(report('S&#G\n---\n....')).toMatch(/only mix/);
   });
 
-  it('accepts walls with ice and belts (Frost Isle)', () => {
-    for (const grid of ['SH~G', 'SK>G', 'Sh~>G']) expect(report(grid)).not.toMatch(/only mix/);
+  it('accepts walls with ice and belts (Frost Isle) and pads (Windy Peaks)', () => {
+    for (const grid of ['SH~G', 'SK>G', 'Sh~>G', 'SHRG']) expect(report(grid)).not.toMatch(/only mix/);
   });
 });
