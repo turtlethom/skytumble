@@ -237,3 +237,37 @@ K~KK.KKK~KK~o~K~K
 K~.KK~~KK~~~K~K~K
 K~~~~K~~~~~~~~~#G
 KKKKKKKKKKKKKKKKK
+
+=== frost-19
+par: 29
+name: Carousel
+idea: A ring of belts around a rink. Ride the top belt and drop onto the orange switch, which brings out the bridge below the ring. The rink has no way onto the east belt, so ride the bottom belt west, slide up the west side and go all the way round again to come down onto the bridge.
+switches: 0
+S##
+###>>>>>>>>>>>>v
+...^~~~#.~.....v
+...^#....~.....v
+...^~....o.....v
+...^~....~.~##.v
+...^~....#~#~~.v
+...^<<<<<<<<<<<<
+...............0
+...............0
+...............G
+
+=== frost-20
+par: 38
+name: Grand Tour
+idea: Two rinks, two pockets. Slide up into the pocket at the top to press orange: its bridge waits at the end of the belts. The way there winds down through the bottom of the first rink and back up. Ride the belts, slide down the second rink and work round to its west side to stand on the heavy purple switch, then roll home over purple's bridge.
+switches: 0 1
+###.....#o
+#S#~~~~~~~
+#########~
+...~###~#~
+...~##~.~~>>>00
+...~#~###....~.~
+...~##~##~..~~##~
+...~#####~..~###~
+....~~~~~...~###~
+..........x#~~~~
+.......G111##

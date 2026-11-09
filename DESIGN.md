@@ -158,7 +158,7 @@ Shipped releases and finished build notes are in `DESIGN-archive.md`, word for w
 
 - **Done this stretch (2026-11-07…08):** Frost Isle's granite walls; the wall rules with ice and belts, frozen after Frost Lab (`frostlab-01`…`06`); How To Play's *Walls on ice and belts* entry; `frost-09`…`18` in two batches, both liked, with all six of Frost Isle's wall levels (10, 11, 13, 15, 17 and the maze, 18). `frost-18` Ice Cave was eased after the user found it too hard (29 moves, 202 states, purple only). See *Frost Isle's new levels* below.
 - **Level tools** (`scripts/design/`, documented in CLAUDE.md): `make` (lint → search → strip → wall and bridge check → regrow → unneeded walls to floor → unreachable tiles dropped → flip, with a short ranked summary), `lint`, `walls`, `regrow` and `ease`. The user asked that the tools grow with every new mechanic.
-- **Next: `frost-19` and `frost-20`**, the last Frost Isle batch, with no walls (all six are used). The finale should be a clear step up from `frost-17` (28 moves, 489 states) without being unreadable the way Ice Cave first was, and no press undone just to reposition. Then the playtest, the push, and Frost Isle is complete at 20.
+- **Now: Frost Isle is complete at 20** (`frost-19` Carousel and `frost-20` Grand Tour approved 2026-11-08). Next: the push (ask first).
 - **After Frost Isle:** walls in Windy Peaks, the next world in map order (*Walls in the other worlds* below): wall samples on the tile sheet, then its lab, with the tools extended for pads first (`lint` flagging a pad aimed at a wall, a fling landing short, a sideways hop onto a wall).
 - **Open questions for the user:** whether to add a slide-end preview on ice (marks where each roll would leave a lying block), which would make every ice level more readable but also easier; whether to tighten `glade-13`, `15` and `18`, each with one wall color that never has to move (found by `walls`); their notes on `glade-16`…`20` and the Glade maze, and its frame rate on their laptop.
 - **Pushing** goes through the `gh` login (`git -c credential.helper= -c credential.helper='!gh auth git-credential' push origin main`); always ask first.
@@ -399,6 +399,15 @@ grilling session to fill the gaps (where split cubes appear, how many colors, th
 
 The maze: lattice layouts (one-wide lanes, junctions three apart) didn't work on ice, because slides went junction to junction like walking. What worked was an ice cave walled and cut up by low stone, with the search placing stone, floor and switch walls (`KEEP=K` so stripping kept the stone).
 
+**Batch 3** (built 2026-11-08, approved in playtest the same day). No walls, as planned. Switches sit in pockets off the rinks: with a switch in the open, every search put it on the natural route, so pressing it cost nothing (a toll, caught by the walls check).
+
+| Level | Par | States | Idea |
+|---|---|---|---|
+| `frost-19` Carousel | 29 | 247 | A ring of belts around a rink: ride the top belt and drop onto orange, then go all the way round again, since the rink has no way onto the east belt that leads down to the bridge |
+| `frost-20` Grand Tour | 38 | 357 | Two rinks, two pockets: slide up into the top pocket to press orange, wind down through the first rink and back up to the belts, then stand on heavy purple in the second rink's pocket |
+
+The finale steps up in length (38 against 28-30) and in linked detours, not in states: in a 17×11 board without walls this layout tops out near 390 states over 12 seeds, below `frost-17`'s 489. After Ice Cave played as too hard at 563, a longer but readable finale with no dead ends seemed the right step; the user approved it. A first frost-20 at 30×14 broke the board size, so `lint` now warns past the largest boards played (23 wide, 13 tall); long thin boards past 17×11 already play fine in four worlds. `analyze` now reads templates too (`?` as floor, `%` as ice), so lint's "run analyze for the diagnosis" works on the same file.
+
 These steps are now tools (2026-11-07, after the user asked for cheaper level-making): `make` runs lint → search → strip → wall and bridge check → regrow → unneeded walls to floor → drop unreachable tiles → flip in one command with a short ranked summary (batch 2 added the bridge check, the two clean-up steps, `KEEP`, `FROM`, lattice's `HEDGES=0`, and a stop on a wrong switches line); `lint`, `walls` and `regrow` work alone; the search penalizes wall colors that don't have to move. How they were made: skeletons fixed by hand around the idea, the search filling small patches, then stripped. A checker fixes each wall color permanently down and permanently up and re-solves: a color only counts if both change par, which threw out every free-form search (their walls never had to move). Then *regrowing*: tiles from the unstripped layout are added back one at a time, kept only if par holds and every color still has to move. That took Double Duty from 174 to 464 states and Notch from 64 to 214. Double Duty is flipped north to south so the purple wall doesn't hide the orange switch.
 
 **First Glade as a real biome**, settled in a grilling session 2026-11-04; nothing is built yet. Simple and relaxing, but still puzzling. **Success:** the user replays it weeks later, the same test as the other worlds. It has to work for a brand new player, who may have skipped the Tutorial. It stays first on the map with its existing forest look, and all its levels are new, with ids such as `glade-01`.
@@ -495,6 +504,8 @@ feedback; batches of 5 levels per round.
 ## Playtest log
 
 Older notes (2026-10-31 to 2026-11-03) are in `DESIGN-archive.md`.
+
+**2026-11-08 — Frost Isle batch 3 (`frost-19`, `frost-20`).** "Both levels play well. The conveyor belt level and the grand tour rink was really well done and unique." No changes; committed. Frost Isle is complete at 20.
 
 **2026-11-08 — easing Ice Cave.** The user chose to ease `frost-18`. The new `ease` tool filled the tiles the solution never uses with stone (563 → 396 states, same 32 moves), but the press trick stayed: orange was only ever pressed in a pair two moves apart, a toll rather than a puzzle. With orange gone it plays in 29 moves with 202 states, no dead ends, and one purple wall that has to move. `make` now flags a press undone within two moves and ranks it lower.
 
