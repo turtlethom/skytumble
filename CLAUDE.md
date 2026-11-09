@@ -210,5 +210,5 @@ src/main.ts    game controller: modes, the stack of open screens, HUD, splash, k
 scripts/       check-levels.ts; design/ (lib, explore, checks, analyze, sim, search, strip, lattice, make, lint, walls, regrow, solutions, play, verify)
 ```
 
-Rules are frozen for ice and conveyors, and for walls with them (see DESIGN.md *Mechanics*); changing them breaks
+Rules are frozen for ice and conveyors, for walls with them, and for walls with launch pads (see DESIGN.md *Mechanics*); changing them breaks
 handmade levels, which `npm test` will flag through par drift.

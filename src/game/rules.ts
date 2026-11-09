@@ -275,7 +275,7 @@ export function flight(b: Block, dir: Dir): Block {
 }
 
 /**
- * A flight with walls (frozen for Windy Peaks after its lab): it flies over them, and only the landing
+ * A flight with walls (frozen for Windy Peaks 2026-11-09, after Peaks Lab): it flies over them, and only the landing
  * matters. A raised wall where a fling or a hop along the pads would land stops it short, standing on
  * the tile before the wall (`hit`); with nothing there, it falls like any landing. A raised wall where
  * a sideways hop would land, or a second raised wall just before it, makes the block fall (`crashed`):

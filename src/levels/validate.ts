@@ -170,7 +170,7 @@ export function padUses(level: Level, moves: Dir[]): PadUse[] {
 
 /**
  * What a wall does to a flip or another shape isn't settled yet (walls with ice and belts are: Frost
- * Isle; with pads: Windy Peaks, in its lab). Hedges stay in First Glade, with the basics only.
+ * Isle; with pads: Windy Peaks, frozen 2026-11-09). Hedges stay in First Glade, with the basics only.
  */
 const NOT_WITH_WALLS = [Tile.Flip, Tile.ShapeSwitch, Tile.ExtraHeavy];
 const NOT_WITH_HEDGES = [...NOT_WITH_WALLS, Tile.Pad, Tile.Ice, Tile.Conveyor];
