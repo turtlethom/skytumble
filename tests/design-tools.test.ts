@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { Draft, flipNS, hidden, lint, regrow, strip, toLevel, wallColors } from '../scripts/design/checks';
+import { findLevel } from '../src/levels';
+import { Draft, dropUnreachable, flipNS, hidden, lint, plainWalls, regrow, strip, toLevel, wallColors } from '../scripts/design/checks';
 
 const draft = (rows: string[], switches: number[] = []): Draft => ({ rows, switches, on: [], shape: 2 });
 
@@ -40,5 +41,24 @@ describe('design tools', () => {
     expect(stripped.rows.join('').split('').filter((c) => c === '#').length).toBeLessThan(13);
     const grown = regrow(stripped, full);
     expect(grown.rows.join('').length).toBe(full.rows.join('').length);
+  });
+
+  it('check bridges the same way: fixed out and fixed in must both change par', () => {
+    // Switchback's bridges home have to move.
+    expect(wallColors(findLevel('frost-05')!.level)).toEqual([expect.objectContaining({ bridges: 8, moves: true })]);
+    // A bridge beside the path that no route needs.
+    expect(wallColors(toLevel(draft(['S##G', '.0..', '.o..'])))).toEqual([expect.objectContaining({ bridges: 1, moves: false })]);
+  });
+
+  it('turn a wall the puzzle does not need into floor, and keep the ones it does', () => {
+    const d = draft(['....G##..', 'S~~~~~~h.', '##....##.', '###o####.', 'H........']);
+    const plain = plainWalls(d);
+    expect(plain.rows[1]).toBe('S~~~~~~h.');
+    expect(plain.rows[4]).toBe('#........');
+  });
+
+  it('drop plain tiles the block can never reach', () => {
+    const out = dropUnreachable(draft(['S##G', '....', '...#']));
+    expect(out.rows[2]).toBe('....');
   });
 });

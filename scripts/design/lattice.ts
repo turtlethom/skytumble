@@ -5,7 +5,7 @@
 // answer. Scoring activity instead produces presses everywhere with no reasoning behind them, and long
 // strings of hedges. Few hedges, more colors and little road between events score well. A press undone
 // straight away scores badly. Prints the three best as design blocks, ready for analyze.ts.
-// Env: MAZE=1 fills everything that isn't a lane with walls that never move (`K`, with no switch of its
+// Env: HEDGES=0 leaves hedges out (any world but First Glade). MAZE=1 fills everything that isn't a lane with walls that never move (`K`, with no switch of its
 // color), with no margin, so a 6 by 4 board is 16x10; empty otherwise, with a margin around it for hedges.
 // Then read the solutions, and pass candidates to strip.ts: this finds layouts, not stories.
 import { parseLevel } from '../../src/game/ascii';
@@ -22,7 +22,8 @@ if (!seedArg || !secs) {
 }
 const colors = colorsArg;
 const maze = process.env.MAZE === '1';
-const MAX_HEDGES = 6;
+// HEDGES=0 for worlds without hedges (every world but First Glade).
+const MAX_HEDGES = Number(process.env.HEDGES ?? 6);
 const margin = maze ? 0 : 1;
 const W = (nx - 1) * 3 + 1 + margin * 2;
 const H = (ny - 1) * 3 + 1 + margin * 2;
@@ -40,9 +41,11 @@ for (const a of nodes) {
   if (a[1] + 3 <= H - 1 - margin) lanes.push({ a, b: [a[0], a[1] + 3] });
 }
 
-const KINDS = maze
-  ? ['none', 'none', 'none', 'plain', 'plain', 'plain', 'plain', 'up', 'down', 'soft', 'hedge', 'hedgegap', 'bridge']
-  : ['none', 'none', 'plain', 'plain', 'plain', 'up', 'down', 'soft', 'hedge', 'hedgegap', 'bridge', 'rbridge'];
+const KINDS = (
+  maze
+    ? ['none', 'none', 'none', 'plain', 'plain', 'plain', 'plain', 'up', 'down', 'soft', 'hedge', 'hedgegap', 'bridge']
+    : ['none', 'none', 'plain', 'plain', 'plain', 'up', 'down', 'soft', 'hedge', 'hedgegap', 'bridge', 'rbridge']
+).filter((k) => MAX_HEDGES > 0 || !k.startsWith('hedge'));
 
 interface Design {
   lanes: { kind: string; near: boolean; color: number }[];

@@ -47,16 +47,21 @@ npm run -s search -- <template> <palette> <parLo> <parHi> 1-4 2 "chain,belt→pa
                                           #   diagnosis if the template can't be solved even all-floor
 npm run -s lattice -- 5 3 26 36 1 150 2 > out.txt
                                           # routing puzzles: columns rows parLo parHi seed seconds colors;
-                                          #   MAZE=1 fills the rest with low stone. Run a few seeds at once
+                                          #   MAZE=1 fills the rest with low stone, HEDGES=0 leaves hedges
+                                          #   out (every world but First Glade). Run a few seeds at once
 npm run -s strip -- out.txt [name]        # remove what the solution doesn't need, keeping par
 npm run -s make -- <template> <palette> <parLo> <parHi> [1-4] [want] [out]
                                           # the whole loop in one command: lint, search, strip, wall
-                                          #   check, regrow, flip if a wall hides something; prints a
-                                          #   short ranked summary, writes finished blocks to <out>
+                                          #   and bridge check, regrow, unneeded walls to floor, drop
+                                          #   unreachable tiles, flip if a wall hides something; prints a
+                                          #   short ranked summary, writes finished blocks to <out> and
+                                          #   the raw search to <out>.raw. KEEP=K keeps a maze's stone;
+                                          #   FROM=<raw> re-finishes without searching again
 npm run -s lint -- <file|id>...           # before solving: switches in reading order with colors,
                                           #   skippable belts, goal only reachable lying, what raised
                                           #   walls hide (and whether a north-south flip fixes it)
-npm run -s walls -- <file|id>...          # each switch-wall color fixed down / up: must both change par
+npm run -s walls -- <file|id>...          # each switch color's walls and bridges fixed one way, then the
+                                          #   other: must both change par. PLAIN=1 turns unneeded walls to floor
 npm run -s regrow -- stripped.txt full.txt # add back decoys that keep par and every moving wall
 npm run verify -- wind-                   # build, serve, play every solution in headless Chrome
 ```

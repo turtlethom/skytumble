@@ -6,7 +6,7 @@ import { DIR_DELTA, DIRS, Level, Tile } from '../../src/game/types';
 import { blockCells, findGoal } from '../../src/game/rules';
 import { solve } from '../../src/game/solver';
 import { flipUses, iceUses, padUses, shapeUses } from '../../src/levels/validate';
-import { explore } from './explore';
+import { closest, explore } from './explore';
 
 /** A level as the tools hold it: text rows plus the options a design block carries. */
 export interface Draft {
@@ -47,6 +47,7 @@ function switchGroups(level: Level): Set<number> {
 export interface WallColor {
   group: number;
   walls: number;
+  bridges: number;
   /** Par with every wall of this color lowered for good, and raised for good; null if unsolvable. */
   allDown: number | null;
   allUp: number | null;
@@ -54,33 +55,49 @@ export interface WallColor {
   moves: boolean;
 }
 
+const isBridgeTile = (t: Tile) => t === Tile.Bridge || t === Tile.BridgeReversed;
+
 /**
- * For each switch-wall color: fix all its walls down (floor) and all up (walls no switch moves), and
- * re-solve. A color only earns its place if both change the par. Walls of a color with no switch never
- * move (low stone), so they aren't checked.
+ * For each switch color: fix everything it moves one way for good, then the other way, and re-solve.
+ * Walls go all down (floor) and all up (walls no switch moves); bridges all out (floor) and all in (gaps).
+ * A color only earns its place if both change the par. Walls of a color with no switch never move (low
+ * stone), so they aren't checked. One-layer levels only: a two-layer level reports nothing.
  */
 export function wallColors(level: Level, base = parOf(level)): WallColor[] {
+  if (level.ceiling) return [];
   const pressed = switchGroups(level);
-  const groups = [...new Set(level.tiles.flatMap((t, i) => (isWall(t) && pressed.has(level.groups[i]) ? [level.groups[i]] : [])))];
+  const movers = (t: Tile) => isWall(t) || isBridgeTile(t);
+  const groups = [...new Set(level.tiles.flatMap((t, i) => (movers(t) && pressed.has(level.groups[i]) ? [level.groups[i]] : [])))];
   return groups.map((g) => {
     const fixed = (up: boolean) => {
       const l = { ...level, tiles: level.tiles.slice(), groups: level.groups.slice() };
       l.tiles.forEach((t, i) => {
-        if (!isWall(t) || level.groups[i] !== g) return;
-        l.tiles[i] = up ? Tile.WallUp : Tile.Floor;
-        l.groups[i] = up ? 9 : -1;
+        if (level.groups[i] !== g) return;
+        if (isWall(t)) {
+          l.tiles[i] = up ? Tile.WallUp : Tile.Floor;
+          l.groups[i] = up ? 9 : -1;
+        } else if (isBridgeTile(t)) {
+          l.tiles[i] = up ? Tile.Empty : Tile.Floor;
+          l.groups[i] = -1;
+        }
       });
       return parOf(l);
     };
     const allDown = fixed(false);
     const allUp = fixed(true);
     const walls = level.tiles.filter((t, i) => isWall(t) && level.groups[i] === g).length;
-    return { group: g, walls, allDown, allUp, moves: allDown !== base && allUp !== base };
+    const bridges = level.tiles.filter((t, i) => isBridgeTile(t) && level.groups[i] === g).length;
+    return { group: g, walls, bridges, allDown, allUp, moves: allDown !== base && allUp !== base };
   });
 }
 
 export const wallsText = (colors: WallColor[]) =>
-  colors.map((c) => `${COLOR[c.group] ?? `group ${c.group}`} ×${c.walls}: ${c.moves ? 'moves' : 'NEED NOT MOVE'} (down ${c.allDown ?? 'X'}, up ${c.allUp ?? 'X'})`).join(' · ');
+  colors
+    .map((c) => {
+      const what = [c.walls ? `${c.walls} wall${c.walls > 1 ? 's' : ''}` : '', c.bridges ? `${c.bridges} bridge${c.bridges > 1 ? 's' : ''}` : ''].filter(Boolean).join(' + ');
+      return `${COLOR[c.group] ?? `group ${c.group}`} (${what}): ${c.moves ? 'moves' : 'NEED NOT MOVE'} (down/out ${c.allDown ?? 'X'}, up/in ${c.allUp ?? 'X'})`;
+    })
+    .join(' · ');
 
 /** Which switch this cell is, in reading order; -1 if it isn't one. */
 function switchIndex(rows: string[][], x0: number, y0: number): number {
@@ -96,7 +113,7 @@ function switchIndex(rows: string[][], x0: number, y0: number): number {
 }
 
 /** Remove every tile the solution doesn't need, keeping par (and dropping a removed switch's group). */
-export function strip(d: Draft): Draft {
+export function strip(d: Draft, keep = ''): Draft {
   const rows = d.rows.map((r) => [...r]);
   let switches = [...d.switches];
   const current = () => ({ ...d, rows: rows.map((r) => r.join('')), switches });
@@ -106,7 +123,7 @@ export function strip(d: Draft): Draft {
     for (let y = 0; y < rows.length; y++) {
       for (let x = 0; x < rows[y].length; x++) {
         const c = rows[y][x];
-        if (c === '.' || c === 'S' || c === 'G' || /^-+$/.test(rows[y].join(''))) continue;
+        if (c === '.' || c === 'S' || c === 'G' || keep.includes(c) || /^-+$/.test(rows[y].join(''))) continue;
         const k = switchIndex(rows, x, y);
         const saved = [...switches];
         if (k >= 0) switches.splice(k, 1);
@@ -124,7 +141,8 @@ export function strip(d: Draft): Draft {
 
 /**
  * Add back tiles from the full layout to a stripped one, one at a time, keeping each only if par holds
- * and every wall color that had to move still does. Walls and switches stay as stripped. The tiles that
+ * and every wall color that had to move still does. Switch walls and switches stay as stripped (low
+ * stone can come back: on ice, stone stops a slide where a gap drops the block). The tiles that
  * come back are wrong turns and decoys: more states, the same puzzle.
  */
 export function regrow(stripped: Draft, full: Draft): Draft {
@@ -136,13 +154,54 @@ export function regrow(stripped: Draft, full: Draft): Draft {
   for (let y = 0; y < rows.length; y++) {
     for (let x = 0; x < rows[y].length; x++) {
       const want = full.rows[y]?.[x] ?? '.';
-      if (rows[y][x] !== '.' || want === '.' || 'HIJKhijk'.includes(want) || SWITCH_CHARS.includes(want)) continue;
+      if (rows[y][x] !== '.' || want === '.' || 'HIJhij'.includes(want) || SWITCH_CHARS.includes(want)) continue;
       rows[y][x] = want;
       const l = tryLevel(current());
       if (!l || parOf(l) !== base || moving(l) !== before) rows[y][x] = '.';
     }
   }
   return current();
+}
+
+/**
+ * Turn walls the puzzle doesn't need into plain floor: each wall in turn becomes floor, and stays floor
+ * if par holds and every color that has to move still does. Colors are checked as a whole, so a color
+ * can need its walls to move while some of its walls are clutter; this removes those.
+ */
+export function plainWalls(d: Draft): Draft {
+  const rows = d.rows.map((r) => [...r]);
+  const current = () => ({ ...d, rows: rows.map((r) => r.join('')) });
+  const base = parOf(tryLevel(current()));
+  const moving = (l: Level) => wallColors(l, base).filter((c) => c.moves).map((c) => c.group).sort().join();
+  const before = moving(toLevel(current()));
+  for (let y = 0; y < rows.length; y++) {
+    for (let x = 0; x < rows[y].length; x++) {
+      const c = rows[y][x];
+      if (!'HIJhij'.includes(c)) continue;
+      rows[y][x] = '#';
+      const l = tryLevel(current());
+      if (!l || parOf(l) !== base || moving(l) !== before) rows[y][x] = c;
+    }
+  }
+  return current();
+}
+
+/**
+ * Drop plain tiles (floor, ice, planks) the block can never touch in any reachable state: decoys only
+ * count if a player can wander onto them. Keeps par; one-layer levels only.
+ */
+export function dropUnreachable(d: Draft): Draft {
+  const level = tryLevel(d);
+  if (!level || level.ceiling) return d;
+  const ex = explore(level);
+  const touched = new Set<string>();
+  for (const { state } of ex.nodes.values()) for (const [x, y] of blockCells(state.block)) touched.add(`${x},${y}`);
+  const rows = d.rows.map((r) => [...r]);
+  rows.forEach((r, y) => r.forEach((c, x) => {
+    if ('#~f'.includes(c) && !touched.has(`${x},${y}`)) r[x] = '.';
+  }));
+  const out = { ...d, rows: rows.map((r) => r.join('')) };
+  return parOf(tryLevel(out)) === parOf(level) ? out : d;
 }
 
 /** The same board seen from the other side: rows reversed, up and down belts and pads swapped, switches re-ordered. */
@@ -228,7 +287,9 @@ export function lint(d: Draft): string[] {
     const { dx, dy } = DIR_DELTA[DIRS[l.groups[i]]];
     const at = (cx: number, cy: number) => (cx < 0 || cy < 0 || cx >= l.width || cy >= l.height ? Tile.Empty : l.tiles[cy * l.width + cx]);
     if (at(x + dx, y + dy) === Tile.Empty) out.push(`note: the belt at ${x},${y} pushes off into nothing (${x + dx},${y + dy}): fine as a trap, wrong if it should carry you somewhere`);
-    if (isWall(at(x + dx, y + dy)) && at(x - dx, y - dy) !== Tile.Empty) {
+    const behind = at(x - dx, y - dy);
+    const sameBelt = behind === Tile.Conveyor && l.groups[(y - dy) * l.width + (x - dx)] === l.groups[i];
+    if (isWall(at(x + dx, y + dy)) && behind !== Tile.Empty && !sameBelt) {
       out.push(`WARN: the belt at ${x},${y} pushes at a wall with floor behind it (${x - dx},${y - dy}): lying across the two skips the ride`);
     }
   });
@@ -242,8 +303,10 @@ export function lint(d: Draft): string[] {
     const lying = [...ex.nodes.values()].some(
       ({ state }) => (state.layer ?? 0) === goal.layer && blockCells(state.block).some(([x, y]) => x === goal.x && y === goal.y),
     );
+    const near = closest(l, ex);
     if (lying) out.push(`WARN: the goal at ${goal.x},${goal.y} is only ever reached lying: move it a tile along the way the block arrives`);
-    else out.push('WARN: unsolvable: run analyze for the diagnosis');
+    else if (near?.block.o === 'S' && near.dist === 1) out.push(`WARN: unsolvable, but the block stands right next to the goal at ${near.block.x},${near.block.y}: try the goal there`);
+    else out.push(`WARN: unsolvable (closest: ${near ? `${near.dist} tiles from the goal` : 'nowhere'}): run analyze for the diagnosis`);
   }
   return out;
 }
