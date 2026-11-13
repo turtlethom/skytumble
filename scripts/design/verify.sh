@@ -21,6 +21,7 @@ up=""
 for _ in $(seq 50); do curl -sf "http://localhost:$port/" > /dev/null && up=1 && break; sleep 0.2; done
 [ -n "$up" ] || { echo "The preview server didn't start:" >&2; cat "$work/preview.log" >&2; exit 1; }
 npx vite-node scripts/design/solutions.ts "$prefix" > "$work/solutions.json"
+LAYERS=1 npx vite-node scripts/design/solutions.ts "$prefix" > "$work/solutions.layers.json"
 mkdir -p "$shots"
 node scripts/design/play.mjs "http://localhost:$port" "$work/solutions.json" "$shots"
 echo "screenshots: $shots"

@@ -20,6 +20,7 @@
     "lint": "vite-node scripts/design/lint.ts",
     "make": "vite-node scripts/design/make.ts",
     "ease": "vite-node scripts/design/ease.ts",
+    "directions": "vite-node scripts/design/directions.ts",
     "verify": "scripts/design/verify.sh"
   },
   "dependencies": {

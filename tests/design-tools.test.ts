@@ -1,10 +1,30 @@
 import { describe, expect, it } from 'vitest';
+import { solve } from '../src/game/solver';
 import { findLevel } from '../src/levels';
+import solutions from '../SOLUTIONS.md?raw';
+import { directions, solutionsMarkdown } from '../scripts/design/arrows';
 import { Draft, dropUnreachable, quickRepresses, flipNS, hidden, lint, plainWalls, regrow, strip, toLevel, wallColors } from '../scripts/design/checks';
 
 const draft = (rows: string[], switches: number[] = []): Draft => ({ rows, switches, on: [], shape: 2 });
 
 describe('design tools', () => {
+  it('keep SOLUTIONS.md up to date (npm run -s directions -- --write)', () => {
+    expect(solutions).toBe(solutionsMarkdown());
+  });
+
+  it('write solutions as marked arrows, swapping up and down on the ceiling', () => {
+    // wind-09: the fling stops short on the heavy switch, and the goal is the last move.
+    const wind = directions(findLevel('wind-09')!.level).join(' ');
+    expect(wind).toContain('→✈●');
+    expect(wind.trim().endsWith('✔')).toBe(true);
+    // star-07 rolls north and south on the ceiling, where the keys swap: ↑ no longer counts the north rolls.
+    const star = findLevel('star-07')!.level;
+    const north = solve(star)!.moves.filter((d) => d === 'up').length;
+    const arrows = directions(star).join(' ');
+    expect(arrows).toContain('⇄');
+    expect(arrows.split('↑').length - 1).not.toBe(north);
+  });
+
   it('find a wall color the level needs to move, and one it does not', () => {
     // Two Stops: lowered, the wall stops the first slide half on it; raised, a tile short.
     const twoStops = draft(['....G##..', 'S~~~~~~h.', '##....##.', '###o####.']);

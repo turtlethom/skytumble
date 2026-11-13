@@ -108,6 +108,11 @@ const peekAt = process.env.PEEK_AT ? Number(process.env.PEEK_AT) : -1;
 const frames = Number(process.env.FRAMES ?? 0);
 await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
 let failed = 0;
+let keyMismatches = 0;
+// Which moves start on the ceiling, from <solutions>.layers.json when solutions.ts wrote one.
+const arrows = fs.existsSync(solutionsFile.replace(/\.json$/, '.layers.json'))
+  ? JSON.parse(fs.readFileSync(solutionsFile.replace(/\.json$/, '.layers.json'), 'utf8'))
+  : {};
 const titleUp = () => evalJs("document.getElementById('arrival').classList.contains('show')");
 const untilTitle = async () => {
   for (let i = 0; i < 50 && !(await titleUp()); i++) await sleep(100);
@@ -202,7 +207,16 @@ for (const [id, moves] of Object.entries(solutions)) {
   await shot(`${id}-start`);
   // Generous gaps: long slides and chained motions take over a second to animate.
   for (const [i, m] of moves.entries()) {
-    await key(await keyFor(m));
+    const k = await keyFor(m);
+    // SOLUTIONS.md writes each move as its key at the starting view (↑/↓ swapped on the ceiling):
+    // say so if the game disagrees.
+    const onCeiling = arrows[id]?.[i]?.ceiling;
+    const expected = onCeiling ? { ...codes, up: 'ArrowDown', down: 'ArrowUp' }[m] : codes[m];
+    if (!process.env.ROTATE && arrows[id] && k !== expected) {
+      keyMismatches++;
+      console.log(`${id} move ${i + 1}: the game rolls ${m} with ${k}, SOLUTIONS.md says ${expected}`);
+    }
+    await key(k);
     if (frames && i === moves.length - 1) {
       // FRAMES=n: n shots during the last move, FRAME_MS apart, to see an animation mid-way.
       for (let f = 1; f <= frames; f++) {
@@ -236,4 +250,5 @@ try {
 } catch {
   // Chrome sometimes still holds files there; the OS cleans its temp dir eventually.
 }
-process.exit(failed ? 1 : 0);
+if (keyMismatches) console.log(`${keyMismatches} moves where SOLUTIONS.md's arrows differ from the game's keys`);
+process.exit(failed || keyMismatches ? 1 : 0);

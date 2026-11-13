@@ -10,6 +10,10 @@ playtest notes) moves word for word to `DESIGN-archive.md`; search it when a pas
 - **Roles:** the user playtests and gives feedback; Claude writes the code and designs the levels.
   The user delegates detail decisions ("give me your recommendation"), so make the call and explain
   it briefly. Ask only about direction or taste.
+- **Solutions:** every level handed over for playtest comes with its solution as arrow keys
+  (`npm run -s directions -- <id>`), pasted into the hand-off message; the user keeps them for reference.
+  `SOLUTIONS.md` holds every handmade level's; rewrite it with `npm run -s directions -- --write`
+  whenever a level changes (`npm test` fails while it's stale).
 - **The loop:** build something playable → verify it yourself → the user playtests → they send
   notes per level id (`frost-03`) or seed → act on the notes → log them in DESIGN.md's *Playtest
   log* → repeat. New mechanics get prototyped in throwaway "lab" levels first; rules freeze after
@@ -70,6 +74,9 @@ FILL=K npm run -s ease -- <file|id>      # make a level easier, same idea: fill 
                                           #   uses (stone with FILL=K) while it lowers states, keeps par ±2
                                           #   (PAR=lo-hi), keeps every moving color, and drops presses
                                           #   undone within two moves. TARGET=<states> stops early
+npm run -s directions -- <id|prefix>      # the solution as arrow keys at the starting view, in groups of five
+                                          #   (✈ flight, ● press, ⇄ flip, ✔ win; ↑/↓ swap on a ceiling).
+                                          #   --write rewrites SOLUTIONS.md; verify checks the arrows match the keys
 npm run verify -- wind-                   # build, serve, play every solution in headless Chrome
 ```
 
