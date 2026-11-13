@@ -117,3 +117,15 @@ switches: 0 1
 .........1.....##^v.
 .........1.....###^.
 .........G..........
+
+=== wind-09
+par: 22
+name: Windbreak
+idea: The orange wall stops the fling a tile short, so you land standing on the heavy switch, which a lying landing can't press. Purple's bridge leads back to orange, which drops the wall between you and the goal. Come back along the corridor lying down: stand on the heavy switch again and its bridge goes away.
+switches: 0 1
+..#######..
+o########..
+###.....1..
+..#.....1#.
+..S##R..xH.
+.........G.

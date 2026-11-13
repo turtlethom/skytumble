@@ -148,8 +148,6 @@ describe('How To Play unlocks', () => {
 
   it('can open every entry from the campaign', () => {
     const reachable = new Set(CAMPAIGN.flatMap((c) => c.levels.flatMap((l) => mechanicsIn(l.level))));
-    // Walls with launch pads are only in Peaks Lab until wind-09 onward are built: drop this then.
-    const pending: MechanicId[] = ['padWalls'];
-    for (const m of MECHANICS.filter((e) => !e.basic && !pending.includes(e.id))) expect(reachable).toContain(m.id);
+    for (const m of MECHANICS.filter((e) => !e.basic)) expect(reachable).toContain(m.id);
   });
 });
