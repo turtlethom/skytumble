@@ -142,3 +142,19 @@ switches: 0
 .###DRR.L##L#.
 ..........###.
 .........G00..
+
+=== wind-11
+par: 31
+name: Gatehouse
+idea: The orange wall is a gate on the only way south. Drop it with the switch in the pocket by the start, then work round the holes to line up with the gap and go through. In the south, stand on the heavy switch to raise the gate again: now it's the brake that stops your fling short, standing on the goal. Leave it down and the fling flies on, off the island.
+switches: 0 0
+.....##S###.
+....o#.#.###
+....########
+....########
+.......#....
+...R..GH....
+...#...#....
+...#####....
+...x###.....
+....###.....
