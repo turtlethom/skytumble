@@ -155,11 +155,11 @@ Wanted, not yet scheduled. Each becomes a biome's signature mechanic or a crossi
 
 Shipped releases and finished build notes are in `DESIGN-archive.md`, word for word.
 
-**Pick up here** (2026-11-13). Live up to `5411143`; committed since: How To Play's *Walls and launch pads* entry (`0e5e2bd`). `wind-09` (liked 2026-11-13).
+**Pick up here** (2026-11-13). Live up to `5411143`; committed since: How To Play's *Walls and launch pads* entry, `wind-09`…`12` (all played 2026-11-13: liked, liked, fine, enjoyed a lot).
 
 - **Done this stretch (2026-11-08…09):** Frost Isle complete at 20 (`frost-19` Carousel, `frost-20` Grand Tour, both liked). The title reads *SkyTumble* everywhere. Windy Peaks' walls are rust-brown ironstone. The rules for walls with launch pads are built and **frozen** after Peaks Lab (`peakslab-01`…`06`, three rounds, all on the animation); see *Mechanics* and *Peaks Lab* below. Landing marks follow the walls. DESIGN.md's finished history moved to `DESIGN-archive.md`.
 - **Tools added:** `lint` warns on boards too big for the camera and on pads aimed at walls; `analyze` reads templates; traces print `SHORT`/`CRASH`; the pad use `short`; `play.mjs` gains `PAGES` (screenshot any page) and `FRAMES` (shots mid-move, on a slowed throwaway build).
-- **Next: `wind-10`…`13`**, the rest of Windy Peaks' first batch (`wind-09` Windbreak is built and liked; see *Windy Peaks' new levels*). One more wall level fits in this batch, with the third and the maze in 14–20. How To Play's *Walls and launch pads* entry is built and now opens from `wind-09`.
+- **Next: `wind-13`**, the batch's peak, without walls: it should clearly beat `wind-12` (33 moves, 423 states) (`wind-09` Windbreak and `wind-10` Boomerang liked; `wind-11` Gatehouse, the batch's second wall level, played as simple but fine for an early level; `wind-12` Errands enjoyed a lot; see *Windy Peaks' new levels*). The third wall level and the maze come in 14–20. How To Play's *Walls and launch pads* entry is built and now opens from `wind-09`.
 - **Open questions for the user:** whether to add a slide-end preview on ice; whether to tighten `glade-13`, `15` and `18` (one wall color each that never has to move); their notes on `glade-16`…`20` and the Glade maze, and its frame rate on their laptop.
 - **Animation lesson:** each kind of blocked jump has its own animation (fling, hop, crash); a fix for one must leave the others as the user liked them, checked frame by frame on a slowed build.
 - **Pushing** goes through the `gh` login (`git -c credential.helper= -c credential.helper='!gh auth git-credential' push origin main`); always ask first.
@@ -414,8 +414,17 @@ The finale steps up in length (38 against 28-30) and in linked detours, not in s
 | Level | Par | States | Idea |
 |---|---|---|---|
 | `wind-09` Windbreak | 22 | 127 | The first wall level. A raised orange wall stops the fling short, standing on a heavy purple switch that a lying landing can't press; purple's bridge leads back to orange, which drops the wall between you and the goal. Come back along a 2-wide corridor lying down, so you stand on the bridge's far end: standing on the heavy switch again takes the bridge away. The mistake it teaches: press orange first and the fling flies the full way, off the island |
+| `wind-10` Boomerang | 26 | 157 | No walls. A 2×2 block of east pads throws you differently by pose: lying half on it is safe, one roll more stands you on a pad for the fling to the far island. That island's west pad throws you back, landing lying along the top pair, which hops you standing onto the heavy switch. Then over the top and down the east column lying across it, half on a pad at every step, to the bridge |
+| `wind-11` Gatehouse | 31 | 178 | The second wall level. The orange wall is a gate on the only way south and also the brake beside the goal: drop it from the pocket switch by the start, work round the north island's holes to line up with the gap, then stand on the heavy orange switch in the south to raise it again, so the fling stops short, standing on the goal. Left down, the fling flies on and falls |
+| `wind-12` Errands | 33 | 423 | No walls; the batch's first belts. Two switches on the far island before both bridges home are out: purple in the top corner past belts that face each other, orange at the bottom, where a belt tips you onto it. Come down standing onto the belt beside the return pad and it feeds you on; back home, roll north lying and round to the bridges |
 
 `wind-09` was shaped by hand: `make` solved the skeleton (par 25) but filled the north with an open field the solution crossed with an 8-move parity shuffle; the corridor replaced it. Its one unused tile, the link from the start island to the corridor, stays: without it orange can't be reached before the fling, and the level couldn't teach its mistake.
+
+`wind-10`: a pad field filled by the search gave noise, so the idea became one pad cluster used in different poses. `make` placed the cluster's neighbours and found the boomerang (a fling back onto the cluster that hops you onto the switch); its 6-move ending went, with the bridge moved under the east column. Two untouched floor tiles stay as decoys (157 states against 125 and 150 without them).
+
+`wind-11`: with a one-wide gate every search padded par with pose shuffles or stayed under 120 states. Two changes fixed it: the heavy switch sits two rolls straight south of the pad, so after the press the ending is two moves, and both sides got wider areas, which made the extra moves real maneuvering instead of loops.
+
+`wind-12`: a plank island and then a plank field both came out thin (126 states, or par 15). What worked was the recipe from `wind-06`…`08`: pads placed by hand from the flight geometry, two switches with bridges home, and the search shaping both islands' floors with belts. A belt-heavy palette gave chaotic belts everywhere, so the palette was cut to mostly floor; `ease` then took it from 598 to 423 states at the same par, to leave room for the batch's peak.
 
 These steps are now tools (2026-11-07, after the user asked for cheaper level-making): `make` runs lint → search → strip → wall and bridge check → regrow → unneeded walls to floor → drop unreachable tiles → flip in one command with a short ranked summary (batch 2 added the bridge check, the two clean-up steps, `KEEP`, `FROM`, lattice's `HEDGES=0`, and a stop on a wrong switches line); `lint`, `walls` and `regrow` work alone; the search penalizes wall colors that don't have to move. How they were made: skeletons fixed by hand around the idea, the search filling small patches, then stripped. A checker fixes each wall color permanently down and permanently up and re-solves: a color only counts if both change par, which threw out every free-form search (their walls never had to move). Then *regrowing*: tiles from the unstripped layout are added back one at a time, kept only if par holds and every color still has to move. That took Double Duty from 174 to 464 states and Notch from 64 to 214. Double Duty is flipped north to south so the purple wall doesn't hide the orange switch.
 
@@ -527,6 +536,12 @@ works and what doesn't. Claude writes the code and designs handmade levels from 
 feedback; batches of 5 levels per round.
 
 ## Playtest log
+
+**2026-11-13 — `wind-12` Errands.** "Really enjoyed this level actually! That was great!" No changes. The recipe of `wind-06`…`08` (pads by hand, two switches, the search shaping island floors with a mostly-floor palette and a few belts) works again.
+
+**2026-11-13 — `wind-11` Gatehouse.** "Simple, nice how it went from gate to brake, nothing crazy to write about, but these are the earlier levels anyways so it's fine." No changes; the rest of the batch should ramp up harder.
+
+**2026-11-13 — `wind-10` Boomerang.** The boomerang reads, "because the other levels introduced how orientation affects the launch". The east column "just feels different, which is good". No changes.
 
 **2026-11-13 — `wind-09` Windbreak.** "A great introduction to the wall feature with launch pads", and the corridor is "a good breather for a teaching level". No changes. Walls stay in 4 of Windy Peaks' 12 new levels.
 
