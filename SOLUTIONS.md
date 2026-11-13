@@ -550,6 +550,19 @@ with Q/E changes them. After a move: ✈ a flight, ● a switch press, ⇄ a fli
 31-33  ↓ ↓ ↓✔
 ```
 
+## `wind-13` Circuit
+
+```
+ 1- 5  → ↓ → ↑ ←
+ 6-10  ↓ → ↓ → ↑
+11-15  ↑✈ ↓ → → ↓
+16-20  ← ↑ → ↑ →
+21-25  ↑ →● ← ↓ ↓
+26-30  ← ← ↓ → ↓✈●
+31-35  ↓ ← ← ← ↓✈
+36-38  ← ← ←✔
+```
+
 ## `star-01` First Light
 
 ```
