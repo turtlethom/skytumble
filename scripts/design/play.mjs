@@ -8,6 +8,8 @@
 // ROTATE=n turns the view n quarter turns (E) before playing, to check controls follow the screen.
 // PAGES='sheet=peaks&walls;sheet=peaks&walls&gray' skips playing: it opens each query, waits for the
 // world to settle and saves page-1.png, page-2.png... (for tile sheets and samples; solutions unused).
+// HOWTO=padWalls skips playing too: it opens How To Play on that entry (unlocking it first) and saves
+// howto-NN.png every HOWTO_MS (default 500) for HOWTO_SHOTS shots (default 16), one loop of its scene.
 // Uses CHROME (path to a Chrome/Chromium binary) or Playwright's cached Chromium. Talks to Chrome over
 // the DevTools protocol with a tiny built-in WebSocket client, so it needs no npm dependencies.
 import { spawn } from 'node:child_process';
@@ -118,6 +120,35 @@ if (process.env.PAGES) {
     await sleep(Number(process.env.SETTLE ?? 4000));
     await shot(`page-${i + 1}`);
     console.log(`page-${i + 1}.png  ?${q}`);
+  }
+} else if (process.env.HOWTO) {
+  const id = process.env.HOWTO;
+  await send('Page.navigate', { url: `${base}/` });
+  await sleep(1500);
+  await evalJs(`(() => {
+    const p = JSON.parse(localStorage.getItem('skytumble.progress') || '{"version":1}');
+    p.seen = [...(p.seen || []), '${id}'];
+    localStorage.setItem('skytumble.progress', JSON.stringify(p));
+  })()`);
+  await send('Page.reload');
+  await sleep(2500);
+  await evalJs("document.querySelector('[data-action=howto]').click()");
+  await sleep(400);
+  const found = await evalJs(`(() => {
+    const b = document.querySelector('[data-mechanic="${id}"]');
+    if (!b || b.disabled) return false;
+    b.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    return true;
+  })()`);
+  if (!found) {
+    console.log(`no open How To Play entry "${id}"`);
+    failed++;
+  } else {
+    for (let i = 1; i <= Number(process.env.HOWTO_SHOTS ?? 16); i++) {
+      await sleep(Number(process.env.HOWTO_MS ?? 500));
+      await shot(`howto-${String(i).padStart(2, '0')}`);
+    }
+    console.log(await evalJs("document.querySelector('#howto .howto-text').textContent"));
   }
 } else if (process.env.TITLE_CHECK === '1') {
   // Walk through when the chapter title should and shouldn't show.

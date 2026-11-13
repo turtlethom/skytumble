@@ -7,7 +7,7 @@ import { Dir, Level, Tile } from '../game/types';
 
 export type MechanicId =
   | 'rolling' | 'lying' | 'planks' | 'soft' | 'heavy' | 'walls'
-  | 'ice' | 'belts' | 'iceWalls' | 'pads' | 'flips' | 'cube' | 'tall' | 'extraHeavy' | 'hedges';
+  | 'ice' | 'belts' | 'iceWalls' | 'pads' | 'padWalls' | 'flips' | 'cube' | 'tall' | 'extraHeavy' | 'hedges';
 
 export interface Mechanic {
   id: MechanicId;
@@ -111,6 +111,16 @@ export const MECHANICS: Mechanic[] = [
     moves: moves('RRRD'),
   },
   {
+    id: 'padWalls',
+    name: 'Walls and launch pads',
+    text: 'Flights pass over walls: only the landing matters. A raised wall where a fling or a hop along two pads would land stops it short, and you stand up on the tile before the wall, falling if that tile is empty. A sideways hop that lands on a raised wall hits it and falls. A lowered wall is floor, so you land on it.',
+    basic: false,
+    // The fling stops short, standing on the tile before the raised wall. Back round past the switch,
+    // which lowers it, and the same fling flies the full way, lying on the lowered wall, next to the goal.
+    level: parseLevel(['S##R..#H#G', '...####...', '...##o#...']),
+    moves: moves('RRDLLLUR'),
+  },
+  {
     id: 'flips',
     name: 'Flip rings',
     text: 'Stand on a ring, or lie fully on two, and the block flips to the other floor, directly above or below, in the same pose. With nothing on the other side, it falls into the sky. Hold [Space] to look at the other floor.',
@@ -164,6 +174,7 @@ export function mechanicsIn(level: Level): MechanicId[] {
   const walls = tiles.some((t) => t === Tile.WallUp || t === Tile.WallDown);
   tiles.forEach((t, i) => {
     if (walls && (t === Tile.Ice || t === Tile.Conveyor)) found.add('iceWalls');
+    if (walls && t === Tile.Pad) found.add('padWalls');
     if (t === Tile.Ice) found.add('ice');
     else if (t === Tile.Conveyor) found.add('belts');
     else if (t === Tile.Pad) found.add('pads');
