@@ -129,3 +129,16 @@ o########..
 ..#.....1#.
 ..S##R..xH.
 .........G.
+
+=== wind-10
+par: 26
+name: Boomerang
+idea: Lie across the first two pads, where the arrows disagree, and one more roll stands you on a pad: the fling carries you to the far island. Its west pad throws you back, landing you lying along the pads you left from, and they hop you onto the heavy switch: the only way to land on it standing. Then climb over the top and come down the east column lying across it, never fully on a pad, to the bridge.
+switches: 0
+........##U#..
+........###D..
+.####...####..
+.S##LRR.x.L##.
+.###DRR.L##L#.
+..........###.
+.........G00..
