@@ -274,3 +274,20 @@ switches: 1 0
 ...........f#fx##..
 .G10##R...L##.###..
 ...........#####...
+
+=== wind-19
+par: 53
+name: Junction
+idea: A rock of pads in the middle sends you on by how you land. Fling in from the start and you land lying on its two right pads, which hop you straight on to the east island. Orange is in the corner there, and the left pad brings you back to the rock. Rest half on a right pad, then roll onto the up pad: in the north, purple sits in the corner, reached lying along the west edge, and the down pad returns you. Last, line up lying along the rock's top row and roll onto its down pad: the fling lands on both bridges, one roll from the goal. Every plank blocks a shortcut, so stand only on stone.
+switches: 1 0
+....xf###..........
+....####D..........
+....#####..........
+...................
+......f##D.#####x..
+####..###..#L.###..
+#S#RR.U#RR.###f##..
+####..f##..##.###..
+.........1.###.##..
+.........0.######..
+.........G.........
