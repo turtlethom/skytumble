@@ -138,7 +138,8 @@ The process that produced the Frost chapter:
    To check a route you have in mind, replay it with `sim` instead of tracing it by hand.
 5. **Strip and judge.** For switch walls, run `walls`: fix each color down for good and up for good,
    and a color earns its place only if both change par (the search penalizes colors that don't, via
-   `WALLS`). Free-form searches with walls in the palette mostly find walls that never have to move;
+   `WALLS`; for planks, `PLANKS=8` rewards each plank whose swap to floor lowers par, or the search
+   keeps planks only where they don't matter). Free-form searches with walls in the palette mostly find walls that never have to move;
    fix the idea's walls by hand instead. After stripping, `regrow` adds back the decoys that keep par
    and every moving wall: that took frost-13 from 174 to 464 states.
    Remove the `*` tiles and re-analyze: a high state count that collapses when

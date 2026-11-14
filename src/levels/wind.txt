@@ -226,3 +226,17 @@ switches: 0
 #S...R.#....
 ##...R.H....
 ######.G....
+
+=== wind-16
+par: 50
+name: Floorboards
+idea: Planks hold a lying block but break under a standing one, so out on the boards you can't turn: lying, you can only roll sideways, and the stones are the only places to stand up and change direction. Fling in from the near pad. Orange, in the middle of the boards, has to be stepped onto standing, from the north; purple is in the far corner. Then lie across the top and roll down the bridges onto the two down pads: a hop lands you standing, right on the goal. Lie along the two pads at the start, and the same hop stands you on a plank.
+switches: 1 0
+................
+###...f##f#ff#x#
+S##RR.fffffffff1
+###...f##ff##f.0
+......f##fxfff.D
+......#fffff#f.D
+................
+...............G

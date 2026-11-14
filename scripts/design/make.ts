@@ -7,7 +7,7 @@
 // writes the finished design blocks to <out> (default: the template's name + .make.txt) for analyze,
 // sim and verify, and the raw search results to <out>.raw.txt (finish them again with FROM=<that file>,
 // skipping the search). Env: RESTARTS (per seed, default 4); KEEP=<characters> that strip must leave
-// alone (KEEP=K keeps a maze's stone); plus search.ts's CLUTTER, PRESSES and WALLS.
+// alone (KEEP=K keeps a maze's stone); plus search.ts's CLUTTER, PRESSES, WALLS and PLANKS.
 import { spawn } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { Draft, block, dropUnreachable, flipNS, hidden, lint, normalize, plainWalls, regrow, report, strip, tryLevel, wallsText, COLOR } from './checks';

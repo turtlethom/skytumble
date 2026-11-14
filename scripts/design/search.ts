@@ -7,6 +7,8 @@
 // Env: CLUTTER (penalty per untouched filled cell, default 0.5), PRESSES (bonus per switch, default 10),
 // WALLS (penalty per switch-wall color the level doesn't need to move, default 40; 0 turns the check off).
 // Without that penalty, searches with switch walls mostly find walls that never have to move.
+// PLANKS (bonus per plank in a '?' cell whose swap to floor lowers par, default 0 = off): without it a
+// search with planks in the palette keeps them only where they never matter, since floor adds states.
 // Prints the best layout as a design block, ready for analyze.ts.
 // A seed range (`1-4`) or list (`1,5,9`) runs one search per seed in parallel and prints every result,
 // best first: save the output to a file and run analyze.ts on it.
@@ -33,6 +35,7 @@ const { rows: template, switches, on, shape } = parseBlock(readFileSync(file, 'u
 const clutter = Number(process.env.CLUTTER ?? 0.5);
 const pressBonus = Number(process.env.PRESSES ?? 10);
 const wallPenalty = Number(process.env.WALLS ?? 40);
+const plankBonus = Number(process.env.PLANKS ?? 0);
 let seed = Number(seedArg);
 const rand = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
 const pick = (xs: string) => xs[Math.floor(rand() * xs.length)];
@@ -83,7 +86,22 @@ function score(rows: string[], floor = -Infinity): number {
   s -= untouched * clutter;
   // The wall check re-solves twice per color, so only pay for it when the score could still count.
   if (wallPenalty && s >= floor) s -= wallColors(level, par).filter((c) => !c.moves).length * wallPenalty;
+  // One solve per plank, so skip it when even every plank counting couldn't reach the best so far.
+  const planks = slots.filter(([x, y]) => rows[y][x] === 'f').length;
+  if (plankBonus && s + planks * plankBonus >= floor) s += plankBonus * neededPlanks(rows, par);
   return s;
+}
+
+/** Planks in '?' cells that hold the solution back: as floor, par drops (the block could stand there). */
+function neededPlanks(rows: string[], par: number): number {
+  let n = 0;
+  for (const [x, y] of slots) {
+    if (rows[y][x] !== 'f') continue;
+    const swapped = rows.map((r, j) => (j === y ? r.slice(0, x) + '#' + r.slice(x + 1) : r));
+    const sol = solve(build(swapped, switches, on, shape));
+    if (sol && sol.moves.length < par) n++;
+  }
+  return n;
 }
 
 const skeleton = render(slots.map((_, i) => (slotPalette[i] === palette ? '#' : '~')));
