@@ -53,7 +53,8 @@ npm run -s search -- <template> <palette> <parLo> <parHi> 1-4 2 "chain,belt→pa
 npm run -s lattice -- 5 3 26 36 1 150 2 > out.txt
                                           # routing puzzles: columns rows parLo parHi seed seconds colors;
                                           #   MAZE=1 fills the rest with low stone, HEDGES=0 leaves hedges
-                                          #   out (every world but First Glade). Run a few seeds at once
+                                          #   out (every world but First Glade). PADS=0.3 puts pads on junctions,
+                                          #   SWITCHES=<n> caps switches. Run a few seeds at once
 npm run -s strip -- out.txt [name]        # remove what the solution doesn't need, keeping par
 npm run -s make -- <template> <palette> <parLo> <parHi> [1-4] [want] [out]
                                           # the whole loop in one command: lint, search, strip, wall

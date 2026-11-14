@@ -604,6 +604,19 @@ with Q/E changes them. After a move: ✈ a flight, ● a switch press, ⇄ a fli
 46-50  → → → ↓ ↓✈✔
 ```
 
+## `wind-17` Crags
+
+```
+ 1- 5  ↓ ↓✈ → ↓ ↓
+ 6-10  ← ← ↓ ↓✈ ←●
+11-15  ← ← ↑ ↑✈ ←✈
+16-20  ↑ ←● ← ← ←
+21-25  ↓ ↓ ↓ ↓✈● →✈
+26-30  ↑ → → ↓ ↓✈
+31-35  ← ↓ ↓ → →
+36-37  ↓ ↓✔
+```
+
 ## `star-01` First Light
 
 ```

@@ -240,3 +240,19 @@ S##RR.fffffffff1
 ......#fffff#f.D
 ................
 ...............G
+
+=== wind-17
+par: 37
+name: Crags
+idea: A maze of low stone that flights pass over, and every pad is a one-way door. Two laps. On the first, the east pads drop you by the heavy purple switch, which lowers the wall in front of the west pad; that pad and the up pad carry you over the stone to orange at the top, which opens the wall by the start, lays the bridges and turns the walls in the east. Then go round the west side: that fling lands you on the other purple switch and lowers the wall where the start's pad lands, so the second throw east takes you down the bridges and home.
+switches: 0 1 1
+#####o#H#SKK#KK#
+#KKKKK#KK#KKKKKK
+#KKKKK#KK#KKKKKK
+#KK#KK##KRKK##i#
+#KKKKKKKK#KK0KK#
+#KKKKKKKKKKK0KKh
+RKKR#oU####K####
+KKK#KK#KK#KK#KKH
+KKKIKKKKKKKK#KK#
+#KK###x###KKLKKG
