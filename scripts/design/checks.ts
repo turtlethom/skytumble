@@ -189,6 +189,27 @@ export function plainWalls(d: Draft): Draft {
 }
 
 /**
+ * Turn floor into planks wherever the level still solves at the same par or longer, in reading order,
+ * on the cells `where` allows. A search fills a plank field with floor, since floor adds states; this
+ * keeps only the stones the puzzle needs to stand on (wind-18).
+ */
+export function plankify(d: Draft, where: (x: number, y: number) => boolean = () => true): Draft {
+  const rows = d.rows.map((r) => [...r]);
+  const current = () => ({ ...d, rows: rows.map((r) => r.join('')) });
+  const base = parOf(tryLevel(d));
+  if (base === null) return d;
+  for (let y = 0; y < rows.length; y++) {
+    for (let x = 0; x < rows[y].length; x++) {
+      if (rows[y][x] !== '#' || !where(x, y)) continue;
+      rows[y][x] = 'f';
+      const par = parOf(tryLevel(current()));
+      if (par === null || par < base) rows[y][x] = '#';
+    }
+  }
+  return current();
+}
+
+/**
  * Drop plain tiles (floor, ice, planks) the block can never touch in any reachable state: decoys only
  * count if a player can wander onto them. Keeps par; one-layer levels only.
  */

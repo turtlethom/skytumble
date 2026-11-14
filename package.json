@@ -15,6 +15,7 @@
     "search": "vite-node scripts/design/search.ts",
     "lattice": "vite-node scripts/design/lattice.ts",
     "strip": "vite-node scripts/design/strip.ts",
+    "plankify": "vite-node scripts/design/plankify.ts",
     "walls": "vite-node scripts/design/walls.ts",
     "regrow": "vite-node scripts/design/regrow.ts",
     "lint": "vite-node scripts/design/lint.ts",

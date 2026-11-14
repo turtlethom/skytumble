@@ -3,7 +3,7 @@ import { solve } from '../src/game/solver';
 import { findLevel } from '../src/levels';
 import solutions from '../SOLUTIONS.md?raw';
 import { directions, solutionsMarkdown } from '../scripts/design/arrows';
-import { Draft, dropUnreachable, quickRepresses, flipNS, hidden, lint, plainWalls, regrow, strip, toLevel, wallColors } from '../scripts/design/checks';
+import { Draft, dropUnreachable, quickRepresses, flipNS, hidden, lint, plainWalls, plankify, regrow, strip, toLevel, wallColors } from '../scripts/design/checks';
 
 const draft = (rows: string[], switches: number[] = []): Draft => ({ rows, switches, on: [], shape: 2 });
 
@@ -80,6 +80,12 @@ describe('design tools', () => {
     const plain = plainWalls(d);
     expect(plain.rows[1]).toBe('S~~~~~~h.');
     expect(plain.rows[4]).toBe('#........');
+  });
+
+  it('turn floor into planks where the block never has to stand', () => {
+    // Along the corridor the block stands on the start, 3 and the goal; 1, 2, 4 and 5 can be planks.
+    const out = plankify(draft(['S#####G']));
+    expect(out.rows[0]).toBe('Sff#ffG');
   });
 
   it('drop plain tiles the block can never reach', () => {

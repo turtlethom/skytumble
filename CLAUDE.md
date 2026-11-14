@@ -56,6 +56,8 @@ npm run -s lattice -- 5 3 26 36 1 150 2 > out.txt
                                           #   out (every world but First Glade). PADS=0.3 puts pads on junctions,
                                           #   SWITCHES=<n> caps switches. Run a few seeds at once
 npm run -s strip -- out.txt [name]        # remove what the solution doesn't need, keeping par
+npm run -s plankify -- <file|id> [x0-x1]  # floor to planks wherever par holds (in columns x0-x1): a search
+                                          #   fills plank fields with floor; this leaves only needed stones
 npm run -s make -- <template> <palette> <parLo> <parHi> [1-4] [want] [out]
                                           # the whole loop in one command: lint, search, strip, wall
                                           #   and bridge check, regrow, unneeded walls to floor, drop
@@ -216,7 +218,7 @@ src/render/    Three.js world (tiles, animations, push cue), palette.ts (belt co
 src/ui/        progress (localStorage), map (the sky map and Labs screen; island layout per chapter),
                menu (a keyboard-driven button list: main menu, Esc menu, Settings)
 src/main.ts    game controller: modes, the stack of open screens, HUD, splash, key focus sink (for Vimium)
-scripts/       check-levels.ts; design/ (lib, explore, checks, analyze, sim, search, strip, lattice, make, lint, walls, regrow, solutions, play, verify)
+scripts/       check-levels.ts; design/ (lib, explore, checks, analyze, sim, search, strip, plankify, lattice, make, lint, walls, regrow, solutions, play, verify)
 ```
 
 Rules are frozen for ice and conveyors, for walls with them, and for walls with launch pads (see DESIGN.md *Mechanics*); changing them breaks

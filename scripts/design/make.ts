@@ -7,10 +7,12 @@
 // writes the finished design blocks to <out> (default: the template's name + .make.txt) for analyze,
 // sim and verify, and the raw search results to <out>.raw.txt (finish them again with FROM=<that file>,
 // skipping the search). Env: RESTARTS (per seed, default 4); KEEP=<characters> that strip must leave
-// alone (KEEP=K keeps a maze's stone); plus search.ts's CLUTTER, PRESSES, WALLS and PLANKS.
+// alone (KEEP=K keeps a maze's stone); plus search.ts's CLUTTER, PRESSES, WALLS and PLANKS. With PLANKS
+// set, floor the search put in '?' cells becomes planks wherever par holds (plankify), before stripping;
+// add KEEP=f to keep a plank field whole.
 import { spawn } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { Draft, block, dropUnreachable, flipNS, hidden, lint, normalize, plainWalls, regrow, report, strip, tryLevel, wallsText, COLOR } from './checks';
+import { Draft, block, dropUnreachable, flipNS, hidden, lint, normalize, plainWalls, plankify, regrow, report, strip, tryLevel, wallsText, COLOR } from './checks';
 import { parseBlock } from './lib';
 
 const [template, palette, lo, hi, seeds = '1-4', want = '', outArg] = process.argv.slice(2);
@@ -56,7 +58,8 @@ for (const text of found.split(/\n\s*\n/).map((b) => b.trim()).filter((b) => b.s
   const lines = text.split('\n');
   const seed = /seed (\S+)/.exec(lines[0])?.[1] ?? '?';
   const { rows, switches, on, shape } = parseBlock(lines);
-  const full = normalize({ rows, switches, on, shape });
+  const searched = normalize({ rows, switches, on, shape });
+  const full = process.env.PLANKS ? plankify(searched, (x, y) => t.rows[y]?.[x] === '?') : searched;
   const stripped = strip(full, process.env.KEEP ?? '');
   const sr = report(stripped);
   if (!sr) continue;

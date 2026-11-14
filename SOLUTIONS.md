@@ -617,6 +617,21 @@ with Q/E changes them. After a move: ✈ a flight, ● a switch press, ⇄ a fli
 36-37  ↓ ↓✔
 ```
 
+## `wind-18` Gangway
+
+```
+ 1- 5  → ↑ ← ↓ →
+ 6-10  → → → → →
+11-15  → → → → →
+16-20  ↓ ← ↑ →● ↑
+21-25  ← ↓ → ↓ ←✈
+26-30  → → → ↓ →
+31-35  ↑ ←● ↑ → →
+36-40  ↓ ← ↓ ↓ ←
+41-45  ← ↑ ←✈ ← ←
+46-46  ←✔
+```
+
 ## `star-01` First Light
 
 ```
