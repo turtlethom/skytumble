@@ -357,6 +357,34 @@ export function lint(d: Draft): string[] {
     else if (near?.block.o === 'S' && near.dist === 1) out.push(`WARN: unsolvable, but the block stands right next to the goal at ${near.block.x},${near.block.y}: try the goal there`);
     else out.push(`WARN: unsolvable (closest: ${near ? `${near.dist} tiles from the goal` : 'nowhere'}): run analyze for the diagnosis`);
   }
+  out.push(...idleSpecials(l));
+  return out;
+}
+
+/**
+ * Belts that never push and pads that never fire, from any position the block can reach: decoration
+ * a player can see does nothing (wind-20's first build had a belt on the start island it only ever
+ * rolled across lying, half on it). A push or flight into a fall still counts: that's a trap. One-layer
+ * levels only; a big level is explored up to a limit, and then nothing is reported.
+ */
+export function idleSpecials(l: Level): string[] {
+  if (l.ceiling) return [];
+  const ex = explore(l, 100_000);
+  if (ex.truncated) return [];
+  const acted = new Set<string>();
+  for (const { state } of ex.nodes.values()) {
+    for (const dir of DIRS) {
+      for (const m of step(l, state, dir).motions) {
+        if (m.kind === 'push' || m.kind === 'fly') blockCells(m.from).forEach(([x, y]) => acted.add(`${x},${y}`));
+      }
+    }
+  }
+  const out: string[] = [];
+  l.tiles.forEach((t, i) => {
+    if (t !== Tile.Conveyor && t !== Tile.Pad) return;
+    const [x, y] = [i % l.width, Math.floor(i / l.width)];
+    if (!acted.has(`${x},${y}`)) out.push(`WARN: the ${t === Tile.Conveyor ? 'belt' : 'pad'} at ${x},${y} never ${t === Tile.Conveyor ? 'pushes' : 'fires'} from any position the block can reach: it's decoration that visibly does nothing`);
+  });
   return out;
 }
 

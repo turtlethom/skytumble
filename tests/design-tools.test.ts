@@ -3,7 +3,7 @@ import { solve } from '../src/game/solver';
 import { findLevel } from '../src/levels';
 import solutions from '../SOLUTIONS.md?raw';
 import { directions, solutionsMarkdown } from '../scripts/design/arrows';
-import { Draft, dropUnreachable, quickRepresses, flipNS, hidden, lint, plainWalls, plankify, regrow, strip, toLevel, wallColors } from '../scripts/design/checks';
+import { Draft, dropUnreachable, idleSpecials, quickRepresses, flipNS, hidden, lint, plainWalls, plankify, regrow, strip, toLevel, wallColors } from '../scripts/design/checks';
 
 const draft = (rows: string[], switches: number[] = []): Draft => ({ rows, switches, on: [], shape: 2 });
 
@@ -86,6 +86,17 @@ describe('design tools', () => {
     // Along the corridor the block stands on the start, 3 and the goal; 1, 2, 4 and 5 can be planks.
     const out = plankify(draft(['S#####G']));
     expect(out.rows[0]).toBe('Sff#ffG');
+  });
+
+  it('flag a belt that never pushes and a pad that never fires', () => {
+    // The block only ever rolls across the belt lying, half on it; the pad is out of reach.
+    const level = toLevel(draft(['S#>##G', '......', '....R.']));
+    const idle = idleSpecials(level);
+    expect(idle).toHaveLength(2);
+    expect(idle[0]).toContain('belt at 2,0');
+    expect(idle[1]).toContain('pad at 4,2');
+    // Stood on, the belt pushes, so it isn't flagged.
+    expect(idleSpecials(toLevel(draft(['S##>G'])))).toEqual([]);
   });
 
   it('drop plain tiles the block can never reach', () => {
