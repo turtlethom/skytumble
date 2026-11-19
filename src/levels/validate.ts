@@ -1,6 +1,6 @@
 import { blockCells, blockLength, findGoal, initialState, isRing, isSolid, isWall, layerView, ringLocked, step, tileAt } from '../game/rules';
 import { solve } from '../game/solver';
-import { Dir, Level, Tile } from '../game/types';
+import { Dir, Level, State, Tile } from '../game/types';
 import { Chapter, HandmadeLevel } from './format';
 
 /**
@@ -36,11 +36,12 @@ export type FlipUse =
   | 'lying flip' // flipped while lying across two flip tiles
   | 'belt→flip' // a belt pushed the block onto flip tiles that fired
   | 'flight→flip' // a pad flight landed on flip tiles that fired
+  | 'flip→pad' // a flip landed the block on pads that fired
   | 'cross-layer press' // pressed a switch that drives bridges, walls or rings on the other floor
   | 'locked' // came to rest fully on flip rings that were locked, so they didn't fire
   | 'unlocked'; // flipped through a ring that was locked at the start, after a press opened it
 
-export function flipUses(level: Level, moves: Dir[]): FlipUse[] {
+export function flipUses(level: Level, moves: Dir[], from?: State): FlipUse[] {
   const uses = new Set<FlipUse>();
   if (!level.ceiling) return [];
   // Which floors each bridge group has tiles on.
@@ -53,7 +54,7 @@ export function flipUses(level: Level, moves: Dir[]): FlipUse[] {
       groupLayers.get(view.groups[i])!.add(layer);
     });
   }
-  let state = initialState(level);
+  let state = from ?? initialState(level);
   const start = state;
   for (const dir of moves) {
     const r = step(level, state, dir);
@@ -65,6 +66,7 @@ export function flipUses(level: Level, moves: Dir[]): FlipUse[] {
       if (blockCells(m.from).some(([x, y]) => ringLocked(level, start, x, y, layer))) uses.add('unlocked');
       if (m.from.o !== 'S') uses.add('lying flip');
       const before = r.motions[i - 1]?.kind;
+      if (r.motions[i + 1]?.kind === 'fly') uses.add('flip→pad');
       if (before === 'push') uses.add('belt→flip');
       if (before === 'fly') uses.add('flight→flip');
       layer = 1 - layer;

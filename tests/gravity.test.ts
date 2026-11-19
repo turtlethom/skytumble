@@ -13,6 +13,22 @@ const at = (x: number, y: number, o: 'S' | 'X' | 'Y', layer = 0, bridges = 0): S
 });
 
 describe('gravity flip', () => {
+  it('fires pads where a flip lands, like any landing (allowed 2026-11-19)', () => {
+    // Standing on the ring at x=2 flips up onto a right pad: the fling lands lying on x=6 and 7.
+    const level = parseLevel(['S#+......', '---', '..R...##.']);
+    const up = step(level, at(0, 0, 'X'), 'right');
+    expect(up.motions.map((m) => m.kind)).toEqual(['flip', 'fly']);
+    expect(up.state).toMatchObject({ layer: 1, block: { x: 6, y: 0, o: 'X' } });
+    expect(flipUses(level, ['right'], at(0, 0, 'X'))).toContain('flip→pad');
+  });
+
+  it('never flips straight back on the ring it landed on', () => {
+    const level = parseLevel(['S#+', '---', '..+']);
+    const r = step(level, at(0, 0, 'X'), 'right');
+    expect(r.motions.map((m) => m.kind)).toEqual(['flip']);
+    expect(r.state.layer).toBe(1);
+  });
+
   it('parses a ceiling layer and formats it back', () => {
     const rows = ['S#+#', '---', '..#G'];
     const level = parseLevel(rows);

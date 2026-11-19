@@ -71,7 +71,7 @@ detour away from the goal). Solution length alone is not the target.
 | **Ice** (Frost) | A lying block fully on ice slides in the roll direction; a standing block grips |
 | **Conveyor** (Frost) | After a move, a block fully on conveyors shifts one tile along the arrow |
 | **Launch pad** (Windy Peaks) | Flings the block along the pad's arrow: standing = long fling, lying fully on two same-arrow pads = short hop |
-| **Flip tile** (Starfall) | Standing on one, or lying fully on two, moves the block to the other floor directly above (or below), same pose |
+| **Flip tile** (Starfall) | Standing on one, or lying fully on two, moves the block to the other floor directly above (or below), same pose. The landing acts like any landing: pads there fire (allowed 2026-11-19; no existing level changed), but a ring there never flips the block straight back that move |
 | **Toppling hedge** (First Glade) | A standing block rolling into it topples it that way for good and stays put, for one move. It lands on the next tile, and an empty tile becomes floor. A lying block just bumps it |
 
 **Whole-block rule:** a special tile (ice, conveyor) acts only when the entire block is on
@@ -609,6 +609,8 @@ works and what doesn't. Claude writes the code and designs handmade levels from 
 feedback; batches of 5 levels per round.
 
 ## Playtest log
+
+**2026-11-19 — How batches run; pads after flips.** After `star-16` took an hour of rebuilds, the user and Claude agreed a process: pitch one-line ideas for a batch for the user to pick or veto before building, time-box each level at two or three rebuilds, ask frozen-rule questions before building, and hand levels over one or two at a time (now in CLAUDE.md). The user allowed pads to fire where a flip lands, as on any landing; the rule change left every existing par unchanged. New flip use: `flip→pad`.
 
 **2026-11-19 — Switches lock rings, not walls.** After the first lab build: "rather than specifically using a wall on the opposing side, why don't we just make it so the button locks and unlocks the flip teleporter? I still want walls, but it seems kind of dumb to have a wall that retracts on the opposing side, and to just prevent walls from conflicting with the teleporters." → Rings take switch colors and lock or open on a press; a wall over or under a ring fails validation. The padlock indicator stays. The lab was rebuilt around it.
 

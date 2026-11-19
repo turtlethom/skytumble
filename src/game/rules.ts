@@ -422,6 +422,9 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
   let pushed = false;
   let locked: { x: number; y: number }[] = [];
   const fired = new Set<number>();
+  // Where a flip landed this move: rings there may not flip the block straight back, but pads there
+  // fire like on any landing (allowed 2026-11-19).
+  const landed = new Set<number>();
   const cellKeys = () => blockCells(block).map(([x, y]) => (layer * level.height + y) * level.width + x);
   while (still()) {
     const push = pushed ? null : conveyorPush(view, block);
@@ -444,7 +447,7 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
     const flips = ring && locked.length === 0;
     if (!launch && !flips) break;
     const cells = cellKeys();
-    if (cells.some((c) => fired.has(c))) break;
+    if (cells.some((c) => fired.has(c) || (flips && landed.has(c)))) break;
     cells.forEach((c) => fired.add(c));
     if (launch) {
       const { to, hit, crashed } = landing(view, state, block, launch);
@@ -455,12 +458,12 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
       if (crashed) return fell(state.bridges);
       continue;
     }
-    // Gravity flips: the block drops "up" to the tiles directly over it, in the same pose, and
-    // those tiles may not fire back this move.
+    // Gravity flips: the block drops "up" to the tiles directly over it, in the same pose. Rings
+    // there may not flip it back this move; pads there fire.
     motions.push({ kind: 'flip', dir, from: block, to: block });
     layer = 1 - layer;
     view = layerView(level, layer);
-    cellKeys().forEach((c) => fired.add(c));
+    cellKeys().forEach((c) => landed.add(c));
   }
 
   if (!still()) return fell(state.bridges);

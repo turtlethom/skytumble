@@ -26,6 +26,10 @@ playtest notes) moves word for word to `DESIGN-archive.md`; search it when a pas
 - **Tools grow with the game:** when a new mechanic or feature lands, extend the design tools to
   cover it (its checks in `lint`, its role in `make`'s report, a test in `tests/design-tools.test.ts`),
   so level-making stays cheap as the game grows. The puzzle ideas still come from the user and Claude.
+- **Batches:** pitch one-line ideas for the whole batch, and the user picks or vetoes them before
+  anything is built. Ask any frozen-rule question in the pitch, not after building. Time-box each
+  level: after two or three rebuilds, say so and switch to a simpler idea. Hand levels over one or
+  two at a time rather than holding back five.
 - **Feature decisions:** for anything big, grill the user first (they asked for `/grill-me` style
   sessions), then record the outcome in DESIGN.md before building.
 
