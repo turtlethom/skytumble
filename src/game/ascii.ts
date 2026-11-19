@@ -19,7 +19,7 @@ const MAX_HEDGES = 9;
  *   ~  ice          ^ v < >  conveyor pointing that way
  *   U D L R  launch pad flinging up / down / left / right
  *   +  flip tile (gravity)
- *   A  cube door: only the cube fits through
+ *   = |  glass tube running east-west / north-south: only the cube rides it, in and out of its ends
  *   M P Q W  flip tile in the color of group 0 / 1 / 2 / 3, starting locked (a press opens it)
  *   m p q w  the same, starting open (a press locks it)
  *   c t n  shape switch: turns a block standing on it into a cube / tall block / normal block
@@ -63,7 +63,10 @@ export function parseLevel(rows: string[], switchGroups: number[] = [], bridgesO
           group = SHAPE_SWITCHES[c];
         }
         else if (c === '+') tile = Tile.Flip;
-        else if (c === 'A') tile = Tile.Door;
+        else if (c === '=' || c === '|') {
+          tile = Tile.Door;
+          group = c === '=' ? 0 : 1;
+        }
         else if (c === 'S') {
           if (!ground) throw new Error(`The start must be on the ground, not the ceiling (${x},${y})`);
           tile = Tile.Floor;
@@ -165,6 +168,7 @@ export function formatLevel(level: Level): string {
         else if (t === Tile.WallUp) row += WALLS_UP[l.groups[i]];
         else if (t === Tile.WallDown) row += WALLS_DOWN[l.groups[i]];
         else if (t === Tile.FlipLocked) row += RINGS_LOCKED[l.groups[i]];
+        else if (t === Tile.Door) row += l.groups[i] === 1 ? '|' : '=';
         else if (t === Tile.Flip && l.groups[i] >= 0) row += RINGS_OPEN[l.groups[i]];
         else if (t === Tile.Conveyor) row += CONVEYOR_CHARS[DIRS[l.groups[i]]];
         else if (t === Tile.Pad) row += PAD_CHARS[DIRS[l.groups[i]]];

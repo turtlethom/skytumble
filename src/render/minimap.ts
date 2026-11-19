@@ -18,7 +18,7 @@ const FILL: Partial<Record<Tile, string>> = {
   [Tile.Pad]: '#dfe5ec',
   [Tile.Flip]: '#b48cff',
   [Tile.FlipLocked]: '#6a6188',
-  [Tile.Door]: '#5fc68f',
+  [Tile.Door]: '#2457c5',
   [Tile.ShapeSwitch]: '#f6f1e6',
   [Tile.ExtraHeavy]: '#86d07a',
 };

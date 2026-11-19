@@ -176,12 +176,25 @@ export function isSolid(level: Level, x: number, y: number, bridges: number, hed
   return true;
 }
 
+/** A tube's axis by its group: 0 runs east-west, 1 north-south. */
+const AXIS: Record<Dir, number> = { left: 0, right: 0, up: 1, down: 1 };
+
 /**
- * Whether a cube door keeps this block out: only the cube fits through (the user's call, 2026-11-19,
- * after an arch a lying block passed under and a slot a standing one fitted were both dropped).
+ * Whether the glass tube at a cell stops this move (the user's calls, 2026-11-19). Anything goes in and
+ * out only through the open ends, along the tube. The cube may roll in; a longer block only slides in,
+ * lying along the tube, carried by belts (`roll` false), since tipping over the tube's edge would pass
+ * through it. A standing block never fits.
  */
-export function gateBlocks(tile: Tile, b: Block): boolean {
-  return tile === Tile.Door && blockLength(b) !== 1;
+export function tubeStops(level: Level, x: number, y: number, b: Block, dir: Dir, roll: boolean): boolean {
+  if (tileAt(level, x, y) !== Tile.Door) return false;
+  if (groupAt(level, x, y) !== AXIS[dir]) return true;
+  if (blockLength(b) === 1) return false;
+  return roll || b.o === 'S' || (b.o === 'X' ? 0 : 1) !== AXIS[dir];
+}
+
+/** Whether any part of the block is in a glass tube. */
+function inTube(level: Level, b: Block): boolean {
+  return blockCells(b).some(([x, y]) => tileAt(level, x, y) === Tile.Door);
 }
 
 /** Something standing there stops a hedge falling onto it: a raised wall or another hedge still up. */
@@ -195,13 +208,15 @@ function standsUp(level: Level, x: number, y: number, state: State): boolean {
  * The first thing in the way of a roll that would land on `to`, nearest the block first: a raised
  * wall or an upright hedge. Slides and belt pushes check `inTheWay` instead; flights fly over.
  */
-function obstacle(level: Level, state: State, to: Block, dir: Dir): { x: number; y: number; hedge: boolean } | null {
+function obstacle(level: Level, state: State, from: Block, to: Block, dir: Dir): { x: number; y: number; hedge: boolean } | null {
+  // A block in a tube leaves only through an open end: the cube by rolling, a longer one never by a roll.
+  for (const [x, y] of blockCells(from)) if (tubeStops(level, x, y, from, dir, true)) return { x, y, hedge: false };
   const cells = blockCells(to);
   if (dir === 'left' || dir === 'up') cells.reverse();
   for (const [x, y] of cells) {
     if (standsUp(level, x, y, state)) return { x, y, hedge: tileAt(level, x, y) === Tile.Hedge };
-    // A gate the block doesn't fit holds like a wall.
-    if (gateBlocks(tileAt(level, x, y), to)) return { x, y, hedge: false };
+    // A tube the block can't enter this way holds like a wall.
+    if (tubeStops(level, x, y, to, dir, true)) return { x, y, hedge: false };
   }
   return null;
 }
@@ -231,21 +246,31 @@ function shift(b: Block, dir: Dir): Block {
  * hedge stops a slide or a push on the tile before it. A wall that came up under the block doesn't
  * hold it, since the block is already there.
  */
-function inTheWay(level: Level, state: State, from: Block, to: Block): { x: number; y: number } | null {
+function inTheWay(level: Level, state: State, from: Block, to: Block, dir: Dir): { x: number; y: number } | null {
+  for (const [x, y] of blockCells(from)) if (tubeStops(level, x, y, from, dir, false)) return { x, y };
   const on = new Set(blockCells(from).map(([x, y]) => y * level.width + x));
-  const hit = blockCells(to).find(([x, y]) => (!on.has(y * level.width + x) && standsUp(level, x, y, state)) || gateBlocks(tileAt(level, x, y), to));
+  const hit = blockCells(to).find(([x, y]) => (!on.has(y * level.width + x) && standsUp(level, x, y, state)) || tubeStops(level, x, y, to, dir, false));
   return hit ? { x: hit[0], y: hit[1] } : null;
 }
 
 /**
- * Slide a lying block along `dir` while it is fully on ice; stops on leaving ice or losing support,
- * or on the tile before a raised wall (`hit`).
+ * Whether the block slides on: a lying block fully on ice, or any block with a part in a glass tube.
+ * A tube slides the block until it's wholly out, past the far end, where ice stops it half off.
+ */
+function slides(level: Level, b: Block): boolean {
+  if (inTube(level, b)) return true;
+  return b.o !== 'S' && fullyOn(level, b, Tile.Ice);
+}
+
+/**
+ * Slide along `dir` while the block slides (see `slides`); stops on leaving the ice or tube, which
+ * leaves it on the first tile past it, or losing support, or on the tile before a raised wall (`hit`).
  */
 function slide(level: Level, state: State, b: Block, dir: Dir): { block: Block; hit: { x: number; y: number } | null } {
   let cur = b;
-  while (cur.o !== 'S' && fullyOn(level, cur, Tile.Ice)) {
+  while (slides(level, cur)) {
     const next = shift(cur, dir);
-    const hit = inTheWay(level, state, cur, next);
+    const hit = inTheWay(level, state, cur, next, dir);
     if (hit) return { block: cur, hit };
     cur = next;
     if (!supported(level, cur, state.bridges)) break;
@@ -379,7 +404,7 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
   // Rolling into something: the block stays put, even over a gap. A standing block has the weight
   // to topple a hedge along the roll, which costs a move, unless something standing beyond the hedge
   // stops it falling. Anything else holds, and no move happened.
-  const hit = obstacle(view, state, rolled, dir);
+  const hit = obstacle(view, state, state.block, rolled, dir);
   if (hit) {
     const { x, y } = hit;
     const { dx, dy } = DIR_DELTA[dir];
@@ -442,7 +467,7 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
       pushed = true;
       // A wall where the belt would push holds the block where it is. The belt tries again only the
       // next time the block lands on it.
-      const hit = inTheWay(view, state, block, shift(block, push));
+      const hit = inTheWay(view, state, block, shift(block, push), push);
       if (hit) {
         held.push({ ...hit, dir: push, belt: true, after: motions.length });
         continue;

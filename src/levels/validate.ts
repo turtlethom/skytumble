@@ -90,7 +90,8 @@ export type ShapeUse =
   | 'tall spans a gap' // a lying tall block rested with its middle over nothing
   | 'tall presses extra-heavy'
   | 'shaped goal' // won as a cube or a tall block
-  | 'through a door'; // came to rest in a cube door, as the cube
+  | 'tube slide' // a block slid through a glass tube (the cube rolling in, or a lying block fed in by belts)
+  | 'long tube slide'; // a lying normal or tall block, fed in by belts, slid through a glass tube
 
 export function shapeUses(level: Level, moves: Dir[]): ShapeUse[] {
   const uses = new Set<ShapeUse>();
@@ -107,7 +108,7 @@ export function shapeUses(level: Level, moves: Dir[]): ShapeUse[] {
     }
     if (r.pressed.some((c) => tileAt(view, c.x, c.y) === Tile.ExtraHeavy)) uses.add('tall presses extra-heavy');
     if (r.outcome === 'win' && blockLength(b) !== 2) uses.add('shaped goal');
-    if (blockCells(b).some(([x, y]) => tileAt(view, x, y) === Tile.Door)) uses.add('through a door');
+    for (const m of r.motions.filter((m) => tubeSlide(view, m))) uses.add(blockLength(m.from) === 1 ? 'tube slide' : 'long tube slide');
     state = r.state;
   }
   return [...uses];
@@ -127,13 +128,19 @@ export interface LevelReport {
   errors: string[];
 }
 
+/** Whether a motion is a slide through a glass tube: it starts with a part of the block in one. */
+function tubeSlide(level: Level, m: { kind: string; from: Parameters<typeof blockCells>[0] }): boolean {
+  return m.kind === 'slide' && blockCells(m.from).some(([x, y]) => tileAt(level, x, y) === Tile.Door);
+}
+
 export function iceUses(level: Level, moves: Dir[]): { uses: IceUse[]; pushes: number } {
   const uses = new Set<IceUse>();
   let pushes = 0;
   let state = initialState(level);
   for (const dir of moves) {
     const r = step(level, state, dir);
-    const kinds = r.motions.map((m) => m.kind);
+    // Slides through glass tubes are tube uses, not ice uses.
+    const kinds = r.motions.map((m) => (tubeSlide(level, m) ? 'tube' : m.kind));
     pushes += kinds.filter((k) => k === 'push').length;
     if (kinds.includes('slide')) uses.add('slide');
     for (let i = 1; i < kinds.length; i++) {
@@ -197,7 +204,7 @@ export function wallsOverRings(level: Level): { x: number; y: number; layer: num
   return out;
 }
 
-/** Cube doors are Toybox's: they mix with the basics, shapes, walls and belts until their other interactions are settled. */
+/** Glass tubes are Toybox's: they mix with the basics, shapes, walls and belts until their other interactions are settled. */
 const NOT_WITH_GATES = [Tile.Ice, Tile.Pad, Tile.Flip, Tile.FlipLocked, Tile.Hedge];
 
 function mixesGates(level: Level): boolean {
@@ -213,7 +220,7 @@ function mixesWalls(level: Level): boolean {
 export function validateLevel(h: HandmadeLevel, chapter: Chapter): LevelReport {
   const errors: string[] = [];
   for (const c of wallsOverRings(h.level)) errors.push(`a wall on the other floor over the ring at ${c.x},${c.y}: walls and rings stay out of each other's way, so a ring always has somewhere to land`);
-  if (mixesGates(h.level)) errors.push('cube doors only mix with the basics, shapes, walls and belts, on one floor, until their other interactions are settled');
+  if (mixesGates(h.level)) errors.push('glass tubes only mix with the basics, shapes, walls and belts, on one floor, until their other interactions are settled');
   if (mixesWalls(h.level)) errors.push('hedges only mix with the basics, on one floor, until their other interactions are settled');
   // A hedge falling off the grid would just vanish, while one falling onto an empty tile bridges it,
   // and both look like open sky.

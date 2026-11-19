@@ -262,26 +262,66 @@ describe('walls on Toybox', () => {
   });
 });
 
-describe('cube doors', () => {
+describe('glass tubes', () => {
   const at = (x: number, y: number, o: 'S' | 'X' | 'Y', n?: 1 | 3) => ({ block: { x, y, o, ...(n ? { n } : {}) }, bridges: 0 });
 
-  it('a cube door lets only the cube through: any other block bumps it, in any pose', () => {
-    const level = parseLevel(['S#A##']);
-    expect(step(level, at(0, 0, 'S'), 'right').outcome).toBe('bump'); // would lie across 1 and the door
-    expect(step(level, at(0, 0, 'X'), 'right').outcome).toBe('bump'); // would stand in the door
-    expect(step(level, at(1, 0, 'S', 1), 'right').state.block).toMatchObject({ x: 2, o: 'S' });
+  it('only the cube rides a tube: any other block bumps it, in any pose', () => {
+    const level = parseLevel(['S#=##']);
+    expect(step(level, at(0, 0, 'S'), 'right').outcome).toBe('bump');
+    expect(step(level, at(0, 0, 'X'), 'right').outcome).toBe('bump');
+    expect(step(parseLevel(['S#', '#=', '##']), at(0, 0, 'Y', 3), 'right').outcome).toBe('bump');
   });
 
-  it("a lying tall block's middle doesn't pass through a cube door either", () => {
-    const level = parseLevel(['S#', '#A', '##']);
-    expect(step(level, at(0, 0, 'Y', 3), 'right').outcome).toBe('bump');
+  it('is ice for the cube: it slides through and stops on the first tile past the tube', () => {
+    const level = parseLevel(['S#===##']);
+    const r = step(level, at(1, 0, 'S', 1), 'right');
+    expect(r.state.block).toMatchObject({ x: 5, y: 0 });
+    expect(r.motions.map((m) => m.kind)).toEqual(['slide']);
+    // Off the far end into nothing, it falls, as off ice.
+    expect(step(parseLevel(['S#==.']), at(1, 0, 'S', 1), 'right').outcome).toBe('fall');
   });
 
-  it('a belt holds a block it would push into a gate it does not fit', () => {
-    const level = parseLevel(['S#>A#']);
-    const r = step(level, at(0, 0, 'X'), 'right'); // stands on the belt, which would push it into the cube door
-    expect(r.state.block).toMatchObject({ x: 2, o: 'S' });
-    expect(r.held).toEqual([expect.objectContaining({ x: 3, belt: true })]);
+  it('the cube enters and leaves only through the open ends', () => {
+    const level = parseLevel(['S#.', '#=#', '.#.']);
+    expect(step(level, at(1, 0, 'S', 1), 'down').outcome).toBe('bump'); // into its glass side
+    expect(step(level, at(1, 1, 'S', 1), 'down').outcome).toBe('bump'); // out through its glass side
+    expect(step(level, at(0, 1, 'S', 1), 'right').state.block).toMatchObject({ x: 2, y: 1 });
+  });
+
+  it('a raised wall in the line brakes the slide inside the tube; lowered, the slide ends on it', () => {
+    const level = parseLevel(['S#==H#']);
+    const braked = step(level, at(1, 0, 'S', 1), 'right');
+    expect(braked.state.block).toMatchObject({ x: 3, y: 0 });
+    expect(braked.held).toEqual([expect.objectContaining({ x: 4 })]);
+    expect(step(level, { ...at(1, 0, 'S', 1), bridges: 1 }, 'right').state.block).toMatchObject({ x: 4, y: 0 });
+  });
+
+  it('belts feed a lying block along the tube in, and it shoots out wholly past the far end', () => {
+    // A 2x1 standing at x=0 rolls right onto two belts pointing at the tube: pushed in, it slides through.
+    const normal = step(parseLevel(['S>>==###']), at(0, 0, 'S'), 'right');
+    expect(normal.state.block).toMatchObject({ x: 5, y: 0, o: 'X' });
+    // A 3x1 rolls onto three belts and ends on the three tiles past the tube.
+    const tall = step(parseLevel(['S>>>==####']), at(0, 0, 'S', 3), 'right');
+    expect(tall.state.block).toMatchObject({ x: 6, y: 0, o: 'X' });
+    // No floor where it comes out: it falls.
+    expect(step(parseLevel(['S>>==#..']), at(0, 0, 'S'), 'right').outcome).toBe('fall');
+  });
+
+  it('a longer block never rolls into a tube, and belts pushing it across a tube hold it', () => {
+    expect(step(parseLevel(['S#==##']), at(0, 0, 'S'), 'right').outcome).toBe('bump');
+    // Lying across two down belts above two east-west tubes: pushed sideways into them, it is held.
+    const level = parseLevel(['##S', 'vv.', '==.', '##.']);
+    const r = step(level, at(0, 0, 'X'), 'down');
+    expect(r.state.block).toMatchObject({ x: 0, y: 1, o: 'X' });
+    expect(r.held).toEqual([expect.objectContaining({ belt: true })]);
+  });
+
+  it('a belt pushes the cube into a tube, and it slides on; a block that cannot ride is held', () => {
+    const cube = step(parseLevel(['S>==##']), at(0, 0, 'S', 1), 'right');
+    expect(cube.state.block).toMatchObject({ x: 4, y: 0 });
+    const held = step(parseLevel(['S#>=#']), at(0, 0, 'X'), 'right');
+    expect(held.state.block).toMatchObject({ x: 2, o: 'S' });
+    expect(held.held).toEqual([expect.objectContaining({ x: 3, belt: true })]);
   });
 });
 

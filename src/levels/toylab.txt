@@ -46,11 +46,20 @@ guard: off
 S###X#H#####T
 
 === toylab-05
-par: 14
-name: Cube Door
-idea: A green door is cube-sized: only the cube fits through it, and any other block bumps it. Fetch the cube switch below the start, roll through, and grow back to normal on the far side for the goal.
+par: 12
+name: Glass Tube
+idea: A glass tube is ice for the cube alone: roll the cube into an open end and it slides straight through, out onto the first tile past the other end. Any other block bumps it, and so does a cube against its side. Fetch the cube switch, slide across the gap, and grow back to normal for the goal.
 guard: off
-###......
-S##A#n##G
-###......
-c........
+###.......
+S##===n##G
+###.......
+c.........
+
+=== toylab-06
+par: 12
+name: Tube Feed
+idea: A normal block can't roll into a tube, but belts can feed one in lying along it: two belts for a block two long. It slides through and shoots out onto the two tiles past the far end. Line up on both belts at once.
+guard: off
+.###.........
+.S##>>===##G.
+.###.........

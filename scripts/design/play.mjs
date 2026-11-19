@@ -228,8 +228,8 @@ for (const [id, moves] of Object.entries(solutions)) {
       console.log(`${id} move ${i + 1}: the game rolls ${m} with ${k}, SOLUTIONS.md says ${expected}`);
     }
     await key(k);
-    if (frames && i === moves.length - 1) {
-      // FRAMES=n: n shots during the last move, FRAME_MS apart, to see an animation mid-way.
+    if (frames && i === Number(process.env.FRAMES_AT ?? moves.length) - 1) {
+      // FRAMES=n: n shots during the last move (or move FRAMES_AT), FRAME_MS apart, to see an animation mid-way.
       for (let f = 1; f <= frames; f++) {
         await sleep(Number(process.env.FRAME_MS ?? 150));
         await shot(`${id}-frame${String(f).padStart(2, '0')}`);

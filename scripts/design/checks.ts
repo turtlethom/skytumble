@@ -275,7 +275,7 @@ export function hidden(level: Level): string[] {
   };
   const name: Partial<Record<Tile, string>> = {
     [Tile.SoftSwitch]: 'switch', [Tile.HeavySwitch]: 'heavy switch', [Tile.ExtraHeavy]: 'star switch', [Tile.Conveyor]: 'belt',
-    [Tile.Pad]: 'pad', [Tile.Flip]: 'ring', [Tile.FlipLocked]: 'locked ring', [Tile.Door]: 'cube door', [Tile.ShapeSwitch]: 'shape switch', [Tile.Goal]: 'goal',
+    [Tile.Pad]: 'pad', [Tile.Flip]: 'ring', [Tile.FlipLocked]: 'locked ring', [Tile.Door]: 'tube', [Tile.ShapeSwitch]: 'shape switch', [Tile.Goal]: 'goal',
   };
   const out: string[] = [];
   level.tiles.forEach((t, i) => {

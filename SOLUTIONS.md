@@ -1363,10 +1363,18 @@ with Q/E changes them. After a move: ✈ a flight, ● a switch press, ⇄ a fli
  6- 6  →✔
 ```
 
-## `toylab-05` Cube Door
+## `toylab-05` Glass Tube
 
 ```
  1- 5  → ↑ ← ↓ ↓
  6-10  ↑ ↑ → → →
-11-14  → → → →✔
+11-12  → →✔
+```
+
+## `toylab-06` Tube Feed
+
+```
+ 1- 5  → ↑ ← ↓ →
+ 6-10  → ↑ ← ↓ →
+11-12  → →✔
 ```

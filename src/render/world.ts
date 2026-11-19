@@ -893,7 +893,12 @@ export class World {
     }
 
     if (tile === Tile.Door) {
-      g.add(floorTile(jitter, this.theme, layer), earth(jitter, this.theme), makeDoor(!!this.theme.finish.plastic));
+      // Tubes in a row along their axis join into one: no end frame where the next segment continues.
+      const view = this.level ? layerView(this.level, layer) : null;
+      const joins = (dx: number, dy: number) =>
+        !!view && levelTileAt(view, x + dx, y + dy) === Tile.Door && view.groups[(y + dy) * view.width + x + dx] === group;
+      const [back, ahead] = group === 1 ? [joins(0, -1), joins(0, 1)] : [joins(-1, 0), joins(1, 0)];
+      g.add(makeTube(group, !!this.theme.finish.plastic, !back, !ahead));
       return g;
     }
 
@@ -1382,6 +1387,15 @@ export class World {
 
   /** Tip the block over its leading bottom edge. */
   async roll(from: Block, to: Block, dir: Dir): Promise<void> {
+    // The cube glides into or out of a glass tube instead of tipping, so its corner never rises
+    // through the tube's roof.
+    if (blockLength(from) === 1 && (this.inTube(from) || this.inTube(to))) {
+      const start = this.block.position.clone();
+      const end = blockPosition(to);
+      await this.tween(ROLL_MS, (t) => this.block.position.lerpVectors(start, end, easeInOut(t)));
+      this.placeBlock(to);
+      return;
+    }
     const { pivot, axis, angle } = this.tipPivot(from, dir);
 
     // Pivot inside the block's layer frame, so a roll on the ceiling plays mirrored.
@@ -1392,6 +1406,13 @@ export class World {
     frame.attach(this.block);
     frame.remove(pivot);
     this.placeBlock(to);
+  }
+
+  /** Whether any part of the block is in a glass tube on its floor. */
+  private inTube(b: Block): boolean {
+    if (!this.level) return false;
+    const view = layerView(this.level, this.layer);
+    return blockCells(b).some(([x, y]) => levelTileAt(view, x, y) === Tile.Door);
   }
 
   /** The block's leading bottom edge for a tip in this direction, and the quarter turn that would lay it over. */
@@ -1441,8 +1462,10 @@ export class World {
       const toPivot = new THREE.Vector3(-dx * halfAlong, lying ? -0.49 : -0.49 * n, -dy * halfAlong);
       const base = this.block.quaternion.clone();
       const lean = new THREE.Quaternion();
+      // Into a snug glass tube the block glides in flat: a lean would lift its leading edge into the roof.
+      const tilt = this.inTube(m.to) ? 0 : PUSH_LEAN;
       await this.tween(PUSH_MS, (t) => {
-        lean.setFromAxisAngle(axis, PUSH_LEAN * Math.sin(t * Math.PI));
+        lean.setFromAxisAngle(axis, tilt * Math.sin(t * Math.PI));
         this.block.quaternion.copy(base).premultiply(lean);
         this.block.position
           .lerpVectors(start, end, easeInOut(t))
@@ -2200,32 +2223,60 @@ function box(
   return mesh;
 }
 
-/** The cube door's mint plastic: a color no switch uses. */
-const GATE_COLOR = 0x5fc68f;
+/** A glass tube's trim: a deep toy blue, darker than the blue switch color so the two don't read alike. */
+const TUBE_TRIM = 0x2457c5;
 
 /**
- * A cube door on a tile: a frame of four thin posts and an open top, with a small cube on top for a
- * sign. Only the cube fits through, so the frame clears it on every side (the cube is 0.98 wide and
- * tall): the posts stand just outside its footprint and the top sits well above it. The frame stays
- * open so the block shows.
+ * One tile of glass tube, running east-west (axis 0) or north-south (1): blue plastic panels all
+ * round (roof, floor, sides), each with a square glass window, a squared profile, thick blue edges along its length, and a blue frame round each
+ * open end (`startEnd`, `endEnd`; none where the tube continues into the next tile). It needs no ground
+ * under it, so a run of tubes can bridge a gap. It clears the cube (0.98 wide and tall) on every side.
  */
-function makeDoor(plastic: boolean): THREE.Object3D {
+function makeTube(axis: number, plastic: boolean, startEnd: boolean, endEnd: boolean): THREE.Object3D {
   const g = new THREE.Group();
-  const part = (w: number, h: number, d: number, x: number, y: number, z: number, angle = 0) => {
-    const m = plastic ? rounded(w, h, d, GATE_COLOR, Math.min(w, h, d) * 0.35, { roughness: 0.3 }) : box(w, h, d, GATE_COLOR, { roughness: 0.5 });
+  const [half, height, edge, pane, panel] = [0.53, 1.18, 0.11, 0.025, 0.05];
+  const glass = new THREE.MeshStandardMaterial({ color: 0xeaf6ff, transparent: true, opacity: 0.22, roughness: 0.05, metalness: 0.1, depthWrite: false, side: THREE.DoubleSide });
+  // Built along x, then turned for a north-south tube.
+  const pivot = new THREE.Group();
+  pivot.rotation.y = axis === 1 ? Math.PI / 2 : 0;
+  g.add(pivot);
+  const glassBox = (w: number, h: number, d: number, x: number, y: number, z: number) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), glass);
+    m.castShadow = false;
+    m.renderOrder = 2;
     m.position.set(x, y, z);
-    m.rotation.y = angle;
-    g.add(m);
+    pivot.add(m);
   };
-  const [post, edge, height] = [0.06, 0.53, 1.22];
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) part(post, height, post, sx * edge, height / 2, sz * edge);
-  for (const s of [-1, 1]) {
-    part(2 * edge + post, post, post, 0, height, s * edge);
-    part(post, post, 2 * edge + post, s * edge, height, 0);
+  const part = (w: number, h: number, d: number, x: number, y: number, z: number) => {
+    const m = plastic ? rounded(w, h, d, TUBE_TRIM, Math.min(w, h, d) * 0.3, { roughness: 0.3 }) : box(w, h, d, TUBE_TRIM, { roughness: 0.5 });
+    m.position.set(x, y, z);
+    pivot.add(m);
+  };
+  // Roof, floor and both sides are blue plastic panels, each with a square glass window, so the cube
+  // shows from every side; the floor carries the block where there's no ground.
+  const win = 0.46;
+  const end = 0.5 - win / 2;
+  for (const y of [height, -panel / 2]) {
+    const side = half - win / 2;
+    for (const s of [-1, 1]) part(1, panel, side, 0, y, s * (win / 2 + side / 2));
+    for (const s of [-1, 1]) part(end, panel, win, s * (win / 2 + end / 2), y, 0);
+    glassBox(win, pane, win, 0, y, 0);
   }
-  // Cross bars holding a small cube: "only the cube".
-  for (const angle of [Math.PI / 4, -Math.PI / 4]) part(2 * edge * Math.SQRT2, post * 0.8, post * 0.8, 0, height, 0, angle);
-  part(0.24, 0.24, 0.24, 0, height + 0.16, 0);
+  for (const z of [-half, half]) {
+    const mid = height / 2;
+    const band = (height - win) / 2;
+    for (const y of [band / 2, height - band / 2]) part(1, band, panel, 0, y, z);
+    for (const s of [-1, 1]) part(end, win, panel, s * (win / 2 + end / 2), mid, z);
+    glassBox(win, win, pane, 0, mid, z);
+  }
+  // Thick edges along the length: two along the roof, two along the floor.
+  for (const s of [-1, 1]) for (const y of [-edge / 2, height]) part(1, edge, edge, 0, y, s * half);
+  // A frame round each open end.
+  for (const [open, ex] of [[startEnd, -0.5 + edge / 2], [endEnd, 0.5 - edge / 2]] as const) {
+    if (!open) continue;
+    for (const s of [-1, 1]) part(edge, height + edge, edge, ex, height / 2, s * half);
+    for (const y of [-edge / 2, height]) part(edge, edge, 2 * half + edge, ex, y, 0);
+  }
   return g;
 }
 

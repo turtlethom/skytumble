@@ -31,7 +31,7 @@ export enum Tile {
    * `Flip` with a group (0-3) starts open and locks on a press; one with no group (-1) never changes.
    */
   FlipLocked = 17,
-  /** A cube door: only the cube fits through or rests here; any other block bumps it, in any pose. */
+  /** A glass tube (group 0 east-west, 1 north-south): only the cube rides it, entering and leaving through its open ends. */
   Door = 18,
 }
 
