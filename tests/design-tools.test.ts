@@ -3,7 +3,7 @@ import { solve } from '../src/game/solver';
 import { findLevel } from '../src/levels';
 import solutions from '../SOLUTIONS.md?raw';
 import { directions, solutionsMarkdown } from '../scripts/design/arrows';
-import { Draft, dropUnreachable, idleSpecials, quickRepresses, flipNS, hidden, lint, plainWalls, plankify, regrow, strip, toLevel, wallColors } from '../scripts/design/checks';
+import { Draft, dropUnreachable, idleSpecials, quickRepresses, flipNS, hidden, lint, plainWalls, plankify, regrow, strip, switchOrder, toLevel, wallColors } from '../scripts/design/checks';
 
 const draft = (rows: string[], switches: number[] = []): Draft => ({ rows, switches, on: [], shape: 2 });
 
@@ -30,6 +30,10 @@ describe('design tools', () => {
     expect(lines).toContain('the ring at 3,0 on the ground is orange, starting locked');
     expect(lint(draft(['S##P#G', '---', '...##.'])).join('\n')).toMatch(/WARN: the ring at 3,0 .* no purple switch opens it/);
     expect(lint(draft(['S##+#G', '---', '...K..'])).join('\n')).toMatch(/WARN: the ring at 3,0 .* wall over it/);
+  });
+
+  it('read a chapter level with switches on the ceiling as its file does', () => {
+    expect(switchOrder(findLevel('star-13')!.level)).toEqual([0, 0, 1, 0]);
   });
 
   it('check ring colors with the walls: a locked ring the solution flips through has to open', () => {

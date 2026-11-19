@@ -132,6 +132,19 @@ describe('How To Play unlocks', () => {
     expect(mechanicsIn(findLevel('glade-20')!.level)).not.toContain('iceWalls');
   });
 
+  it('show a locked ring that does nothing, then flipping once a press opens it', () => {
+    const results = run(entry('lockedRings'));
+    expect(results[1].locked).toEqual([{ x: 3, y: 0 }]);
+    expect(results.filter((r) => r.toggled)).toHaveLength(1);
+    expect(results[3].state.layer).toBe(1);
+    expect(results[results.length - 1].outcome).toBe('win');
+  });
+
+  it('open locked rings only where a ring has a switch color', () => {
+    expect(mechanicsIn(findLevel('starlab-01')!.level)).toContain('lockedRings');
+    expect(mechanicsIn(findLevel('star-08')!.level)).not.toContain('lockedRings');
+  });
+
   it('open walls and launch pads only where walls meet pads', () => {
     expect(mechanicsIn(findLevel('wind-01')!.level)).not.toContain('padWalls');
     expect(mechanicsIn(findLevel('glade-20')!.level)).not.toContain('padWalls');

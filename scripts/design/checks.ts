@@ -8,6 +8,17 @@ import { solve } from '../../src/game/solver';
 import { flipUses, iceUses, padUses, shapeUses } from '../../src/levels/validate';
 import { closest, explore, padArrow } from './explore';
 
+/** A level's switch groups in reading order, through the ground and then the ceiling, as a `switches:` line lists them. */
+export function switchOrder(level: Level): number[] {
+  const out: number[] = [];
+  for (const floor of [level, ...(level.ceiling ? [level.ceiling] : [])]) {
+    floor.tiles.forEach((t, i) => {
+      if (t === Tile.SoftSwitch || t === Tile.HeavySwitch || t === Tile.ExtraHeavy) out.push(floor.groups[i]);
+    });
+  }
+  return out;
+}
+
 const cellsOf = (b: { x: number; y: number; o: 'S' | 'X' | 'Y' }) => blockCells(b).map(([x, y]) => `${x},${y}`).join('+');
 
 /** A level as the tools hold it: text rows plus the options a design block carries. */

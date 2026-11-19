@@ -7,7 +7,7 @@ import { Dir, Level, Tile } from '../game/types';
 
 export type MechanicId =
   | 'rolling' | 'lying' | 'planks' | 'soft' | 'heavy' | 'walls'
-  | 'ice' | 'belts' | 'iceWalls' | 'pads' | 'padWalls' | 'flips' | 'cube' | 'tall' | 'extraHeavy' | 'hedges';
+  | 'ice' | 'belts' | 'iceWalls' | 'pads' | 'padWalls' | 'flips' | 'lockedRings' | 'cube' | 'tall' | 'extraHeavy' | 'hedges';
 
 export interface Mechanic {
   id: MechanicId;
@@ -130,6 +130,15 @@ export const MECHANICS: Mechanic[] = [
     moves: moves('RRRR'),
   },
   {
+    id: 'lockedRings',
+    name: 'Locked rings',
+    text: 'A ring with a thin line of a switch\'s color around it can be locked: dull, with a padlock, it won\'t flip you, and you rest on it like floor. Every press of its color opens or locks it, along with that color\'s walls and bridges. A wall never stands over or under a ring.',
+    basic: false,
+    // Onto the locked ring: the padlock pops and nothing happens. One press opens it, and back on it, up you go.
+    level: parseLevel(['S##M#o', '---', '...###G'], [0]),
+    moves: moves('RRRLRR'),
+  },
+  {
     id: 'cube',
     name: 'The cube',
     text: 'Stand on a cube switch to become a cube, which rolls one tile at a time. It\'s so light that it never breaks planks or presses heavy switches. Some goals are marked for a cube, and a normal switch turns you back.',
@@ -178,7 +187,10 @@ export function mechanicsIn(level: Level): MechanicId[] {
     if (t === Tile.Ice) found.add('ice');
     else if (t === Tile.Conveyor) found.add('belts');
     else if (t === Tile.Pad) found.add('pads');
-    else if (t === Tile.Flip || t === Tile.FlipLocked) found.add('flips');
+    else if (t === Tile.Flip || t === Tile.FlipLocked) {
+      found.add('flips');
+      if (groups[i] >= 0) found.add('lockedRings');
+    }
     else if (t === Tile.ExtraHeavy) found.add('extraHeavy');
     else if (t === Tile.Hedge) found.add('hedges');
     else if (t === Tile.ShapeSwitch && groups[i] === 1) found.add('cube');

@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { formatLevel, parseLevel } from '../../src/game/ascii';
 import { blockCells, initialState, step } from '../../src/game/rules';
 import { Block, DIR_DELTA, Dir, Level, Tile } from '../../src/game/types';
+import { switchOrder } from './checks';
 
 /**
  * A design block: grid rows plus optional option lines.
@@ -104,10 +105,7 @@ export async function loadDesigns(arg: string): Promise<Design[]> {
 
 /** The design-block view of a parsed level (rows, switch groups in reading order, bridges on). */
 export function fromLevel(name: string, level: Level): Design {
-  const switches: number[] = [];
-  level.tiles.forEach((t, i) => {
-    if (t === Tile.SoftSwitch || t === Tile.HeavySwitch || t === Tile.ExtraHeavy) switches.push(level.groups[i]);
-  });
+  const switches = switchOrder(level);
   const on = [...Array(10).keys()].filter((g) => (level.bridgesOn >> g) & 1);
   return { name, rows: formatLevel(level).split('\n'), switches, on, level };
 }
