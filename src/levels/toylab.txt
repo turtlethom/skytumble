@@ -44,3 +44,13 @@ shape: tall
 switches: 0
 guard: off
 S###X#H#####T
+
+=== toylab-05
+par: 14
+name: Cube Door
+idea: A green door is cube-sized: only the cube fits through it, and any other block bumps it. Fetch the cube switch below the start, roll through, and grow back to normal on the far side for the goal.
+guard: off
+###......
+S##A#n##G
+###......
+c........

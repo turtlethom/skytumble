@@ -72,6 +72,7 @@ detour away from the goal). Solution length alone is not the target.
 | **Conveyor** (Frost) | After a move, a block fully on conveyors shifts one tile along the arrow |
 | **Launch pad** (Windy Peaks) | Flings the block along the pad's arrow: standing = long fling, lying fully on two same-arrow pads = short hop |
 | **Flip tile** (Starfall) | Standing on one, or lying fully on two, moves the block to the other floor directly above (or below), same pose. The landing acts like any landing: pads there fire (allowed 2026-11-19; no existing level changed), but a ring there never flips the block straight back that move |
+| **Cube door** (Toybox; in its lab, built 2026-11-19, not frozen yet) | The twist: a green cube-sized frame (`A`) that only the cube fits through or rests in; any other block bumps it, in any pose. Bumping it is free, like a wall, and a belt can't push a block into one it doesn't fit (held). (Settled after two first looks: an arch a lying block passed under clipped through its frame, and a slot a standing block fitted was dropped: the user wants only the cube through.) For now doors mix with the basics, shapes, walls and belts only |
 | **Toppling hedge** (First Glade) | A standing block rolling into it topples it that way for good and stays put, for one move. It lands on the next tile, and an empty tile becomes floor. A lying block just bumps it |
 
 **Whole-block rule:** a special tile (ice, conveyor) acts only when the entire block is on
@@ -159,7 +160,7 @@ Shipped releases and finished build notes are in `DESIGN-archive.md`, word for w
 
 **Pick up here** (paused 2026-11-14, at the user's request). Everything is committed and live through `c33e3f4`: **Windy Peaks is complete at 20** (`wind-09`…`20` all played and liked; see *Windy Peaks' new levels*). Hand every level over with its directions.
 
-- **Next: Starfall**, the third world in the walls order (Frost Isle, Windy Peaks, Starfall, Toybox). As with the others: wall samples in Starfall's stone on the tile sheet for approval (up, sunk, in black and white), then Starfall Lab for the unsettled rules (walls with flip rings: the planned rule is that a ring under a raised wall won't fire and looks locked, and walls cross floors like bridges), sign-off and frozen rules, then `star-09`…`20` in batches of 5, with walls in 4 of the 12 (three wall levels and a maze). Grill the user on anything big first. **Status (2026-11-19):** Starfall's walls are **dusk moss**; the locked-ring rules are frozen. Batch 1 (`star-09`…`13`) is approved and committed. **Starfall is complete at 20** (all committed). **Toybox's walls:** grey plastic brick walls committed (`ce1f433`); **Toybox Lab is built** (`toylab-01`…`04`, see *Toybox Lab* below) and waits for the user's playtest. Then `toy-09`…`20`, walls in 6 of the 12 (five wall levels and a maze), pitched batch by batch. Nothing new besides walls unless the lab shows walls add little.
+- **Next: Starfall**, the third world in the walls order (Frost Isle, Windy Peaks, Starfall, Toybox). As with the others: wall samples in Starfall's stone on the tile sheet for approval (up, sunk, in black and white), then Starfall Lab for the unsettled rules (walls with flip rings: the planned rule is that a ring under a raised wall won't fire and looks locked, and walls cross floors like bridges), sign-off and frozen rules, then `star-09`…`20` in batches of 5, with walls in 4 of the 12 (three wall levels and a maze). Grill the user on anything big first. **Status (2026-11-19):** Starfall's walls are **dusk moss**; the locked-ring rules are frozen. Batch 1 (`star-09`…`13`) is approved and committed. **Starfall is complete at 20** (all committed). **Toybox's walls:** grey brick walls and the walls-with-shapes rules are committed and frozen (`86e50be`). **The twist is the cube door** (only the cube fits through; the arch and slot were dropped after a first look); its lab level `toylab-05` waits for playtest. Then `toy-09`…`13` from the batch 1 pitch, walls in 6 of the 12.
 - **Lessons from Windy Peaks' last batches:** every level its own idea, never a liked level's frame reused; mechanics mix in as ingredients; no special tile that never acts (`lint` warns); par and states climb, and the finale clearly tops the rest.
 - **Done this stretch (2026-11-08…09):** Frost Isle complete at 20 (`frost-19` Carousel, `frost-20` Grand Tour, both liked). The title reads *SkyTumble* everywhere. Windy Peaks' walls are rust-brown ironstone. The rules for walls with launch pads are built and **frozen** after Peaks Lab (`peakslab-01`…`06`, three rounds, all on the animation); see *Mechanics* and *Peaks Lab* below. Landing marks follow the walls. DESIGN.md's finished history moved to `DESIGN-archive.md`.
 - **Tools added:** `lint` warns on boards too big for the camera and on pads aimed at walls; `analyze` reads templates; traces print `SHORT`/`CRASH`; the pad use `short`; `play.mjs` gains `PAGES` (screenshot any page) and `FRAMES` (shots mid-move, on a slowed throwaway build).
@@ -595,6 +596,7 @@ Rules, to be frozen per world (Frost Isle's slide and belt rows frozen 2026-11-0
 | `toylab-02` Close Shave | The normal block bumps two tiles from the stone and can't finish the corridor; a cube, stopped only by a wall right beside it, squeezes past the end |
 | `toylab-03` Mind the Middle | A lying tall block's middle hangs over a gap but not past a raised wall; the switch below drops it |
 | `toylab-04` Heavy Lifting | Only a standing tall block presses the star switch, and it moves walls; without it the wall stops the tip |
+| `toylab-05` Cube Door | The twist: a cube door lets only the cube through; fetch the cube switch, pass, and grow back to normal |
 
 - **Labs screen:** a ninth lab needed a third row; the islands overlap a little (each one's point hides behind the row below), but every lab stays readable and clickable.
 
@@ -629,6 +631,10 @@ works and what doesn't. Claude writes the code and designs handmade levels from 
 feedback; batches of 5 levels per round.
 
 ## Playtest log
+
+**2026-11-19 — Cube doors only.** "i only want it to be a feature where the cube fits through a gate, but not the 2 by 1... also maybe the width and height can be slightly higher for the structure, so it looks like the cube isn't phasing through the gate." → The slot is gone (with `toylab-06` and `07`); the door's posts now stand just outside the cube's footprint and its top well above it.
+
+**2026-11-19 — Toy gates, first look (`toylab-05`).** "i don't like that at all. i thought it was going to be a cube that would be able to go through the gate. the 2 by 1 just fades through it and it doesn't look great." → The arch became a cube door: only the cube fits, so no block passes through a frame. `toylab-05` and `07` rebuilt; the slot is unchanged, as the user hadn't tried it yet.
 
 **2026-11-19 — Toybox Lab.** The tall block's three-tile reach "feels fair"; the grey bricks "read clearly". On whether walls are enough: "i feel like there could be more for sure. walls are great to add, but i feel like there needs to be a twist." → Rules frozen; a Toybox twist is pitched before batch 1.
 

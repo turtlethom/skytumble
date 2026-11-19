@@ -176,6 +176,14 @@ export function isSolid(level: Level, x: number, y: number, bridges: number, hed
   return true;
 }
 
+/**
+ * Whether a cube door keeps this block out: only the cube fits through (the user's call, 2026-11-19,
+ * after an arch a lying block passed under and a slot a standing one fitted were both dropped).
+ */
+export function gateBlocks(tile: Tile, b: Block): boolean {
+  return tile === Tile.Door && blockLength(b) !== 1;
+}
+
 /** Something standing there stops a hedge falling onto it: a raised wall or another hedge still up. */
 function standsUp(level: Level, x: number, y: number, state: State): boolean {
   const t = tileAt(level, x, y);
@@ -192,6 +200,8 @@ function obstacle(level: Level, state: State, to: Block, dir: Dir): { x: number;
   if (dir === 'left' || dir === 'up') cells.reverse();
   for (const [x, y] of cells) {
     if (standsUp(level, x, y, state)) return { x, y, hedge: tileAt(level, x, y) === Tile.Hedge };
+    // A gate the block doesn't fit holds like a wall.
+    if (gateBlocks(tileAt(level, x, y), to)) return { x, y, hedge: false };
   }
   return null;
 }
@@ -223,7 +233,7 @@ function shift(b: Block, dir: Dir): Block {
  */
 function inTheWay(level: Level, state: State, from: Block, to: Block): { x: number; y: number } | null {
   const on = new Set(blockCells(from).map(([x, y]) => y * level.width + x));
-  const hit = blockCells(to).find(([x, y]) => !on.has(y * level.width + x) && standsUp(level, x, y, state));
+  const hit = blockCells(to).find(([x, y]) => (!on.has(y * level.width + x) && standsUp(level, x, y, state)) || gateBlocks(tileAt(level, x, y), to));
   return hit ? { x: hit[0], y: hit[1] } : null;
 }
 

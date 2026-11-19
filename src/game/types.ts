@@ -31,6 +31,8 @@ export enum Tile {
    * `Flip` with a group (0-3) starts open and locks on a press; one with no group (-1) never changes.
    */
   FlipLocked = 17,
+  /** A cube door: only the cube fits through or rests here; any other block bumps it, in any pose. */
+  Door = 18,
 }
 
 /** Standing upright, lying along the x axis, or lying along the y axis. */

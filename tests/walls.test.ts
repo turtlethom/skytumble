@@ -262,6 +262,29 @@ describe('walls on Toybox', () => {
   });
 });
 
+describe('cube doors', () => {
+  const at = (x: number, y: number, o: 'S' | 'X' | 'Y', n?: 1 | 3) => ({ block: { x, y, o, ...(n ? { n } : {}) }, bridges: 0 });
+
+  it('a cube door lets only the cube through: any other block bumps it, in any pose', () => {
+    const level = parseLevel(['S#A##']);
+    expect(step(level, at(0, 0, 'S'), 'right').outcome).toBe('bump'); // would lie across 1 and the door
+    expect(step(level, at(0, 0, 'X'), 'right').outcome).toBe('bump'); // would stand in the door
+    expect(step(level, at(1, 0, 'S', 1), 'right').state.block).toMatchObject({ x: 2, o: 'S' });
+  });
+
+  it("a lying tall block's middle doesn't pass through a cube door either", () => {
+    const level = parseLevel(['S#', '#A', '##']);
+    expect(step(level, at(0, 0, 'Y', 3), 'right').outcome).toBe('bump');
+  });
+
+  it('a belt holds a block it would push into a gate it does not fit', () => {
+    const level = parseLevel(['S#>A#']);
+    const r = step(level, at(0, 0, 'X'), 'right'); // stands on the belt, which would push it into the cube door
+    expect(r.state.block).toMatchObject({ x: 2, o: 'S' });
+    expect(r.held).toEqual([expect.objectContaining({ x: 3, belt: true })]);
+  });
+});
+
 describe('rings on Starfall', () => {
   // Rolling right twice stands the block on the ring at x=3; a switch at x=5 is its color's.
   const onRing = (ground: string) => {

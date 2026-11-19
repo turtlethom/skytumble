@@ -1362,3 +1362,11 @@ with Q/E changes them. After a move: ✈ a flight, ● a switch press, ⇄ a fli
  1- 5  → →● → → →
  6- 6  →✔
 ```
+
+## `toylab-05` Cube Door
+
+```
+ 1- 5  → ↑ ← ↓ ↓
+ 6-10  ↑ ↑ → → →
+11-14  → → → →✔
+```

@@ -892,6 +892,11 @@ export class World {
       return g;
     }
 
+    if (tile === Tile.Door) {
+      g.add(floorTile(jitter, this.theme, layer), earth(jitter, this.theme), makeDoor(!!this.theme.finish.plastic));
+      return g;
+    }
+
     if (tile === Tile.Flip || tile === Tile.FlipLocked) {
       const stone = box(0.98, 0.18, 0.98, COLORS.flipStone, { roughness: 0.7 });
       stone.position.y = -0.09;
@@ -2193,6 +2198,35 @@ function box(
   mesh.receiveShadow = true;
   mesh.castShadow = !opts.transparent;
   return mesh;
+}
+
+/** The cube door's mint plastic: a color no switch uses. */
+const GATE_COLOR = 0x5fc68f;
+
+/**
+ * A cube door on a tile: a frame of four thin posts and an open top, with a small cube on top for a
+ * sign. Only the cube fits through, so the frame clears it on every side (the cube is 0.98 wide and
+ * tall): the posts stand just outside its footprint and the top sits well above it. The frame stays
+ * open so the block shows.
+ */
+function makeDoor(plastic: boolean): THREE.Object3D {
+  const g = new THREE.Group();
+  const part = (w: number, h: number, d: number, x: number, y: number, z: number, angle = 0) => {
+    const m = plastic ? rounded(w, h, d, GATE_COLOR, Math.min(w, h, d) * 0.35, { roughness: 0.3 }) : box(w, h, d, GATE_COLOR, { roughness: 0.5 });
+    m.position.set(x, y, z);
+    m.rotation.y = angle;
+    g.add(m);
+  };
+  const [post, edge, height] = [0.06, 0.53, 1.22];
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) part(post, height, post, sx * edge, height / 2, sz * edge);
+  for (const s of [-1, 1]) {
+    part(2 * edge + post, post, post, 0, height, s * edge);
+    part(post, post, 2 * edge + post, s * edge, height, 0);
+  }
+  // Cross bars holding a small cube: "only the cube".
+  for (const angle of [Math.PI / 4, -Math.PI / 4]) part(2 * edge * Math.SQRT2, post * 0.8, post * 0.8, 0, height, 0, angle);
+  part(0.24, 0.24, 0.24, 0, height + 0.16, 0);
+  return g;
 }
 
 /**

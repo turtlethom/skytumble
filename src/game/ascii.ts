@@ -19,6 +19,7 @@ const MAX_HEDGES = 9;
  *   ~  ice          ^ v < >  conveyor pointing that way
  *   U D L R  launch pad flinging up / down / left / right
  *   +  flip tile (gravity)
+ *   A  cube door: only the cube fits through
  *   M P Q W  flip tile in the color of group 0 / 1 / 2 / 3, starting locked (a press opens it)
  *   m p q w  the same, starting open (a press locks it)
  *   c t n  shape switch: turns a block standing on it into a cube / tall block / normal block
@@ -62,6 +63,7 @@ export function parseLevel(rows: string[], switchGroups: number[] = [], bridgesO
           group = SHAPE_SWITCHES[c];
         }
         else if (c === '+') tile = Tile.Flip;
+        else if (c === 'A') tile = Tile.Door;
         else if (c === 'S') {
           if (!ground) throw new Error(`The start must be on the ground, not the ceiling (${x},${y})`);
           tile = Tile.Floor;
@@ -144,6 +146,7 @@ const CHARS: Record<Tile, string> = {
   [Tile.WallDown]: '?',
   [Tile.Hedge]: '&',
   [Tile.FlipLocked]: '?',
+  [Tile.Door]: 'A',
 };
 
 export function formatLevel(level: Level): string {

@@ -89,7 +89,8 @@ export type ShapeUse =
   | 'cube crosses fragile' // a cube rested standing on a fragile tile
   | 'tall spans a gap' // a lying tall block rested with its middle over nothing
   | 'tall presses extra-heavy'
-  | 'shaped goal'; // won as a cube or a tall block
+  | 'shaped goal' // won as a cube or a tall block
+  | 'through a door'; // came to rest in a cube door, as the cube
 
 export function shapeUses(level: Level, moves: Dir[]): ShapeUse[] {
   const uses = new Set<ShapeUse>();
@@ -106,6 +107,7 @@ export function shapeUses(level: Level, moves: Dir[]): ShapeUse[] {
     }
     if (r.pressed.some((c) => tileAt(view, c.x, c.y) === Tile.ExtraHeavy)) uses.add('tall presses extra-heavy');
     if (r.outcome === 'win' && blockLength(b) !== 2) uses.add('shaped goal');
+    if (blockCells(b).some(([x, y]) => tileAt(view, x, y) === Tile.Door)) uses.add('through a door');
     state = r.state;
   }
   return [...uses];
@@ -195,6 +197,14 @@ export function wallsOverRings(level: Level): { x: number; y: number; layer: num
   return out;
 }
 
+/** Cube doors are Toybox's: they mix with the basics, shapes, walls and belts until their other interactions are settled. */
+const NOT_WITH_GATES = [Tile.Ice, Tile.Pad, Tile.Flip, Tile.FlipLocked, Tile.Hedge];
+
+function mixesGates(level: Level): boolean {
+  const tiles = [...level.tiles, ...(level.ceiling?.tiles ?? [])];
+  return tiles.includes(Tile.Door) && (!!level.ceiling || tiles.some((t) => NOT_WITH_GATES.includes(t)));
+}
+
 function mixesWalls(level: Level): boolean {
   const tiles = [...level.tiles, ...(level.ceiling?.tiles ?? [])];
   return tiles.includes(Tile.Hedge) && (!!level.ceiling || !!level.startShape || tiles.some((t) => NOT_WITH_HEDGES.includes(t)));
@@ -203,6 +213,7 @@ function mixesWalls(level: Level): boolean {
 export function validateLevel(h: HandmadeLevel, chapter: Chapter): LevelReport {
   const errors: string[] = [];
   for (const c of wallsOverRings(h.level)) errors.push(`a wall on the other floor over the ring at ${c.x},${c.y}: walls and rings stay out of each other's way, so a ring always has somewhere to land`);
+  if (mixesGates(h.level)) errors.push('cube doors only mix with the basics, shapes, walls and belts, on one floor, until their other interactions are settled');
   if (mixesWalls(h.level)) errors.push('hedges only mix with the basics, on one floor, until their other interactions are settled');
   // A hedge falling off the grid would just vanish, while one falling onto an empty tile bridges it,
   // and both look like open sky.
