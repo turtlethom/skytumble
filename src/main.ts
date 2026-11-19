@@ -152,6 +152,9 @@ class Game {
     // 3 left) rolls the block in a grid direction from the current view.
     (window as unknown as { skytumbleKeyFor: (d: Dir) => number }).skytumbleKeyFor = (d) =>
       [0, 1, 2, 3].find((k) => this.world.gridDirForScreen(k) === d) ?? -1;
+    // Whether the game would take a move now: no animation running and none queued. The driver waits
+    // for this before each key, since a flip's camera turn changes which arrow rolls which way.
+    (window as unknown as { skytumbleIdle: () => boolean }).skytumbleIdle = () => this.status !== 'busy' && this.queued === null;
     const params = new URLSearchParams(location.search);
     this.themeOverride = THEMES[params.get('theme') ?? params.get('sheet') ?? ''] ?? null;
     if (params.has('fps')) this.readout.toggle();

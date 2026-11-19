@@ -210,8 +210,14 @@ for (const [id, moves] of Object.entries(solutions)) {
   for (let r = 0; r < Number(process.env.ROTATE ?? 0); r++) await key('KeyE');
   if (process.env.ROTATE) await sleep(800);
   await shot(`${id}-start`);
-  // Generous gaps: long slides and chained motions take over a second to animate.
+  // Each key waits until the game is idle: chained motions and flips can take several seconds, and a
+  // flip turns the camera, which changes which arrow rolls which way.
+  const idle = async () => {
+    for (let t = 0; t < 100 && !(await evalJs('window.skytumbleIdle?.() ?? true')); t++) await sleep(100);
+    await sleep(150);
+  };
   for (const [i, m] of moves.entries()) {
+    await idle();
     const k = await keyFor(m);
     // SOLUTIONS.md writes each move as its key at the starting view (↑/↓ swapped on the ceiling):
     // say so if the game disagrees.
@@ -228,7 +234,10 @@ for (const [id, moves] of Object.entries(solutions)) {
         await sleep(Number(process.env.FRAME_MS ?? 150));
         await shot(`${id}-frame${String(f).padStart(2, '0')}`);
       }
-    } else await sleep(1300);
+    } else {
+      await sleep(200);
+      await idle();
+    }
     if (process.env.STEPS === '1') await shot(`${id}-${String(i + 1).padStart(2, '0')}`);
     if (i + 1 === peekAt) {
       await key('Space');
