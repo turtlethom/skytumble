@@ -69,6 +69,8 @@ describe('design tools', () => {
     // A goal the block only ever reaches lying.
     expect(lint(draft(['S###G#'])).join('\n')).toMatch(/only ever reached lying/);
     expect(lint(draft(['S' + '#'.repeat(23) + 'G'])).join('\n')).toMatch(/bigger than any board/);
+    expect(lint(draft(['S', ...Array(10).fill('#'), 'G'])).join('\n')).toMatch(/12 rows deep/);
+    expect(lint(draft(['S', ...Array(7).fill('#'), 'G'])).join('\n')).not.toMatch(/rows deep/);
     // Pads aimed at walls (Windy Peaks): a short landing, one over nothing, and a sideways hop's crash.
     expect(lint(draft(['S##R..#H#', '..o.....G'], [0])).join('\n')).toContain('the orange wall at 7,0 stops it on 6,0 while up');
     expect(lint(draft(['S##R...K#G'])).join('\n')).toMatch(/stopped short by the fixed wall at 7,0 has nothing to stand on/);

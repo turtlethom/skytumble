@@ -309,6 +309,9 @@ export function lint(d: Draft): string[] {
   // back too far. First Glade's later levels also keep to 15x11 (11-15) and 17x11 (16-20), but long thin
   // boards past that played fine elsewhere, so only the outer bound is a warning.
   if (l.width > 23 || l.height > 13) out.push(`WARN: ${l.width}x${l.height} is bigger than any board played so far (23 wide, 13 tall): the camera pulls back too far`);
+  // Depth costs more than width: the camera looks north at an angle, so a deep board pulls it back
+  // further. star-20's first fresh build (13 deep) looked too small to the user; star-17 (9 deep) framed well.
+  else if (l.height > 10) out.push(`WARN: ${l.height} rows deep: the camera pulls back until the board looks small (aim for 10 or fewer; star-17 is 9)`);
   // Switches, in the reading order that `switches:` follows.
   const list: string[] = [];
   let count = 0;
