@@ -122,7 +122,7 @@ Walls and hedges: `H I J K` a wall starting up in group 0-3, `h i j k` starting 
 reversed bridge, `&` a toppling hedge (at most 9; pad the grid around them, or validation fails).
 A wall whose color has no switch in the level never moves: it's drawn low, with no colored line, and all
 of them merge into one mesh. Use `K` for these, so a maze can have dozens.
-Walls mix with the basics, ice, belts, pads and flips, hedges with the basics only (validation fails otherwise). A ring can take a switch color (`M P Q W` starting locked, `m p q w` open, groups 0-3): a press opens or locks it, and a locked ring doesn't fire (traces print `LOCKED`). A wall never stands over or under a ring on the other floor (validation fails). A diagnosis lists where each hedge
+Walls mix with everything (a standing tall block is stopped by a wall three tiles off, a cube only by one beside it, and a raised wall under a lying tall block's middle blocks the roll), hedges with the basics only (validation fails otherwise). A ring can take a switch color (`M P Q W` starting locked, `m p q w` open, groups 0-3): a press opens or locks it, and a locked ring doesn't fire (traces print `LOCKED`). A wall never stands over or under a ring on the other floor (validation fails). A diagnosis lists where each hedge
 lands each way; traces print `TOPPLE` with what it bridged, or `wasted`. In `analyze`, a raised wall the solution never bumps still shows `*`: it can be doing its
 job, so don't strip it the way you would an unused tile. `sim` prints bumps and knocks, and doesn't
 stop at them. Chapters are registered in play order in

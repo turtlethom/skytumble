@@ -1333,3 +1333,32 @@ with Q/E changes them. After a move: ✈ a flight, ● a switch press, ⇄ a fli
  1- 5  → →⇄ ↓● ↑ →
  6- 8  →⇄ → →✔
 ```
+
+## `toylab-01` Arm's Length
+
+```
+ 1- 5  ↓● ↑ → → →
+ 6- 6  →✔
+```
+
+## `toylab-02` Close Shave
+
+```
+ 1- 5  ↓ ↓ ↑ ↑ ↑
+ 6-10  → → → → ↓
+11-12  ↓ ↓✔
+```
+
+## `toylab-03` Mind the Middle
+
+```
+ 1- 5  ↓ ↓● ↑ → →
+ 6- 7  → ↓✔
+```
+
+## `toylab-04` Heavy Lifting
+
+```
+ 1- 5  → →● → → →
+ 6- 6  →✔
+```

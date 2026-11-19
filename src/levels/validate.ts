@@ -176,12 +176,10 @@ export function padUses(level: Level, moves: Dir[]): PadUse[] {
 }
 
 /**
- * What a wall does to another shape isn't settled yet (walls with ice and belts are: Frost Isle; with
- * pads: Windy Peaks, frozen 2026-11-09; with flips: Starfall, in its lab). Hedges stay in First Glade,
- * with the basics only, on one floor.
+ * Walls mix with everything: ice and belts (Frost Isle), pads (Windy Peaks), flips (Starfall) and
+ * shapes (Toybox, in its lab). Hedges stay in First Glade, with the basics only, on one floor.
  */
-const NOT_WITH_WALLS = [Tile.ShapeSwitch, Tile.ExtraHeavy];
-const NOT_WITH_HEDGES = [...NOT_WITH_WALLS, Tile.Flip, Tile.Pad, Tile.Ice, Tile.Conveyor];
+const NOT_WITH_HEDGES = [Tile.ShapeSwitch, Tile.ExtraHeavy, Tile.Flip, Tile.Pad, Tile.Ice, Tile.Conveyor];
 
 /** Rings with a wall directly over (or under) them on the other floor, where a flip would land inside the wall. */
 export function wallsOverRings(level: Level): { x: number; y: number; layer: number }[] {
@@ -199,15 +197,13 @@ export function wallsOverRings(level: Level): { x: number; y: number; layer: num
 
 function mixesWalls(level: Level): boolean {
   const tiles = [...level.tiles, ...(level.ceiling?.tiles ?? [])];
-  const unsettled = (not: Tile[]) => !!level.startShape || tiles.some((t) => not.includes(t));
-  if (tiles.includes(Tile.Hedge) && (!!level.ceiling || unsettled(NOT_WITH_HEDGES))) return true;
-  return tiles.some(isWall) && unsettled(NOT_WITH_WALLS);
+  return tiles.includes(Tile.Hedge) && (!!level.ceiling || !!level.startShape || tiles.some((t) => NOT_WITH_HEDGES.includes(t)));
 }
 
 export function validateLevel(h: HandmadeLevel, chapter: Chapter): LevelReport {
   const errors: string[] = [];
   for (const c of wallsOverRings(h.level)) errors.push(`a wall on the other floor over the ring at ${c.x},${c.y}: walls and rings stay out of each other's way, so a ring always has somewhere to land`);
-  if (mixesWalls(h.level)) errors.push('walls only mix with the basics, ice, belts, pads and flips, and hedges only with the basics, until their other interactions are settled');
+  if (mixesWalls(h.level)) errors.push('hedges only mix with the basics, on one floor, until their other interactions are settled');
   // A hedge falling off the grid would just vanish, while one falling onto an empty tile bridges it,
   // and both look like open sky.
   for (const c of h.level.hedgeCells ?? []) {

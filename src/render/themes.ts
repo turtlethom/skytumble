@@ -203,6 +203,8 @@ export const CHAPTER_THEMES: Record<string, Theme> = {
   peakslab: PEAKS,
   // Starfall's dusk-moss walls with flip rings, on its two floors.
   starlab: NIGHT,
+  // Toybox's grey brick walls with shapes, on its pegboard.
+  toylab: TOYBOX,
 };
 
 /** Every theme by id, so `?theme=forest` can preview one on any level or on the tile sheet. */

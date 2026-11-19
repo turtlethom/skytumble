@@ -238,6 +238,30 @@ describe('walls on Windy Peaks', () => {
   });
 });
 
+describe('walls on Toybox', () => {
+  const at = (x: number, y: number, o: 'S' | 'X' | 'Y', n?: 1 | 3) => ({ block: { x, y, o, ...(n ? { n } : {}) }, bridges: 0 });
+
+  it('a standing tall block is stopped by a raised wall three tiles off; the normal block rolls there', () => {
+    const level = parseLevel(['S##H']);
+    expect(step(level, at(0, 0, 'S', 3), 'right').outcome).toBe('bump');
+    expect(step(level, at(0, 0, 'S'), 'right').outcome).toBe('ok');
+  });
+
+  it('a cube is stopped only by a wall right next to it', () => {
+    const level = parseLevel(['S#H']);
+    expect(step(level, at(0, 0, 'S', 1), 'right').outcome).toBe('ok');
+    expect(step(level, at(1, 0, 'S', 1), 'right').outcome).toBe('bump');
+  });
+
+  it("a raised wall under a lying tall block's middle blocks the roll; a gap there does not", () => {
+    // Lying across (y) at x=0, rows 0-2, rolling right onto x=1: the middle lands on row 1.
+    const walled = parseLevel(['S#', '#H', '##']);
+    expect(step(walled, at(0, 0, 'Y', 3), 'right').outcome).toBe('bump');
+    const gap = parseLevel(['S#', '#.', '##']);
+    expect(step(gap, at(0, 0, 'Y', 3), 'right').state.block).toMatchObject({ x: 1, y: 0, o: 'Y' });
+  });
+});
+
 describe('rings on Starfall', () => {
   // Rolling right twice stands the block on the ring at x=3; a switch at x=5 is its color's.
   const onRing = (ground: string) => {
@@ -478,12 +502,12 @@ describe('validation', () => {
   });
 
   it('refuses walls and hedges with mechanics whose interactions are not settled', () => {
-    for (const grid of ['S&~G', 'S&>G', 'S&RG', 'S&+G', 'SHcG', 'S&XG']) expect(report(grid)).toMatch(/only mix/);
+    for (const grid of ['S&~G', 'S&>G', 'S&RG', 'S&+G', 'S&cG', 'S&XG']) expect(report(grid)).toMatch(/only mix/);
     expect(report('S&#G\n---\n....')).toMatch(/only mix/);
   });
 
   it('accepts walls with ice and belts (Frost Isle), pads (Windy Peaks) and flips on two floors (Starfall)', () => {
-    for (const grid of ['SH~G', 'SK>G', 'Sh~>G', 'SHRG', 'S#+#\n---\n..hG']) expect(report(grid)).not.toMatch(/only mix/);
+    for (const grid of ['SH~G', 'SK>G', 'Sh~>G', 'SHRG', 'S#+#\n---\n..hG', 'SHcG', 'SoXH#G']) expect(report(grid)).not.toMatch(/only mix/);
   });
 
   it('refuses a wall over or under a ring on the other floor', () => {

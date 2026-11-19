@@ -18,14 +18,15 @@ const LAYOUT: Record<string, { x: number; y: number; theme: string }> = {
   wind: { x: 80, y: 23, theme: 'peaks' },
   star: { x: 110, y: 70, theme: 'night' },
   toy: { x: 140, y: 23, theme: 'toy' },
-  lab: { x: 20, y: 22, theme: 'lab' },
-  windlab: { x: 60, y: 22, theme: 'lab' },
-  gravlab: { x: 100, y: 22, theme: 'lab' },
-  shapelab: { x: 140, y: 22, theme: 'lab' },
-  gladelab: { x: 20, y: 64, theme: 'lab' },
-  frostlab: { x: 60, y: 64, theme: 'lab' },
-  peakslab: { x: 100, y: 64, theme: 'lab' },
-  starlab: { x: 140, y: 64, theme: 'lab' },
+  lab: { x: 20, y: 16, theme: 'lab' },
+  windlab: { x: 60, y: 16, theme: 'lab' },
+  gravlab: { x: 100, y: 16, theme: 'lab' },
+  shapelab: { x: 140, y: 16, theme: 'lab' },
+  gladelab: { x: 20, y: 45, theme: 'lab' },
+  frostlab: { x: 60, y: 45, theme: 'lab' },
+  peakslab: { x: 100, y: 45, theme: 'lab' },
+  starlab: { x: 140, y: 45, theme: 'lab' },
+  toylab: { x: 20, y: 74, theme: 'lab' },
 };
 
 const SIGNATURE_LABEL: Record<string, string> = { walls: 'Hedges', ice: 'Ice & belts', pads: 'Launch pads', gravity: 'Gravity', shapes: 'Shapes' };

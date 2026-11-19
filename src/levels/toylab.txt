@@ -1,0 +1,46 @@
+title: Toybox Lab (prototypes)
+
+=== toylab-01
+par: 6
+name: Arm's Length
+idea: Tipping over, a tall block covers three tiles, so a raised wall stops it from three tiles away: try rolling right. Press the orange switch lying across the column, and the wall sinks.
+shape: tall
+switches: 0
+guard: off
+S##H####T
+#........
+#........
+o........
+
+=== toylab-02
+par: 12
+name: Close Shave
+idea: A normal block can't get to the end of the corridor: two tiles from the stone it bumps. A cube rolls one tile at a time, so only a wall right beside it stops it. Fetch the cube switch, then squeeze past the end and down to the goal.
+guard: off
+......
+S####K
+#...#.
+#...#.
+c...C.
+
+=== toylab-03
+par: 7
+name: Mind the Middle
+idea: Lying down, a tall block rests on its two ends, so its middle can hang over a gap but not pass a raised wall, which stands two tiles high. Roll right and the wall stops you; press the switch below first.
+shape: tall
+switches: 0
+guard: off
+S...
+####
+#.H#
+####
+o..T
+
+=== toylab-04
+par: 6
+name: Heavy Lifting
+idea: Only a standing tall block presses the star switch, and a star switch moves walls like any other. It drops the wall your next tip lands on; without it, the wall stops you mid-tip.
+shape: tall
+switches: 0
+guard: off
+S###X#H#####T
