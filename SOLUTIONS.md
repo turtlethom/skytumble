@@ -870,6 +870,16 @@ with Q/E changes them. After a move: ✈ a flight, ● a switch press, ⇄ a fli
 41-44  → ↑✈⇄ ↑ ↑✔
 ```
 
+## `star-19` Switchback
+
+```
+ 1- 5  → →✈⇄ → →● ←
+ 6-10  ← ↑ → ↓ ←
+11-15  ↑ → ↓ ← ↓
+16-20  ← ←● → ↑ ↑✈⇄
+21-22  ↓ ↓✔
+```
+
 ## `toy-01` Building Blocks
 
 ```
