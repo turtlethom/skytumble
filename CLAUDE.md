@@ -55,6 +55,10 @@ npm run -s lattice -- 5 3 26 36 1 150 2 > out.txt
                                           #   MAZE=1 fills the rest with low stone, HEDGES=0 leaves hedges
                                           #   out (every world but First Glade). PADS=0.3 puts pads on junctions,
                                           #   SWITCHES=<n> caps switches. Run a few seeds at once
+npm run -s locks -- <template> <parLo> <parHi> [rings=+MmPp] [colors=01] [top=5] > out.txt
+                                          # ring networks: every coloring of the `Z` ring slots and `Y` switch
+                                          #   slots, solved and ranked; STRICT=1 keeps levels where every color is
+                                          #   needed both ways, KINDS=xo allows soft switches, MAX caps the count
 npm run -s strip -- out.txt [name]        # remove what the solution doesn't need, keeping par
 npm run -s plankify -- <file|id> [x0-x1]  # floor to planks wherever par holds (in columns x0-x1): a search
                                           #   fills plank fields with floor; this leaves only needed stones
