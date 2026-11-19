@@ -1145,3 +1145,37 @@ with Q/E changes them. After a move: ✈ a flight, ● a switch press, ⇄ a fli
 ```
  1- 4  → ↑● ↓ →✈✔
 ```
+
+## `starlab-01` Padlock
+
+```
+ 1- 5  → → →● ←⇄ →
+ 6- 6  →✔
+```
+
+## `starlab-02` Half Locked
+
+```
+ 1- 4  ↑● ↓ →⇄ →✔
+```
+
+## `starlab-03` Lock It
+
+```
+ 1- 5  ↓● ↑ → → →
+ 6- 6  →✔
+```
+
+## `starlab-04` Swap
+
+```
+ 1- 5  → →⇄ → →● →
+ 6- 8  →⇄ → →✔
+```
+
+## `starlab-05` Upstairs Switch
+
+```
+ 1- 5  → →⇄ ↓● ↑ →
+ 6- 8  →⇄ → →✔
+```

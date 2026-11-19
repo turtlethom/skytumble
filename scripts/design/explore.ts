@@ -1,7 +1,7 @@
 // Whole-level exploration for the design tools: every reachable state, which of them can still
 // win, where each pad sends the block, and a map of where the block can get to. diagnose() turns
 // it into a report that says *why* a draft is unsolvable instead of just "UNSOLVABLE".
-import { blockCells, bridgeOut, findGoal, flight, initialState, isSolid, isWall, landing, layerView, step, tileAt } from '../../src/game/rules';
+import { blockCells, bridgeOut, findGoal, flight, initialState, isRing, isSolid, isWall, landing, layerView, step, tileAt } from '../../src/game/rules';
 import { Block, DIR_DELTA, DIRS, Dir, Level, State, Tile } from '../../src/game/types';
 
 const keyOf = (s: State) => `${s.block.x},${s.block.y},${s.block.o},${s.block.n ?? 2},${s.bridges},${s.layer ?? 0},${s.hedges ?? 0}`;
@@ -156,10 +156,12 @@ export function flipReport(full: Level): string[] {
     const there = layerView(full, 1 - layer);
     for (let y = 0; y < full.height; y++) {
       for (let x = 0; x < full.width; x++) {
-        if (tileAt(here, x, y) !== Tile.Flip) continue;
+        if (!isRing(tileAt(here, x, y))) continue;
         const other = tileName(there, x, y, full.bridgesOn);
         const verdict = tileAt(there, x, y) === Tile.Empty ? '✗ FALLS into the sky' : 'lands';
-        lines.push(`${layer ? 'ceiling' : 'ground '} flip at ${x},${y} → ${layer ? 'ground' : 'ceiling'}: ${other}  ${verdict}`);
+        const g = here.groups[y * full.width + x];
+        const lock = g < 0 ? '' : `  (group ${g} ring, starts ${tileAt(here, x, y) === Tile.FlipLocked ? 'locked' : 'open'})`;
+        lines.push(`${layer ? 'ceiling' : 'ground '} flip at ${x},${y} → ${layer ? 'ground' : 'ceiling'}: ${other}  ${verdict}${lock}`);
       }
     }
   }

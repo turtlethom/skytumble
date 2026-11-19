@@ -44,6 +44,8 @@ export interface StepResult {
    * `after` counts the motions that came before it.
    */
   held?: Held[];
+  /** Locked flip rings the block came to rest fully on: a press of their color would open them. */
+  locked?: { x: number; y: number }[];
 }
 
 export interface Held {
@@ -261,7 +263,35 @@ function padLaunch(level: Level, b: Block): Dir | null {
 
 /** Whether flip tiles fire under this block: standing on one, or lying fully on two. */
 function flipFires(level: Level, b: Block): boolean {
-  return fullyOn(level, b, Tile.Flip);
+  return blockCells(b).every(([x, y]) => isRing(tileAt(level, x, y)));
+}
+
+/** A flip ring, open or locked. */
+export function isRing(tile: Tile): boolean {
+  return tile === Tile.Flip || tile === Tile.FlipLocked;
+}
+
+/**
+ * Whether a ring is open: a press of its group's switch toggles it, like a wall, from how it started.
+ * A ring with no group never changes.
+ */
+export function ringOpen(tile: Tile, group: number, bridges: number, startBridges: number): boolean {
+  if (group < 0) return tile === Tile.Flip;
+  const flipped = ((bridges ^ startBridges) >> group) & 1;
+  return (tile === Tile.Flip) !== (flipped === 1);
+}
+
+/** The locked rings under this block, on a level's layer view. */
+function lockedUnder(level: Level, state: State, b: Block): { x: number; y: number }[] {
+  return blockCells(b)
+    .filter(([x, y]) => !ringOpen(tileAt(level, x, y), groupAt(level, x, y), state.bridges, level.bridgesOn))
+    .map(([x, y]) => ({ x, y }));
+}
+
+/** Whether the ring at a cell of `layer` is locked in this state. */
+export function ringLocked(level: Level, state: State, x: number, y: number, layer: number): boolean {
+  const view = layerView(level, layer);
+  return isRing(tileAt(view, x, y)) && lockedUnder(view, state, { x, y, o: 'S' }).length > 0;
 }
 
 /**
@@ -390,6 +420,7 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
   // Then belts, pads and flip tiles act wherever the block rests, until none does. At most one
   // belt push per move, and each pad or flip tile fires at most once, so every move ends.
   let pushed = false;
+  let locked: { x: number; y: number }[] = [];
   const fired = new Set<number>();
   const cellKeys = () => blockCells(block).map(([x, y]) => (layer * level.height + y) * level.width + x);
   while (still()) {
@@ -408,7 +439,9 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
       continue;
     }
     const launch = padLaunch(view, block);
-    const flips = !launch && flipFires(view, block);
+    const ring = !launch && flipFires(view, block);
+    locked = ring ? lockedUnder(view, state, block) : [];
+    const flips = ring && locked.length === 0;
     if (!launch && !flips) break;
     const cells = cellKeys();
     if (cells.some((c) => fired.has(c))) break;
@@ -481,6 +514,7 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
     pressed,
     ...(reshaped ? { reshaped } : {}),
     ...(held.length ? { held } : {}),
+    ...(locked.length ? { locked } : {}),
   };
 }
 

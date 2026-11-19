@@ -17,6 +17,7 @@ const FILL: Partial<Record<Tile, string>> = {
   [Tile.Conveyor]: '#4a5266',
   [Tile.Pad]: '#dfe5ec',
   [Tile.Flip]: '#b48cff',
+  [Tile.FlipLocked]: '#6a6188',
   [Tile.ShapeSwitch]: '#f6f1e6',
   [Tile.ExtraHeavy]: '#86d07a',
 };

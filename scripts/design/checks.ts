@@ -3,7 +3,7 @@
 // raised wall hides from the opening camera, and lint a draft for the mistakes that cost the most rounds.
 import { formatLevel, parseLevel } from '../../src/game/ascii';
 import { DIR_DELTA, DIRS, Dir, Level, Tile } from '../../src/game/types';
-import { blockCells, findGoal, flight, initialState, isSolid, landing, step, wallUp } from '../../src/game/rules';
+import { blockCells, findGoal, flight, initialState, isSolid, landing, layerView, step, wallUp } from '../../src/game/rules';
 import { solve } from '../../src/game/solver';
 import { flipUses, iceUses, padUses, shapeUses } from '../../src/levels/validate';
 import { closest, explore, padArrow } from './explore';
@@ -50,6 +50,7 @@ export interface WallColor {
   group: number;
   walls: number;
   bridges: number;
+  rings: number;
   /** Par with every wall of this color lowered for good, and raised for good; null if unsolvable. */
   allDown: number | null;
   allUp: number | null;
@@ -61,43 +62,52 @@ const isBridgeTile = (t: Tile) => t === Tile.Bridge || t === Tile.BridgeReversed
 
 /**
  * For each switch color: fix everything it moves one way for good, then the other way, and re-solve.
- * Walls go all down (floor) and all up (walls no switch moves); bridges all out (floor) and all in (gaps).
+ * Walls go all down (floor) and all up (walls no switch moves); bridges all out (floor) and all in (gaps); rings all open and all locked (floor).
  * A color only earns its place if both change the par. Walls of a color with no switch never move (low
- * stone), so they aren't checked. One-layer levels only: a two-layer level reports nothing.
+ * stone), so they aren't checked. On two floors, a color's walls and bridges on both are fixed together.
  */
 export function wallColors(level: Level, base = parOf(level)): WallColor[] {
-  if (level.ceiling) return [];
   const pressed = switchGroups(level);
-  const movers = (t: Tile) => isWall(t) || isBridgeTile(t);
-  const groups = [...new Set(level.tiles.flatMap((t, i) => (movers(t) && pressed.has(level.groups[i]) ? [level.groups[i]] : [])))];
+  const isRingTile = (t: Tile) => t === Tile.Flip || t === Tile.FlipLocked;
+  const movers = (t: Tile) => isWall(t) || isBridgeTile(t) || isRingTile(t);
+  const floors = [level, ...(level.ceiling ? [level.ceiling] : [])];
+  const groups = [...new Set(floors.flatMap((f) => f.tiles.flatMap((t, i) => (movers(t) && pressed.has(f.groups[i]) ? [f.groups[i]] : []))))];
+  const count = (g: number, is: (t: Tile) => boolean) => floors.reduce((n, f) => n + f.tiles.filter((t, i) => is(t) && f.groups[i] === g).length, 0);
   return groups.map((g) => {
     const fixed = (up: boolean) => {
-      const l = { ...level, tiles: level.tiles.slice(), groups: level.groups.slice() };
-      l.tiles.forEach((t, i) => {
-        if (level.groups[i] !== g) return;
-        if (isWall(t)) {
-          l.tiles[i] = up ? Tile.WallUp : Tile.Floor;
-          l.groups[i] = up ? 9 : -1;
-        } else if (isBridgeTile(t)) {
-          l.tiles[i] = up ? Tile.Empty : Tile.Floor;
-          l.groups[i] = -1;
-        }
-      });
+      const fix = <F extends { tiles: Tile[]; groups: number[] }>(f: F): F => {
+        const out = { ...f, tiles: f.tiles.slice(), groups: f.groups.slice() };
+        f.tiles.forEach((t, i) => {
+          if (f.groups[i] !== g) return;
+          if (isWall(t)) {
+            out.tiles[i] = up ? Tile.WallUp : Tile.Floor;
+            out.groups[i] = up ? 9 : -1;
+          } else if (isBridgeTile(t)) {
+            out.tiles[i] = up ? Tile.Empty : Tile.Floor;
+            out.groups[i] = -1;
+          } else if (isRingTile(t)) {
+            // "Down" opens a ring for good, "up" locks it for good, which leaves plain floor.
+            out.tiles[i] = up ? Tile.Floor : Tile.Flip;
+            out.groups[i] = -1;
+          }
+        });
+        return out;
+      };
+      const l = fix(level);
+      if (level.ceiling) l.ceiling = fix(level.ceiling);
       return parOf(l);
     };
     const allDown = fixed(false);
     const allUp = fixed(true);
-    const walls = level.tiles.filter((t, i) => isWall(t) && level.groups[i] === g).length;
-    const bridges = level.tiles.filter((t, i) => isBridgeTile(t) && level.groups[i] === g).length;
-    return { group: g, walls, bridges, allDown, allUp, moves: allDown !== base && allUp !== base };
+    return { group: g, walls: count(g, isWall), bridges: count(g, isBridgeTile), rings: count(g, isRingTile), allDown, allUp, moves: allDown !== base && allUp !== base };
   });
 }
 
 export const wallsText = (colors: WallColor[]) =>
   colors
     .map((c) => {
-      const what = [c.walls ? `${c.walls} wall${c.walls > 1 ? 's' : ''}` : '', c.bridges ? `${c.bridges} bridge${c.bridges > 1 ? 's' : ''}` : ''].filter(Boolean).join(' + ');
-      return `${COLOR[c.group] ?? `group ${c.group}`} (${what}): ${c.moves ? 'moves' : 'NEED NOT MOVE'} (down/out ${c.allDown ?? 'X'}, up/in ${c.allUp ?? 'X'})`;
+      const what = [c.walls ? `${c.walls} wall${c.walls > 1 ? 's' : ''}` : '', c.bridges ? `${c.bridges} bridge${c.bridges > 1 ? 's' : ''}` : '', c.rings ? `${c.rings} ring${c.rings > 1 ? 's' : ''}` : ''].filter(Boolean).join(' + ');
+      return `${COLOR[c.group] ?? `group ${c.group}`} (${what}): ${c.moves ? 'moves' : 'NEED NOT MOVE'} (down/out/open ${c.allDown ?? 'X'}, up/in/locked ${c.allUp ?? 'X'})`;
     })
     .join(' · ');
 
@@ -254,7 +264,7 @@ export function hidden(level: Level): string[] {
   };
   const name: Partial<Record<Tile, string>> = {
     [Tile.SoftSwitch]: 'switch', [Tile.HeavySwitch]: 'heavy switch', [Tile.ExtraHeavy]: 'star switch', [Tile.Conveyor]: 'belt',
-    [Tile.Pad]: 'pad', [Tile.Flip]: 'ring', [Tile.ShapeSwitch]: 'shape switch', [Tile.Goal]: 'goal',
+    [Tile.Pad]: 'pad', [Tile.Flip]: 'ring', [Tile.FlipLocked]: 'locked ring', [Tile.ShapeSwitch]: 'shape switch', [Tile.Goal]: 'goal',
   };
   const out: string[] = [];
   level.tiles.forEach((t, i) => {
@@ -302,10 +312,31 @@ export function lint(d: Draft): string[] {
   }
   // Colors with nothing to press them, and switches with nothing to move.
   const pressed = switchGroups(l);
-  const moved = new Set(l.tiles.flatMap((t, i) => (isWall(t) || t === Tile.Bridge || t === Tile.BridgeReversed ? [l.groups[i]] : [])));
-  for (const g of moved) if (!pressed.has(g) && l.tiles.some((t, i) => (t === Tile.Bridge || t === Tile.BridgeReversed) && l.groups[i] === g)) out.push(`WARN: ${COLOR[g] ?? g} bridges have no switch: they never move`);
-  for (const g of moved) if (!pressed.has(g) && l.tiles.some((t, i) => isWall(t) && l.groups[i] === g)) out.push(`note: ${COLOR[g] ?? g} walls have no switch: they're low stone that never moves`);
-  for (const g of pressed) if (!moved.has(g)) out.push(`WARN: the ${COLOR[g] ?? g} switch moves nothing`);
+  // Both floors: a color's walls and bridges move together wherever they are.
+  const floors = [l, ...(l.ceiling ? [l.ceiling] : [])];
+  const allTiles = floors.flatMap((f) => f.tiles);
+  const allGroups = floors.flatMap((f) => f.groups);
+  const colored = (t: Tile, g: number) => isWall(t) || t === Tile.Bridge || t === Tile.BridgeReversed || ((t === Tile.Flip || t === Tile.FlipLocked) && g >= 0);
+  const moved = new Set(allTiles.flatMap((t, i) => (colored(t, allGroups[i]) ? [allGroups[i]] : [])));
+  for (const g of moved) if (!pressed.has(g) && allTiles.some((t, i) => (t === Tile.Bridge || t === Tile.BridgeReversed) && allGroups[i] === g)) out.push(`WARN: ${COLOR[g] ?? g} bridges have no switch: they never move`);
+  for (const g of moved) if (!pressed.has(g) && allTiles.some((t, i) => isWall(t) && allGroups[i] === g)) out.push(`note: ${COLOR[g] ?? g} walls have no switch: they're low stone that never moves`);
+  // Rings in a switch color, which a press opens or locks, and walls over rings, which validation refuses.
+  if (l.ceiling) {
+    for (const layer of [0, 1]) {
+      const here = layerView(l, layer);
+      const there = layerView(l, 1 - layer);
+      here.tiles.forEach((t, i) => {
+        if (t !== Tile.Flip && t !== Tile.FlipLocked) return;
+        const [x, y, g] = [i % l.width, Math.floor(i / l.width), here.groups[i]];
+        const where = `the ring at ${x},${y} on the ${layer ? 'ceiling' : 'ground'}`;
+        if (isWall(there.tiles[i])) out.push(`WARN: ${where} has a wall over it on the other floor: move one, walls and rings can't share a cell`);
+        if (g < 0) return;
+        const starts = t === Tile.FlipLocked ? 'locked' : 'open';
+        if (!pressed.has(g)) out.push(t === Tile.FlipLocked ? `WARN: ${where} is locked and no ${COLOR[g] ?? g} switch opens it: it's decoration that visibly does nothing` : `note: ${where} is ${COLOR[g] ?? g} but no switch locks it: use + instead`);
+        else out.push(`${where} is ${COLOR[g] ?? g}, starting ${starts}`);
+      });
+    }
+  }
   // A belt pushing at a wall, with solid ground behind it: the block can lie across the two and roll
   // straight onto the wall's tile, skipping the ride.
   l.tiles.forEach((t, i) => {

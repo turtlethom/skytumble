@@ -178,7 +178,7 @@ export function mechanicsIn(level: Level): MechanicId[] {
     if (t === Tile.Ice) found.add('ice');
     else if (t === Tile.Conveyor) found.add('belts');
     else if (t === Tile.Pad) found.add('pads');
-    else if (t === Tile.Flip) found.add('flips');
+    else if (t === Tile.Flip || t === Tile.FlipLocked) found.add('flips');
     else if (t === Tile.ExtraHeavy) found.add('extraHeavy');
     else if (t === Tile.Hedge) found.add('hedges');
     else if (t === Tile.ShapeSwitch && groups[i] === 1) found.add('cube');

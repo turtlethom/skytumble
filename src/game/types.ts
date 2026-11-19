@@ -26,6 +26,11 @@ export enum Tile {
   WallDown = 15,
   /** Holds until a standing block rolls into it, then topples that way for good. Group = its index in `Level.hedgeCells`. */
   Hedge = 16,
+  /**
+   * A flip tile that starts locked: it won't fire until a press of its group's switch opens it. A
+   * `Flip` with a group (0-3) starts open and locks on a press; one with no group (-1) never changes.
+   */
+  FlipLocked = 17,
 }
 
 /** Standing upright, lying along the x axis, or lying along the y axis. */

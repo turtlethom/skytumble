@@ -19,7 +19,7 @@ describe('chapter files', () => {
   it('report errors with file and line', () => {
     expect(() => parseChapter('lab', '=== lab-01\nbogus: 1\nS#G')).toThrow('lab.txt:1: unknown field');
     expect(() => parseChapter('lab', 'title: Lab\nS#G')).toThrow('lab.txt:2: grid row before');
-    expect(() => parseChapter('lab', '=== lab-01\nS#Q')).toThrow("Unknown level character 'Q'");
+    expect(() => parseChapter('lab', '=== lab-01\nS#Z')).toThrow("Unknown level character 'Z'");
   });
 });
 

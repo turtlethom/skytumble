@@ -41,6 +41,8 @@ export interface WallStone {
   mortar: string;
   deck: number;
   snow?: number;
+  /** The tiny grains flecked over the stone, dark then light, if not granite's grey. */
+  flecks?: [string, string];
 }
 
 /** The ground and block every world starts from until it restyles them. */
@@ -72,6 +74,16 @@ const NIGHT: Theme = {
   earth: { soil: 0x2b2f66, hanging: 0x8fa6e8, style: 'glowroots' },
   fragile: { light: 0x1f6f78, dark: 0x185a62, weathered: true },
   finish: { switchBase: 0xd7dbea, rail: 0xd7dbea },
+  // Dusk moss (chosen 2026-11-19 over moss, dark moss, blue moss and sandstone): a grey-purple stone of
+  // the night itself, far darker than the grass and dull beside the bright violet rings. Dark meteorite
+  // was dropped: a sunk wall's dark top read as a gap, where gaps show the darkened Earth.
+  wall: {
+    style: 'ashlar',
+    shades: ['#545468', '#5b5b70', '#636378', '#4e4e62', '#69697e', '#58586c'],
+    mortar: '#2c2c3a',
+    deck: 0xb0aeb8,
+    flecks: ['#25252f', '#c4c8b8'],
+  },
   // The usual violet nearly matches this grass.
   flipMark: 0x3c1a9e,
 };
@@ -176,6 +188,8 @@ export const CHAPTER_THEMES: Record<string, Theme> = {
   frostlab: FROST,
   // Windy Peaks' ironstone walls, judged on its slate.
   peakslab: PEAKS,
+  // Starfall's dusk-moss walls with flip rings, on its two floors.
+  starlab: NIGHT,
 };
 
 /** Every theme by id, so `?theme=forest` can preview one on any level or on the tile sheet. */

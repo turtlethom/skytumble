@@ -22,9 +22,10 @@ const LAYOUT: Record<string, { x: number; y: number; theme: string }> = {
   windlab: { x: 60, y: 22, theme: 'lab' },
   gravlab: { x: 100, y: 22, theme: 'lab' },
   shapelab: { x: 140, y: 22, theme: 'lab' },
-  gladelab: { x: 40, y: 64, theme: 'lab' },
-  frostlab: { x: 80, y: 64, theme: 'lab' },
-  peakslab: { x: 120, y: 64, theme: 'lab' },
+  gladelab: { x: 20, y: 64, theme: 'lab' },
+  frostlab: { x: 60, y: 64, theme: 'lab' },
+  peakslab: { x: 100, y: 64, theme: 'lab' },
+  starlab: { x: 140, y: 64, theme: 'lab' },
 };
 
 const SIGNATURE_LABEL: Record<string, string> = { walls: 'Hedges', ice: 'Ice & belts', pads: 'Launch pads', gravity: 'Gravity', shapes: 'Shapes' };

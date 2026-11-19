@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Motion, blockCells, blockLength, bridgeOut, flightLandings, hedgeFell, isBridge, isWall, layerView, tileAt as levelTileAt, wallUp } from '../game/rules';
+import { Motion, blockCells, blockLength, bridgeOut, flightLandings, hedgeFell, isBridge, isWall, layerView, ringLocked, tileAt as levelTileAt, wallUp } from '../game/rules';
 import { Block, DIR_DELTA, DIRS, Dir, Level, State, Tile } from '../game/types';
 import { ForestScenery } from './forest';
 import { FrostScenery } from './frost';
@@ -38,6 +38,11 @@ const COLORS = {
   flip: 0xb48cff,
   /** Flip landing marks: the flip tiles' violet, deep enough to hold up on grass. */
   flipMark: 0x8a5cf0,
+  /** A locked flip ring: its violet gone dull, with no glow. */
+  flipLocked: 0x4c4766,
+  /** The padlock's shackle, and a lock for a ring under low stone that never moves. */
+  lockMetal: 0xcfd3df,
+  lockStone: 0x8a8a9a,
   /** The landing preview: the block's footprint where a flip would leave it. */
   preview: 0xcbb2ff,
   /** Shape switches: a stone disc like the other switches, with a bar in the block's own color. */
@@ -259,6 +264,12 @@ export class World {
   /** Dirt and hanging rock per layer: hidden when you see a layer from behind, where it's only clutter. */
   private earths: THREE.Object3D[][] = [[], []];
   private flipGlows: THREE.MeshStandardMaterial[] = [];
+  /**
+   * Every flip ring, with its padlock (if a switch can lock it) and the violet landing mark over it on
+   * the other floor. Locked, a ring has no glow, shows its padlock and loses its mark.
+   */
+  private lockAt = new THREE.Vector3();
+  private rings: { layer: number; x: number; y: number; glow: THREE.MeshStandardMaterial; lock: THREE.Object3D | null; mark: THREE.Object3D | null; locked: boolean }[] = [];
   private hasCeiling = false;
   /** The layer the block is on, and the one being looked at (differs while peeking). */
   private layer = 0;
@@ -451,6 +462,7 @@ export class World {
     this.earths = [[], []];
     this.level = level;
     this.flipGlows = [];
+    this.rings = [];
     this.hasCeiling = !!level.ceiling;
     this.applyTheme(theme);
     this.switches.clear();
@@ -491,12 +503,18 @@ export class World {
     for (const layer of layers) {
       const view = layerView(level, layer);
       view.tiles.forEach((t, i) => {
-        if (t === Tile.Flip) tileAt(1 - layer, i % level.width, Math.floor(i / level.width))?.obj.add(makeLandingMark(theme.flipMark ?? COLORS.flipMark));
+        if (t !== Tile.Flip && t !== Tile.FlipLocked) return;
+        const [x, y] = [i % level.width, Math.floor(i / level.width)];
+        const mark = makeLandingMark(theme.flipMark ?? COLORS.flipMark);
+        tileAt(1 - layer, x, y)?.obj.add(mark);
+        const ring = this.rings.find((r) => r.layer === layer && r.x === x && r.y === y);
+        if (ring) ring.mark = mark;
       });
     }
     this.landingMarks.clear();
     this.marksFor = { level, color: theme.landingMark };
     this.showLandings(state);
+    this.showLocks(state);
     for (const layer of layers) {
       this.layerGroups[layer].traverse((o) => {
         if (o.userData.earth) this.earths[layer].push(o);
@@ -874,10 +892,20 @@ export class World {
       return g;
     }
 
-    if (tile === Tile.Flip) {
+    if (tile === Tile.Flip || tile === Tile.FlipLocked) {
       const stone = box(0.98, 0.18, 0.98, COLORS.flipStone, { roughness: 0.7 });
       stone.position.y = -0.09;
       g.add(stone, earth(jitter, this.theme));
+      // A ring a switch opens and locks has a thin line of its color around it, as walls do.
+      const lockColor = this.ringLockColor(tile, group);
+      if (lockColor !== null && lockColor !== COLORS.lockStone) {
+        for (const [dx, dz, w, d] of [[0, -0.45, 0.9, 0.05], [0, 0.45, 0.9, 0.05], [-0.45, 0, 0.05, 0.85], [0.45, 0, 0.05, 0.85]]) {
+          const edge = box(w, 0.012, d, lockColor, { roughness: 0.6 });
+          edge.position.set(dx, 0.006, dz);
+          edge.castShadow = false;
+          g.add(edge);
+        }
+      }
       // A glowing ring with a bright core: "gravity turns here".
       const glow = new THREE.MeshStandardMaterial({ color: COLORS.flip, emissive: COLORS.flip, emissiveIntensity: 0.8 });
       const ring = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.05, 8, 32), glow);
@@ -887,6 +915,15 @@ export class World {
       core.position.y = 0.02;
       g.add(ring, core);
       this.flipGlows.push(glow);
+      // Locked, it shows a padlock in its switch's color.
+      const lock = lockColor === null ? null : makePadlock(lockColor);
+      if (lock) {
+        lock.position.y = 0.04;
+        lock.scale.setScalar(1.3);
+        lock.visible = false;
+        g.add(lock);
+      }
+      this.rings.push({ layer, x, y, glow, lock, mark: null, locked: false });
       return g;
     }
 
@@ -1160,8 +1197,75 @@ export class World {
     for (const [key, mark] of this.landingMarks) mark.visible = want.has(key);
   }
 
+  /**
+   * The color of a ring's padlock: its switch's color, or stone grey for a ring locked for good (no
+   * switch opens it); null for a ring that is never locked.
+   */
+  private ringLockColor(tile: Tile, group: number): number | null {
+    if (group < 0) return null;
+    if (this.hasSwitch(group)) return GROUP_COLORS[group % GROUP_COLORS.length];
+    return tile === Tile.FlipLocked ? COLORS.lockStone : null;
+  }
+
+  /** Lock and unlock rings to match the switches in `state`: a locked ring goes dull, shows its padlock and loses its landing mark. */
+  private showLocks(state: State): void {
+    const level = this.level;
+    if (!level) return;
+    for (const r of this.rings) {
+      r.locked = !!r.lock && ringLocked(level, state, r.x, r.y, r.layer);
+      if (r.lock) r.lock.visible = r.locked;
+      if (r.mark) r.mark.visible = !r.locked;
+      const color = r.locked ? COLORS.flipLocked : COLORS.flip;
+      r.glow.color.set(color);
+      r.glow.emissive.set(r.locked ? 0x000000 : COLORS.flip);
+    }
+  }
+
+  /**
+   * The block came to rest on locked rings: a padlock in their switch's color pops up over it,
+   * shakes and fades, since the ring's own padlock is under the block.
+   */
+  fizzle(block: Block): void {
+    const cells = blockCells(block).map(([x, y]) => ({ x, y }));
+    const level = this.level;
+    const ring = this.rings.find((r) => r.layer === this.layer && r.locked && cells.some((c) => c.x === r.x && c.y === r.y));
+    if (!ring || !level) return;
+    const view = layerView(level, ring.layer);
+    const i = ring.y * level.width + ring.x;
+    const color = this.ringLockColor(view.tiles[i], view.groups[i]);
+    if (color === null) return;
+    const lock = makePadlock(color, true);
+    const [x, z] = [cells.reduce((a, c) => a + c.x, 0) / cells.length, cells.reduce((a, c) => a + c.y, 0) / cells.length];
+    const top = block.o === 'S' ? blockLength(block) : 1;
+    lock.position.set(x, top + 0.25, z);
+    // Turned to face the camera: rotating about the vertical isn't changed by the ceiling's mirror.
+    const parent = this.layerGroups[this.layer];
+    const at = parent.localToWorld(lock.position.clone());
+    lock.rotation.y = Math.atan2(this.camera.position.x - at.x, this.camera.position.z - at.z);
+    parent.add(lock);
+    const mats: THREE.Material[] = [];
+    lock.traverse((o) => {
+      const m = (o as THREE.Mesh).material as THREE.Material | undefined;
+      if (m) mats.push(m);
+    });
+    const y0 = lock.position.y;
+    void this.tween(750, (t) => {
+      lock.position.y = y0 + 0.35 * easeOut(Math.min(t * 2, 1));
+      lock.scale.setScalar(1 + 0.9 * easeOutBack(Math.min(t * 2.5, 1)));
+      lock.rotation.z = t < 0.5 ? Math.sin(t * Math.PI * 8) * 0.25 * (1 - t * 2) : 0;
+      const fade = t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4;
+      for (const m of mats) m.opacity = fade;
+      if (t === 1) {
+        lock.removeFromParent();
+        lock.traverse((o) => (o as THREE.Mesh).geometry?.dispose());
+        mats.forEach((m) => m.dispose());
+      }
+    });
+  }
+
   setWalls(state: State): Promise<void> {
     this.showLandings(state);
+    this.showLocks(state);
     const changes = this.walls.filter((w) => w.up !== this.wallShows(w, state));
     if (changes.length === 0) return Promise.resolve();
     for (const w of changes) {
@@ -1451,7 +1555,8 @@ export class World {
   private async flip(m: Motion): Promise<void> {
     const from = this.layer;
     this.layer = 1 - from;
-    void this.tween(500, (t) => this.flipGlows.forEach((g) => (g.emissiveIntensity = 0.8 + 2 * Math.sin(t * Math.PI))));
+    const open = this.rings.filter((r) => !r.locked).map((r) => r.glow);
+    void this.tween(500, (t) => open.forEach((g) => (g.emissiveIntensity = 0.8 + 2 * Math.sin(t * Math.PI))));
     this.flipBurst(m.from, from);
     // The landing spot in the old frame's coordinates: the frames mirror each other about CEIL_H / 2.
     const target = blockPosition(m.to);
@@ -1764,6 +1869,12 @@ export class World {
     this.updatePeekGhost(k);
     this.updatePeekOutline(now);
     for (const g of this.flipGlows) g.emissiveIntensity += (0.8 + Math.sin(now / 400) * 0.25 - g.emissiveIntensity) * 0.1;
+    // Ring padlocks turn to face the camera, so they read as padlocks from every side and from below.
+    for (const r of this.rings) {
+      if (!r.lock?.visible) continue;
+      const at = r.lock.getWorldPosition(this.lockAt);
+      r.lock.rotation.y = Math.atan2(this.camera.position.x - at.x, this.camera.position.z - at.z);
+    }
     this.bpAlpha += (this.bpTarget() - this.bpAlpha) * k;
     for (const m of this.bpMats) m.opacity = m.userData.opacity * this.bpAlpha;
     this.blueprints.forEach((g, l) => (g.visible = l === this.layer && this.bpAlpha > 0.01));
@@ -2084,6 +2195,29 @@ function box(
   return mesh;
 }
 
+/**
+ * A small padlock standing upright, facing +z: a body in a switch color with a dark keyhole, and a
+ * pale metal shackle. `fading` gives it materials that can fade out.
+ */
+function makePadlock(color: number, fading = false): THREE.Object3D {
+  const g = new THREE.Group();
+  const opts = fading ? { transparent: true, depthWrite: false } : {};
+  const body = rounded(0.3, 0.24, 0.1, color, 0.03, { roughness: 0.5, ...opts });
+  body.position.y = 0.12;
+  const hole = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.02, 14), new THREE.MeshStandardMaterial({ color: rimColor(color, 0.3), roughness: 0.8, ...opts }));
+  hole.rotation.x = Math.PI / 2;
+  hole.position.set(0, 0.14, 0.05);
+  const slot = box(0.022, 0.06, 0.02, rimColor(color, 0.3), opts);
+  slot.position.set(0, 0.095, 0.05);
+  const shackle = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.026, 8, 20, Math.PI), new THREE.MeshStandardMaterial({ color: COLORS.lockMetal, roughness: 0.35, metalness: 0.3, ...opts }));
+  shackle.position.y = 0.24;
+  g.add(body, hole, slot, shackle);
+  g.traverse((o) => {
+    if ((o as THREE.Mesh).isMesh) o.castShadow = !fading;
+  });
+  return g;
+}
+
 /** A box with rounded edges, which catch the light the way molded plastic does. */
 function rounded(
   w: number,
@@ -2386,7 +2520,8 @@ function ashlarCanvas(stone: WallStone, ledges = true): HTMLCanvasElement {
   // Granite flecks: tiny light and dark grains all over.
   for (let i = 0; i < 900; i++) {
     ctx.globalAlpha = 0.25 + rnd() * 0.25;
-    ctx.fillStyle = rnd() < 0.5 ? '#2c313a' : '#c7ccd4';
+    const [dark, light] = stone.flecks ?? ['#2c313a', '#c7ccd4'];
+    ctx.fillStyle = rnd() < 0.5 ? dark : light;
     ctx.fillRect(rnd() * size, rnd() * size, 1.5, 1.5);
   }
   ctx.globalAlpha = 1;

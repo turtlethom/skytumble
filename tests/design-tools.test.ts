@@ -25,6 +25,17 @@ describe('design tools', () => {
     expect(arrows.split('↑').length - 1).not.toBe(north);
   });
 
+  it('lint rings in switch colors, and warn on a wall over a ring or a locked ring nothing opens', () => {
+    const lines = lint(draft(['S##M#o', '---', '...##G'], [0])).join('\n');
+    expect(lines).toContain('the ring at 3,0 on the ground is orange, starting locked');
+    expect(lint(draft(['S##P#G', '---', '...##.'])).join('\n')).toMatch(/WARN: the ring at 3,0 .* no purple switch opens it/);
+    expect(lint(draft(['S##+#G', '---', '...K..'])).join('\n')).toMatch(/WARN: the ring at 3,0 .* wall over it/);
+  });
+
+  it('check ring colors with the walls: a locked ring the solution flips through has to open', () => {
+    expect(wallColors(findLevel('starlab-01')!.level)).toEqual([expect.objectContaining({ group: 0, rings: 1, moves: true })]);
+  });
+
   it('find a wall color the level needs to move, and one it does not', () => {
     // Two Stops: lowered, the wall stops the first slide half on it; raised, a tile short.
     const twoStops = draft(['....G##..', 'S~~~~~~h.', '##....##.', '###o####.']);

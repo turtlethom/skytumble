@@ -50,3 +50,27 @@ export function wallSampleFloor(): Level {
     '##########I~~#',
   ]);
 }
+
+/**
+ * Starfall's walls up close (`?sheet=night&walls`), on both floors: raised and sunk walls by flip
+ * rings (a plain one, a locked orange one, an open blue one), the teal planks and moonstone switches,
+ * and low stone that never moves (group 3 has no switch).
+ * `&up` puts the block on the ceiling. Not a puzzle.
+ */
+export function starWallSampleFloor(): Level {
+  return parseLevel([
+    '##############',
+    '#o##HH##hh##f#',
+    '#######+####f#',
+    'S###KKKK######',
+    '####K###M##HH#',
+    '##############',
+    '---',
+    '##############',
+    '#x##JJ##jj##f#',
+    '#######+####f#',
+    '######KKKK####',
+    '######K#q##JJ#',
+    '##############',
+  ], [0, 2]);
+}

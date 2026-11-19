@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatLevel, parseLevel } from '../src/game/ascii';
-import { flightLandings, hedgeFell, initialState, isBridged, isSolid, step, wallUp } from '../src/game/rules';
+import { flightLandings, hedgeFell, initialState, isBridged, isSolid, ringLocked, step, wallUp } from '../src/game/rules';
 import { solve } from '../src/game/solver';
 import { Dir, Level, State, Tile } from '../src/game/types';
 import { parseChapter } from '../src/levels/format';
@@ -238,6 +238,54 @@ describe('walls on Windy Peaks', () => {
   });
 });
 
+describe('rings on Starfall', () => {
+  // Rolling right twice stands the block on the ring at x=3; a switch at x=5 is its color's.
+  const onRing = (ground: string) => {
+    const level = parseLevel([ground, '---', '...###'], [0]);
+    return { level, r: step(level, play(level, ['right']), 'right') };
+  };
+
+  it('a locked ring in a switch color does not fire: the block stays, and the result says so', () => {
+    const { r } = onRing('S##M#o');
+    expect(r.outcome).toBe('ok');
+    expect(r.state.layer).toBe(0);
+    expect(r.motions).toEqual([]);
+    expect(r.locked).toEqual([{ x: 3, y: 0 }]);
+  });
+
+  it('a press opens a locked ring, and locks an open one', () => {
+    const { level } = onRing('S##M#o');
+    const pressed = play(level, ['right', 'right', 'right']);
+    expect(ringLocked(level, pressed, 3, 0, 0)).toBe(false);
+    expect(step(level, pressed, 'left').state.layer).toBe(1);
+    const open = onRing('S##m#o');
+    expect(open.r.state.layer).toBe(1);
+    expect(ringLocked(open.level, play(open.level, ['right', 'right', 'right', 'right']), 3, 0, 0)).toBe(false);
+  });
+
+  it('a plain ring never locks, whatever is pressed', () => {
+    const level = parseLevel(['S#o+', '---', '...#'], [0]);
+    expect(play(level, ['right']).bridges).toBe(1);
+    expect(step(level, play(level, ['right']), 'right').state.layer).toBe(1);
+  });
+
+  it('a block lying across two rings flips only if both are open', () => {
+    const level = parseLevel(['S+M', '---', '.##'], [0]);
+    const r = step(level, initialState(level), 'right');
+    expect(r.state.layer).toBe(0);
+    expect(r.locked).toEqual([{ x: 2, y: 0 }]);
+    expect(step(level, { ...initialState(level), bridges: 1 }, 'right').state.layer).toBe(1);
+  });
+
+  it('a press on one floor locks and opens rings on the other', () => {
+    const level = parseLevel(['S#oM', '---', '...q'], [0, 2]);
+    const start = initialState(level);
+    expect(ringLocked(level, start, 3, 0, 0)).toBe(true);
+    expect(ringLocked(level, start, 3, 0, 1)).toBe(false);
+    expect(ringLocked(level, play(level, ['right']), 3, 0, 0)).toBe(false);
+  });
+});
+
 describe('reversed bridges', () => {
   it('are out when a digit bridge of their color is in', () => {
     const reversed = parseLevel(['S#a']);
@@ -434,7 +482,13 @@ describe('validation', () => {
     expect(report('S&#G\n---\n....')).toMatch(/only mix/);
   });
 
-  it('accepts walls with ice and belts (Frost Isle) and pads (Windy Peaks)', () => {
-    for (const grid of ['SH~G', 'SK>G', 'Sh~>G', 'SHRG']) expect(report(grid)).not.toMatch(/only mix/);
+  it('accepts walls with ice and belts (Frost Isle), pads (Windy Peaks) and flips on two floors (Starfall)', () => {
+    for (const grid of ['SH~G', 'SK>G', 'Sh~>G', 'SHRG', 'S#+#\n---\n..hG']) expect(report(grid)).not.toMatch(/only mix/);
+  });
+
+  it('refuses a wall over or under a ring on the other floor', () => {
+    expect(report('S#+h\n---\n..#G')).not.toMatch(/over the ring/);
+    expect(report('S#+#\n---\n.#HG')).toMatch(/wall on the other floor over the ring at 2,0/);
+    expect(report('S#H#\n---\n.#MG')).toMatch(/over the ring at 2,0/);
   });
 });

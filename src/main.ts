@@ -8,7 +8,7 @@ import { isLesson, lessonDone, lessonPrompt } from './levels/lessons';
 import { HandmadeLevel } from './levels/format';
 import { MECHANICS, Mechanic, mechanicsIn } from './levels/mechanics';
 import { MENU_LEVEL } from './levels/menuScene';
-import { tileSheet, toySampleFloor, wallSampleFloor } from './levels/sheet';
+import { tileSheet, toySampleFloor, wallSampleFloor, starWallSampleFloor } from './levels/sheet';
 import { NEUTRAL, THEMES, Theme, themeForLevel } from './render/themes';
 import { World } from './render/world';
 import { ChapterArrival } from './ui/arrival';
@@ -166,7 +166,14 @@ class Game {
       return;
     }
     if (params.has('walls') && params.has('sheet')) {
-      void this.start(wallSampleFloor(), 0);
+      const star = this.themeOverride?.id === 'night';
+      const level = star ? starWallSampleFloor() : wallSampleFloor();
+      void this.start(level, 0).then(async () => {
+        if (!params.has('up')) return;
+        // Starfall's samples seen from the ceiling, as after a flip.
+        this.state = { ...this.state, layer: 1 };
+        await this.world.setLevel(level, this.state, this.currentTheme());
+      });
       return;
     }
     if (params.has('toys')) {
@@ -393,6 +400,7 @@ class Game {
       holds(i + 1, motion.to);
     }
     if (scene !== this.scene) return;
+    if (result.locked) this.world.fizzle(result.state.block);
     this.world.pressSwitches(result.pressed);
     if (result.reshaped) {
       const before = result.motions.length ? result.motions[result.motions.length - 1].to : result.rolled;

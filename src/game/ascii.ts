@@ -6,6 +6,9 @@ const PAD_CHARS: Record<Dir, string> = { up: 'U', down: 'D', left: 'L', right: '
 const WALLS_UP = 'HIJK';
 const WALLS_DOWN = 'hijk';
 const BRIDGES_REVERSED = 'abde';
+/** Flip rings in a switch color, groups 0-3: starting locked, starting open. */
+const RINGS_LOCKED = 'MPQW';
+const RINGS_OPEN = 'mpqw';
 /** Each hedge takes three bits in `State.hedges`, and the solver's key has to stay a safe whole number. */
 const MAX_HEDGES = 9;
 
@@ -16,6 +19,8 @@ const MAX_HEDGES = 9;
  *   ~  ice          ^ v < >  conveyor pointing that way
  *   U D L R  launch pad flinging up / down / left / right
  *   +  flip tile (gravity)
+ *   M P Q W  flip tile in the color of group 0 / 1 / 2 / 3, starting locked (a press opens it)
+ *   m p q w  the same, starting open (a press locks it)
  *   c t n  shape switch: turns a block standing on it into a cube / tall block / normal block
  *   X  extra-heavy switch (only a standing tall block presses it)
  *   C T  goal marked for a cube / a tall block (G takes the normal block)
@@ -78,6 +83,9 @@ export function parseLevel(rows: string[], switchGroups: number[] = [], bridgesO
         } else if (WALLS_UP.includes(c) || WALLS_DOWN.includes(c)) {
           tile = WALLS_UP.includes(c) ? Tile.WallUp : Tile.WallDown;
           group = (WALLS_UP.includes(c) ? WALLS_UP : WALLS_DOWN).indexOf(c);
+        } else if (RINGS_LOCKED.includes(c) || RINGS_OPEN.includes(c)) {
+          tile = RINGS_LOCKED.includes(c) ? Tile.FlipLocked : Tile.Flip;
+          group = (RINGS_LOCKED.includes(c) ? RINGS_LOCKED : RINGS_OPEN).indexOf(c);
         } else if (BRIDGES_REVERSED.includes(c)) {
           tile = Tile.BridgeReversed;
           group = BRIDGES_REVERSED.indexOf(c);
@@ -135,6 +143,7 @@ const CHARS: Record<Tile, string> = {
   [Tile.WallUp]: '?',
   [Tile.WallDown]: '?',
   [Tile.Hedge]: '&',
+  [Tile.FlipLocked]: '?',
 };
 
 export function formatLevel(level: Level): string {
@@ -152,6 +161,8 @@ export function formatLevel(level: Level): string {
         else if (t === Tile.BridgeReversed) row += BRIDGES_REVERSED[l.groups[i]];
         else if (t === Tile.WallUp) row += WALLS_UP[l.groups[i]];
         else if (t === Tile.WallDown) row += WALLS_DOWN[l.groups[i]];
+        else if (t === Tile.FlipLocked) row += RINGS_LOCKED[l.groups[i]];
+        else if (t === Tile.Flip && l.groups[i] >= 0) row += RINGS_OPEN[l.groups[i]];
         else if (t === Tile.Conveyor) row += CONVEYOR_CHARS[DIRS[l.groups[i]]];
         else if (t === Tile.Pad) row += PAD_CHARS[DIRS[l.groups[i]]];
         else if (t === Tile.ShapeSwitch) row += Object.keys(SHAPE_SWITCHES).find((k) => SHAPE_SWITCHES[k] === l.groups[i]);

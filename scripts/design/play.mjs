@@ -122,6 +122,11 @@ if (process.env.PAGES) {
   const pages = process.env.PAGES.split(';').filter(Boolean);
   for (const [i, q] of pages.entries()) {
     await send('Page.navigate', { url: `${base}/?${q}` });
+    // PAGE_JS runs on each page once it has loaded, to open a screen before the shot (the Labs, say).
+    if (process.env.PAGE_JS) {
+      await sleep(1500);
+      await evalJs(process.env.PAGE_JS);
+    }
     await sleep(Number(process.env.SETTLE ?? 4000));
     await shot(`page-${i + 1}`);
     console.log(`page-${i + 1}.png  ?${q}`);

@@ -51,7 +51,8 @@ for (const [i, dir] of moves.entries()) {
   const b = r.state.block;
   const hit = r.bumped ? `${r.knocked ? 'TOPPLED' : 'BUMPED'}(${r.bumped.x},${r.bumped.y})${r.bridged ? ` →bridged(${r.bridged.x},${r.bridged.y})` : ''}` : '';
   const held = (r.held ?? []).map((h) => `${h.belt ? 'HELD' : r.motions[h.after - 1]?.kind === 'fly' ? (r.outcome === 'fall' ? 'CRASH' : 'SHORT') : 'BRAKE'}(${h.x},${h.y})`).join(' ');
-  const extra = [describeMotions(r.motions), held, r.pressed.length ? 'PRESS' : '', r.broke ? 'BROKE' : '', hit].filter(Boolean);
+  const locked = r.locked ? `LOCKED(${r.locked.map((c) => `${c.x},${c.y}`).join(' ')})` : '';
+  const extra = [describeMotions(r.motions), held, locked, r.pressed.length ? 'PRESS' : '', r.broke ? 'BROKE' : '', hit].filter(Boolean);
   const up = d.level.ceiling ? (r.state.layer ? ' ceiling' : ' ground') : '';
   const shape = b.n === 1 ? 'cube ' : b.n === 3 ? 'tall ' : '';
   console.log(`${String(i + 1).padStart(3)} ${dir[0].toUpperCase()} → ${shape}${b.o}(${b.x},${b.y})${up} ${r.outcome}${extra.length ? `  ${extra.join(' ')}` : ''}`);
