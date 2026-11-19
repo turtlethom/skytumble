@@ -856,6 +856,20 @@ with Q/E changes them. After a move: ✈ a flight, ● a switch press, ⇄ a fli
 51-52  → →✔
 ```
 
+## `star-18` Slingshot
+
+```
+ 1- 5  → →✈⇄ → ↑ →
+ 6-10  ↓ ← ↑ → →●
+11-15  ← ← ↓ → ↓●
+16-20  ← ↑ ↑ → ↓
+21-25  ← ↓ ← ← ←
+26-30  ← ← ← ↑ ↑✈
+31-35  ↓ ← ↑ → →
+36-40  ↓● ↑ ← ← ↓
+41-44  → ↑✈⇄ ↑ ↑✔
+```
+
 ## `toy-01` Building Blocks
 
 ```
