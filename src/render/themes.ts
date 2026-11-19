@@ -43,6 +43,8 @@ export interface WallStone {
   snow?: number;
   /** The tiny grains flecked over the stone, dark then light, if not granite's grey. */
   flecks?: [string, string];
+  /** A plastic building brick instead of stone: glossy, with studs on top in this color. */
+  studs?: number;
 }
 
 /** The ground and block every world starts from until it restyles them. */
@@ -157,6 +159,17 @@ const TOYBOX: Theme = {
   earth: { soil: 0x7c3733, hanging: 0xcfc2a6, style: 'pegs' },
   fragile: { light: 0xa98a60, dark: 0x93754e },
   finish: { switchBase: 0xdcd1b8, plastic: true },
+  // Glossy light grey building bricks with studs (chosen 2026-11-19 over teal, which sat near the blue
+  // switch color): neutral against every switch color, far from the red floor, the yellow block and
+  // the ivory switch bases, and well below the block in black and white.
+  wall: {
+    style: 'brick',
+    shades: ['#a9adb3', '#b1b5bb', '#a3a7ad', '#b6babf', '#acb0b6', '#a6aab0'],
+    mortar: '#7d828a',
+    deck: 0xb9bcc2,
+    flecks: ['#9a9ea4', '#c4c7cc'],
+    studs: 0xb3b7bd,
+  },
 };
 
 /** The Tutorial: a plain dark studio in the block's own slate, with nothing to look at but the rule being taught. */

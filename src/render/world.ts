@@ -2338,7 +2338,7 @@ function makeLowWalls(cells: { x: number; y: number; edge: boolean }[], theme: T
     return mesh;
   };
   const g = new THREE.Group();
-  g.add(merged(cells.map(({ x, y }) => stoneGeometry(1, LOW_WALL_HEIGHT, 1).translate(x, LOW_WALL_HEIGHT / 2, y)), new THREE.MeshStandardMaterial({ map: stoneMap(stone), roughness: 0.95 })));
+  g.add(merged(cells.map(({ x, y }) => stoneGeometry(1, LOW_WALL_HEIGHT, 1).translate(x, LOW_WALL_HEIGHT / 2, y)), new THREE.MeshStandardMaterial({ map: stoneMap(stone), roughness: stone.studs !== undefined ? 0.32 : 0.95 })));
   if (stone.snow !== undefined) {
     const top = (x: number, y: number) => {
       const plane = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2).translate(x, LOW_WALL_HEIGHT + 0.002, y);
@@ -2349,6 +2349,11 @@ function makeLowWalls(cells: { x: number; y: number; edge: boolean }[], theme: T
       return plane;
     };
     g.add(merged(cells.map(({ x, y }) => top(x, y)), new THREE.MeshStandardMaterial({ map: dustedMap(stone), roughness: 0.95 })));
+  }
+  if (stone.studs !== undefined) {
+    // Four studs a cell, as on a building brick.
+    const studs = cells.flatMap(({ x, y }) => [-0.25, 0.25].flatMap((dx) => [-0.25, 0.25].map((dz) => STUD.clone().translate(x + dx, LOW_WALL_HEIGHT + STUD_H / 2, y + dz))));
+    g.add(merged(studs, new THREE.MeshStandardMaterial({ color: stone.studs, roughness: 0.3 })));
   }
   const edges = cells.filter((c) => c.edge);
   if (edges.length) {
@@ -2383,9 +2388,21 @@ function wallTop(height: number, y: number, stone: WallStone, raised: boolean): 
       cap.position.set(dx, y + height + 0.0225, dz);
       top.add(cap);
     }
+    // A plastic brick's stud on each corner, only on a raised wall: a sunk one has to read as floor.
+    if (raised && stone.studs !== undefined) top.add(stud(stone.studs, dx, y + height, dz));
   }
   return top;
 }
+
+/** A building brick's stud standing on a surface at height `y`. */
+function stud(color: number, x: number, y: number, z: number): THREE.Mesh {
+  const mesh = new THREE.Mesh(STUD, new THREE.MeshStandardMaterial({ color, roughness: 0.3 }));
+  mesh.position.set(x, y + STUD_H / 2, z);
+  mesh.castShadow = true;
+  return mesh;
+}
+const STUD_H = 0.06;
+const STUD = new THREE.CylinderGeometry(0.075, 0.075, STUD_H, 16);
 
 /** One texture's worth of wall, in tiles: two bricks long and four courses high. */
 const BRICK_TILE = 0.8;
@@ -2537,7 +2554,8 @@ function lighten(css: string, by: number): string {
 
 /** A box of stone whose bricks all come out the same size, whatever the box's proportions. */
 function stoneBox(w: number, h: number, d: number, stone: WallStone, tint = 0xffffff): THREE.Mesh {
-  const mesh = new THREE.Mesh(stoneGeometry(w, h, d), new THREE.MeshStandardMaterial({ map: stoneMap(stone), color: tint, roughness: 0.95 }));
+  const roughness = stone.studs !== undefined ? 0.32 : 0.95;
+  const mesh = new THREE.Mesh(stoneGeometry(w, h, d), new THREE.MeshStandardMaterial({ map: stoneMap(stone), color: tint, roughness }));
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   return mesh;
