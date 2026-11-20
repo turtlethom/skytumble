@@ -265,3 +265,19 @@ switches: 1 2
 .#n......####.........
 .####....###o.........
 ......................
+
+=== toy-20
+par: 63
+name: Assembly Line
+idea: The finale: every station needs its own shape. Orange stops the cube at the tube's end but blocks the feed; the cube's purple lays the way off the landing; the feed only lands a tall block safely; the star switch takes only a tall one. Press orange twice.
+switches: 1 2 0
+......................
+.####=====H....##G##..
+.###c.....o....#####..
+.#S##............2....
+.####..........X#n###.
+.#######xK.....######.
+.####..........######.
+.####..........######.
+.t>>>==h==##f11######.
+......................
