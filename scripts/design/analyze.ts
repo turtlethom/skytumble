@@ -49,6 +49,10 @@ for (const arg of process.argv.slice(2)) {
     );
     const seen = touched(level, sol.moves);
     console.log(rows.map((r, y) => [...r].map((c, x) => ('.-'.includes(c) || seen.has(`${x},${y}`) ? c : '*')).join('')).join('\n'));
+    // Special pieces the solution never touches read as clutter (toy-17's stray cube switch). Raised walls
+    // are left out: one the solution never bumps can still be doing its job.
+    const unused = rows.flatMap((r, y) => [...r].flatMap((c, x) => (/[oxXcnt=|<>^vUDLR+MPQWmpqw]/.test(c) && !seen.has(`${x},${y}`) ? [`${c}@${x},${y}`] : [])));
+    if (unused.length) console.log(`UNUSED specials (the solution never touches them; keep only deliberate decoys): ${unused.join(' ')}`);
     if (env('TRACE')) console.log(`  ${trace.join('\n  ')}`);
     if (env('DIAG')) console.log(diagnose(rows, level, ex).join('\n'));
   }

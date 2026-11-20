@@ -217,3 +217,19 @@ idea: Two belt lanes feed the tall block through tubes onto the goal island, one
 .#.##f#####===<<<.....
 .#t###f>>>====###.....
 ......................
+
+=== toy-17
+par: 53
+name: Toy Shelf
+idea: The maze, in low bricks, with two colors that reshape it as you go. A normal block turns only where lanes meet and presses the heavy switch; the cube stops anywhere and rides the tubes cut through the bricks. Plan when to be which.
+switches: 1 1 1 0
+#o##I###o##h##o#
+KKKiK|#KKK|KHKK#
+KKK#K|HKKK|K#KK#
+#KK####i##I#n#HS
+KKKHKKKKK#KKKKKK
+KKK#KKKKK#KKKKKK
+#KK###cKK##h#KK#
+KKKKKK#KK#KKHKKK
+KKKKKK#KK#KK#KKK
+#KK#KKx####IGKK#

@@ -47,7 +47,8 @@ Design tools (`scripts/design/`). Each takes a draft file of design blocks, or a
 prefix (`wind-`) for a whole chapter, so playtest notes can be acted on directly:
 
 ```
-npm run -s analyze -- <file|id>...        # templates read as all-open; par, states, dead ends, pad/ice uses, untouched tiles (*);
+npm run -s analyze -- <file|id>...        # templates read as all-open; par, states, dead ends, pad/ice uses, untouched tiles (*)
+                                          #   and special pieces the solution never touches (UNUSED);
                                           #   unsolvable → diagnosis. TRACE=1 moves · DIAG=1 diagnosis
                                           #   always · BLOCK=1 print as a design block (copy to a draft)
 npm run -s sim -- <file|id> RRDL [name]   # replay moves; board at the end (SHOW=1: after every move)
