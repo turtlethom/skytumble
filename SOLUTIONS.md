@@ -1041,6 +1041,20 @@ with Q/E changes them. After a move: ✈ a flight, ● a switch press, ⇄ a fli
 56-58  → → →✔
 ```
 
+## `toy-14` Parcel Post
+
+```
+ 1- 5  ↓ ↓ → ↓● ↑
+ 6-10  → ↑ ← ← ←
+11-15  ↓ ↓ ↓ → →
+16-20  ↓ ↓ ← → ↓
+21-25  ←● → ↑ ↑ →
+26-30  ↓ → → ↑ ←
+31-35  ← ← ← ↑ →
+36-40  → → → → →
+41-41  →✔
+```
+
 ## `lab-01` Glide
 
 ```
