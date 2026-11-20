@@ -63,6 +63,13 @@ const ACTIVE_MS = 1500;
 const IDLE_FPS = 30;
 /** After this long with no input, stop drawing (and pause the page's clouds) until something wakes it. */
 const SLEEP_MS = 60_000;
+/** How see-through a glass tube's blue panels get while the block is inside it (1 is solid). */
+const TUBE_CLEAR = 0.16;
+/** A slide braked by a wall inside a tube ends in a knock: the block rebounds this far and back. */
+const KNOCK_BACK = 0.09;
+const KNOCK_MS = 170;
+/** A bump inside a tube is a shove against the glass, this far and back, instead of a tip through it. */
+const TUBE_SHOVE = 0.06;
 /** A flip: long enough to see the planet and moon trade places. */
 const FLIP_MS = 800;
 /** How close to a floor's own view the turn must be for that floor's soil and roots to show. */
@@ -327,6 +334,13 @@ export class World {
   /** Wind streaks drifting over each pad along its arrow. */
   private gusts: { obj: THREE.Mesh; phase: number }[] = [];
   private tweens: Tween[] = [];
+  /**
+   * Glass tube tiles on the ground, with their blue panels' materials: while the block is in one, its
+   * panels fade to clear glass so a block stuck inside never vanishes (the user's call, 2026-11-20).
+   */
+  private tubes: { x: number; y: number; mats: THREE.MeshStandardMaterial[]; fade: number }[] = [];
+  private blockBox = new THREE.Box3();
+  private tubeAt = new THREE.Vector3();
   private last = performance.now();
   /**
    * Idle rendering (the user's call, 2026-11-20: the game ate CPU when left open). Full frame rate while
@@ -502,6 +516,7 @@ export class World {
     this.switches.clear();
     this.bridges = [];
     this.walls = [];
+    this.tubes = [];
     this.lowWalls = [[], []];
     this.hedges.clear();
     this.fallen.clear();
@@ -932,7 +947,9 @@ export class World {
       const joins = (dx: number, dy: number) =>
         !!view && levelTileAt(view, x + dx, y + dy) === Tile.Door && view.groups[(y + dy) * view.width + x + dx] === group;
       const [back, ahead] = group === 1 ? [joins(0, -1), joins(0, 1)] : [joins(-1, 0), joins(1, 0)];
-      g.add(makeTube(group, !!this.theme.finish.plastic, !back, !ahead));
+      const tube = makeTube(group, !!this.theme.finish.plastic, !back, !ahead);
+      g.add(tube);
+      if (layer === 0) this.tubes.push({ x, y, mats: tube.userData.panels, fade: 1 });
       return g;
     }
 
@@ -1332,6 +1349,24 @@ export class World {
    * A knocked hedge goes over as the block reaches it.
    */
   async bump(from: Block, hit: { x: number; y: number }, dir: Dir, knocked: boolean, bridged?: { x: number; y: number }): Promise<void> {
+    if (this.inTube(from)) {
+      // Inside a glass tube there's no room to tip: the block shoves against the glass (or the wall
+      // ahead, which shakes) and settles back, instead of leaning through the tube's side.
+      const { dx, dy } = DIR_DELTA[dir];
+      const wall = this.walls.find((w) => w.layer === this.layer && w.x === hit.x && w.y === hit.y);
+      const at = blockPosition(from);
+      let touched = false;
+      await this.tween(BUMP_MS, (t) => {
+        const s = TUBE_SHOVE * Math.sin(Math.PI * t ** 0.6);
+        this.block.position.set(at.x + dx * s, at.y, at.z + dy * s);
+        if (!touched && t >= BUMP_TOUCH && wall) {
+          touched = true;
+          void this.shake(wall.pillar, dx, dy);
+        }
+      });
+      this.placeBlock(from);
+      return;
+    }
     const { pivot, axis, angle } = this.tipPivot(from, dir);
     const { dx, dy } = DIR_DELTA[dir];
     const cells = blockCells(from);
@@ -1366,10 +1401,22 @@ export class World {
 
   /**
    * A raised wall kept a belt from pushing: the belt flares under the block, which doesn't move. A slide
-   * a wall stopped shows nothing more, since any reaction there delays the next move (playtest 2026-11-07).
+   * a wall stopped on ice shows nothing more, since any reaction there delays the next move (playtest
+   * 2026-11-07). Inside a glass tube it knocks (the user's call, 2026-11-20): the block rebounds off the
+   * wall and settles against it, and the wall shakes, so being stuck in there reads as stuck.
    */
-  hold(b: Block, h: { dir: Dir; belt: boolean }): void {
-    if (h.belt) this.flareBelts(b, h.dir);
+  async hold(b: Block, h: { x: number; y: number; dir: Dir; belt: boolean }): Promise<void> {
+    if (h.belt) return this.flareBelts(b, h.dir);
+    if (!this.inTube(b)) return;
+    const { dx, dy } = DIR_DELTA[h.dir];
+    const wall = this.walls.find((w) => w.layer === this.layer && w.x === h.x && w.y === h.y);
+    if (wall) void this.shake(wall.pillar, dx, dy);
+    const at = blockPosition(b);
+    await this.tween(KNOCK_MS, (t) => {
+      const back = KNOCK_BACK * Math.sin(Math.PI * t) * (1 - t * 0.4);
+      this.block.position.set(at.x - dx * back, at.y, at.z - dy * back);
+    });
+    this.placeBlock(b);
   }
 
   /**
@@ -1440,6 +1487,27 @@ export class World {
     frame.attach(this.block);
     frame.remove(pivot);
     this.placeBlock(to);
+  }
+
+  /**
+   * Fade each ground tube tile the block's body overlaps to clear glass, and back once it leaves, so a
+   * block sliding through or stuck inside always shows. Follows the mesh, so it tracks mid-slide. It runs
+   * before applyLayerAlpha, which writes every tile material's opacity each frame.
+   */
+  private updateTubeGlass(dt: number): void {
+    if (!this.tubes.length) return;
+    const box = this.layer === 0 ? this.blockBox.setFromObject(this.block) : null;
+    const k = Math.min(1, dt * 12);
+    for (const t of this.tubes) {
+      // The tile's centre in world space, through the block's own frame (tiles sit at their grid square).
+      const at = this.frames[0].localToWorld(this.tubeAt.set(t.x, 0, t.y));
+      const inside = !!box && box.max.x > at.x - 0.4 && box.min.x < at.x + 0.4 && box.max.z > at.z - 0.4 && box.min.z < at.z + 0.4 && box.min.y < at.y + 1;
+      const fade = t.fade + ((inside ? TUBE_CLEAR : 1) - t.fade) * k;
+      if (Math.abs(fade - t.fade) < 1e-4 && (fade === 1 || inside)) continue;
+      t.fade = Math.abs(fade - 1) < 0.005 ? 1 : fade;
+      // applyLayerAlpha, later in the frame, multiplies this in and sets transparency to match.
+      for (const m of t.mats) m.userData.tubeFade = t.fade;
+    }
   }
 
   /** Whether any part of the block is in a glass tube on its floor. */
@@ -1918,6 +1986,7 @@ export class World {
       g.obj.position.x = (p - 0.5) * 0.7;
       (g.obj.material as THREE.MeshBasicMaterial).opacity = Math.sin(p * Math.PI) * 0.75;
     }
+    this.updateTubeGlass(dt);
     if (this.goalMarker) {
       this.goalMarker.rotation.y += dt * 0.8;
       this.goalMarker.position.y = MARKER_Y + Math.sin(now / 520) * 0.1;
@@ -2167,13 +2236,15 @@ export class World {
       const soil = this.flipTurn ? Math.abs(this.side - layer) < FLIP_SOIL_BACK : layer === side;
       for (const e of this.earths[layer]) e.visible = soil;
       for (const e of this.layerMats[layer]) {
-        const transparent = e.transparent || a < 0.995;
+        // A glass tube's panels also fade on their own while the block is inside (see updateTubeGlass).
+        const f = a * ((e.mat.userData.tubeFade as number | undefined) ?? 1);
+        const transparent = e.transparent || f < 0.995;
         if (transparent !== e.mat.transparent) {
           e.mat.transparent = transparent;
           e.mat.needsUpdate = true;
         }
-        e.mat.opacity = e.opacity * a;
-        e.mat.depthWrite = a >= 0.995;
+        e.mat.opacity = e.opacity * f;
+        e.mat.depthWrite = f >= 0.995;
       }
     });
   }
@@ -2283,9 +2354,13 @@ function makeTube(axis: number, plastic: boolean, startEnd: boolean, endEnd: boo
     m.position.set(x, y, z);
     pivot.add(m);
   };
+  // The blue parts' materials, so the tube can fade to clear glass while the block is inside it.
+  const panels: THREE.MeshStandardMaterial[] = [];
+  g.userData.panels = panels;
   const part = (w: number, h: number, d: number, x: number, y: number, z: number) => {
     const m = plastic ? rounded(w, h, d, TUBE_TRIM, Math.min(w, h, d) * 0.3, { roughness: 0.3 }) : box(w, h, d, TUBE_TRIM, { roughness: 0.5 });
     m.position.set(x, y, z);
+    panels.push(m.material as THREE.MeshStandardMaterial);
     pivot.add(m);
   };
   // Roof, floor and both sides are blue plastic panels, each with a square glass window, so the cube

@@ -394,17 +394,17 @@ class Game {
   private async animateStep(from: State, result: ReturnType<typeof step>, dir: Dir, scene: number): Promise<void> {
     if (result.bumped) return this.world.bump(from.block, result.bumped, dir, !!result.knocked, result.bridged);
     await this.world.roll(from.block, result.rolled, dir);
-    // Belts a wall held, flared right after the motion before them, without holding up the next move.
-    const holds = (after: number, at: Block) => {
-      for (const h of result.held ?? []) if (h.after === after) this.world.hold(at, h);
-    };
-    holds(0, result.rolled);
+    // Belts a wall held flare right after the motion before them, without holding up the next move; a
+    // slide a wall braked inside a glass tube knocks, and the next motion waits for that.
+    const holds = (after: number, at: Block) =>
+      Promise.all((result.held ?? []).filter((h) => h.after === after).map((h) => this.world.hold(at, h)));
+    await holds(0, result.rolled);
     for (const [i, motion] of result.motions.entries()) {
       // A short beat between chained motions so slide → push → slide reads as three events.
       if (i > 0) await new Promise((r) => window.setTimeout(r, CHAIN_BEAT_MS));
       await this.world.move(motion);
       if (scene !== this.scene) return;
-      holds(i + 1, motion.to);
+      await holds(i + 1, motion.to);
     }
     if (scene !== this.scene) return;
     if (result.locked) this.world.fizzle(result.state.block);
