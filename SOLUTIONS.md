@@ -1070,6 +1070,18 @@ with Q/E changes them. After a move: ✈ a flight, ● a switch press, ⇄ a fli
 46-49  ↑ → → →✔
 ```
 
+## `toy-16` Stand Tall
+
+```
+ 1- 5  ↑ ← ↓ ↓ ↓
+ 6-10  → → → → ←
+11-15  ← ← ← → ↑
+16-20  → → ↓ ↑ ←
+21-25  ← ↓ → ← ←
+26-30  ↑ → → ↑ →
+31-35  ↓ ↓ → → →✔
+```
+
 ## `lab-01` Glide
 
 ```
