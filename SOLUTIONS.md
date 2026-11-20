@@ -978,6 +978,16 @@ with Q/E changes them. After a move: ✈ a flight, ● a switch press, ⇄ a fli
 36-39  → → → ↓✔
 ```
 
+## `toy-09` Standing Room
+
+```
+ 1- 5  → → ↓ ↓ →
+ 6-10  →● ← ← ↑ ↑
+11-15  ← ↓ → ↓ ↓
+16-20  → → → → →
+21-21  →✔
+```
+
 ## `lab-01` Glide
 
 ```

@@ -145,6 +145,18 @@ describe('How To Play unlocks', () => {
     expect(mechanicsIn(findLevel('star-08')!.level)).not.toContain('lockedRings');
   });
 
+  it('show the cube rolling onto a switch right beside a wall, which then sinks', () => {
+    const results = run(entry('shapeWalls'));
+    expect(results[1].state.block).toMatchObject({ x: 3, n: 1 });
+    expect(results[2].pressed).toEqual([{ x: 4, y: 0 }]);
+    expect(results[results.length - 1].outcome).toBe('win');
+  });
+
+  it('open walls and shapes where walls meet a shape switch or a shaped start', () => {
+    expect(mechanicsIn(findLevel('toy-09')!.level)).toContain('shapeWalls');
+    expect(mechanicsIn(findLevel('toy-08')!.level)).not.toContain('shapeWalls');
+  });
+
   it('open walls and launch pads only where walls meet pads', () => {
     expect(mechanicsIn(findLevel('wind-01')!.level)).not.toContain('padWalls');
     expect(mechanicsIn(findLevel('glade-20')!.level)).not.toContain('padWalls');

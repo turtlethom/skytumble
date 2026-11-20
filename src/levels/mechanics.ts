@@ -7,7 +7,7 @@ import { Dir, Level, Tile } from '../game/types';
 
 export type MechanicId =
   | 'rolling' | 'lying' | 'planks' | 'soft' | 'heavy' | 'walls'
-  | 'ice' | 'belts' | 'iceWalls' | 'pads' | 'padWalls' | 'flips' | 'lockedRings' | 'cube' | 'tall' | 'extraHeavy' | 'hedges';
+  | 'ice' | 'belts' | 'iceWalls' | 'pads' | 'padWalls' | 'flips' | 'lockedRings' | 'shapeWalls' | 'cube' | 'tall' | 'extraHeavy' | 'hedges';
 
 export interface Mechanic {
   id: MechanicId;
@@ -139,6 +139,16 @@ export const MECHANICS: Mechanic[] = [
     moves: moves('RRRLRR'),
   },
   {
+    id: 'shapeWalls',
+    name: 'Walls and shapes',
+    text: 'A raised wall stops a roll that would land any part of the block on it, so each shape is stopped from its own distance: a tall block from three tiles away, the normal block from two, a cube only from right beside it. A lying tall block can hang its middle over a gap, but not over a raised wall.',
+    basic: false,
+    // The normal block becomes a cube, which rolls onto the switch right beside the wall (the normal block
+    // would bump two tiles short); the wall sinks and the cube rolls through to its goal.
+    level: parseLevel(['S##coHC'], [0]),
+    moves: moves('RRRRR'),
+  },
+  {
     id: 'cube',
     name: 'The cube',
     text: 'Stand on a cube switch to become a cube, which rolls one tile at a time. It\'s so light that it never breaks planks or presses heavy switches. Some goals are marked for a cube, and a normal switch turns you back.',
@@ -178,12 +188,14 @@ export function mechanicsIn(level: Level): MechanicId[] {
   const tiles = [...level.tiles, ...(level.ceiling?.tiles ?? [])];
   const groups = [...level.groups, ...(level.ceiling?.groups ?? [])];
   const found = new Set<MechanicId>();
+  if (level.startShape && tiles.some((t) => t === Tile.WallUp || t === Tile.WallDown)) found.add('shapeWalls');
   if (level.startShape === 1) found.add('cube');
   if (level.startShape === 3) found.add('tall');
   const walls = tiles.some((t) => t === Tile.WallUp || t === Tile.WallDown);
   tiles.forEach((t, i) => {
     if (walls && (t === Tile.Ice || t === Tile.Conveyor)) found.add('iceWalls');
     if (walls && t === Tile.Pad) found.add('padWalls');
+    if (walls && (t === Tile.ShapeSwitch || t === Tile.ExtraHeavy)) found.add('shapeWalls');
     if (t === Tile.Ice) found.add('ice');
     else if (t === Tile.Conveyor) found.add('belts');
     else if (t === Tile.Pad) found.add('pads');

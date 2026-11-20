@@ -160,7 +160,7 @@ Shipped releases and finished build notes are in `DESIGN-archive.md`, word for w
 
 **Pick up here** (paused 2026-11-14, at the user's request). Everything is committed and live through `c33e3f4`: **Windy Peaks is complete at 20** (`wind-09`…`20` all played and liked; see *Windy Peaks' new levels*). Hand every level over with its directions.
 
-- **Next: Starfall**, the third world in the walls order (Frost Isle, Windy Peaks, Starfall, Toybox). As with the others: wall samples in Starfall's stone on the tile sheet for approval (up, sunk, in black and white), then Starfall Lab for the unsettled rules (walls with flip rings: the planned rule is that a ring under a raised wall won't fire and looks locked, and walls cross floors like bridges), sign-off and frozen rules, then `star-09`…`20` in batches of 5, with walls in 4 of the 12 (three wall levels and a maze). Grill the user on anything big first. **Status (2026-11-19):** Starfall's walls are **dusk moss**; the locked-ring rules are frozen. Batch 1 (`star-09`…`13`) is approved and committed. **Starfall is complete at 20** (all committed). **Toybox's walls:** grey brick walls and the walls-with-shapes rules are committed and frozen (`86e50be`). **The twist is the glass tube**, frozen: ice for the cube, and for lying blocks fed in by belts (lab: `toylab-05`, `06`). Next: `toy-09`…`13`, handed over one or two at a time. Then `toy-09`…`13` from the batch 1 pitch, walls in 6 of the 12.
+- **Next: Starfall**, the third world in the walls order (Frost Isle, Windy Peaks, Starfall, Toybox). As with the others: wall samples in Starfall's stone on the tile sheet for approval (up, sunk, in black and white), then Starfall Lab for the unsettled rules (walls with flip rings: the planned rule is that a ring under a raised wall won't fire and looks locked, and walls cross floors like bridges), sign-off and frozen rules, then `star-09`…`20` in batches of 5, with walls in 4 of the 12 (three wall levels and a maze). Grill the user on anything big first. **Status (2026-11-19):** Starfall's walls are **dusk moss**; the locked-ring rules are frozen. Batch 1 (`star-09`…`13`) is approved and committed. **Starfall is complete at 20** (all committed). **Toybox's walls:** grey brick walls and the walls-with-shapes rules are committed and frozen (`86e50be`). **The twist is the glass tube**, frozen: ice for the cube, and for lying blocks fed in by belts (lab: `toylab-05`, `06`). Batch 1 in progress: `toy-09` played well and committed; `toy-10` (tubes) next (see *Toybox's new levels*).
 - **Lessons from Windy Peaks' last batches:** every level its own idea, never a liked level's frame reused; mechanics mix in as ingredients; no special tile that never acts (`lint` warns); par and states climb, and the finale clearly tops the rest.
 - **Done this stretch (2026-11-08…09):** Frost Isle complete at 20 (`frost-19` Carousel, `frost-20` Grand Tour, both liked). The title reads *SkyTumble* everywhere. Windy Peaks' walls are rust-brown ironstone. The rules for walls with launch pads are built and **frozen** after Peaks Lab (`peakslab-01`…`06`, three rounds, all on the animation); see *Mechanics* and *Peaks Lab* below. Landing marks follow the walls. DESIGN.md's finished history moved to `DESIGN-archive.md`.
 - **Tools added:** `lint` warns on boards too big for the camera and on pads aimed at walls; `analyze` reads templates; traces print `SHORT`/`CRASH`; the pad use `short`; `play.mjs` gains `PAGES` (screenshot any page) and `FRAMES` (shots mid-move, on a slowed throwaway build).
@@ -588,6 +588,12 @@ Rules, to be frozen per world (Frost Isle's slide and belt rows frozen 2026-11-0
 - **Calls Claude made:** the characters (`M P Q W` locked, `m p q w` open, by color like walls); a colored ring's line of color; the padlock in the switch's color; the pop over the block, because the ring's padlock hides under it; a locked ring's landing mark goes away, as pad marks follow walls. The flip previews already skip a locked ring, since they come from the rules.
 - **Tools:** `analyze` and `sim` print `LOCKED(x,y)`; the diagnosis's flip list says each ring's color and how it starts; `lint` lists colored rings, and warns on a wall over a ring and on a locked ring no switch opens; `walls` checks colors on both floors and counts rings (fixed open, then locked); flip uses `locked` and `unlocked`; `play.mjs` takes `PAGE_JS` to open a screen before a page shot.
 
+**Toybox's new levels** (batch 1 started 2026-11-19). Walls in 6 of the 12 (five wall levels and a maze), glass tubes from `toy-10`. Par and states climb from the opener to a batch peak above `toy-08` (39 moves, 585 states). Handed over one or two at a time.
+
+| Level | Par | States | Idea |
+|---|---|---|---|
+| `toy-09` Standing Room | 21 | 205 | The first wall level. A heavy orange switch sits right before a raised wall at the end of a corridor you enter standing. Two-tile tips leave the normal block standing two tiles short (its next tip would land on the wall: a bump); a tall block's three-tile tips land it on the switch. So grow tall, press, come back, shrink to normal for the goal past the lowered wall. How To Play's *Walls and shapes* entry opens here |
+
 **Toybox Lab** (built 2026-11-19), in Toybox's theme with its grey brick walls. One rule question per level, all short (par 6 to 12):
 
 | Level | Question |
@@ -632,6 +638,8 @@ works and what doesn't. Claude writes the code and designs handmade levels from 
 feedback; batches of 5 levels per round.
 
 ## Playtest log
+
+**2026-11-19 — `toy-09` Standing Room.** "toy-09 played well, commit it. it was simple" → Committed as is; simple suits the opener. The user asked how the chapter's levels progress, so the batch plan was laid out before `toy-10`.
 
 **2026-11-19 — Tube feed animation.** "fix the animation where it uses the conveyor belt to go in the tube. since the tube is nice and snug, the block doesn't jump up as much from the conveyor" → A push into a tube now glides flat, without the belt push's lean. `play.mjs` gained `FRAMES_AT` to check it.
 
