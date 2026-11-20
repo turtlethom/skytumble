@@ -155,6 +155,10 @@ class Game {
     // Whether the game would take a move now: no animation running and none queued. The driver waits
     // for this before each key, since a flip's camera turn changes which arrow rolls which way.
     (window as unknown as { skytumbleIdle: () => boolean }).skytumbleIdle = () => this.status !== 'busy' && this.queued === null;
+    // Frames the scene has drawn, for the driver's frame-rate check (FRAMERATE=1).
+    (window as unknown as { skytumbleFrames: () => number }).skytumbleFrames = () => this.world.drawn;
+    // Left alone, the scene stops drawing; the page's drifting clouds pause with it.
+    this.world.onSleep = (asleep) => document.body.classList.toggle('asleep', asleep);
     const params = new URLSearchParams(location.search);
     this.themeOverride = THEMES[params.get('theme') ?? params.get('sheet') ?? ''] ?? null;
     if (params.has('fps')) this.readout.toggle();

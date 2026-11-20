@@ -57,6 +57,12 @@ const COLORS = {
 const CEIL_H = 4;
 /** How quickly the camera swings for a peek, roughly. */
 const TURN_RATE = 9;
+/** Full frame rate for this long after a key or the mouse, so camera turns and peeks finish smoothly. */
+const ACTIVE_MS = 1500;
+/** Frame rate for the ambient motion while nothing else happens. */
+const IDLE_FPS = 30;
+/** After this long with no input, stop drawing (and pause the page's clouds) until something wakes it. */
+const SLEEP_MS = 60_000;
 /** A flip: long enough to see the planet and moon trade places. */
 const FLIP_MS = 800;
 /** How close to a floor's own view the turn must be for that floor's soil and roots to show. */
@@ -322,6 +328,18 @@ export class World {
   private gusts: { obj: THREE.Mesh; phase: number }[] = [];
   private tweens: Tween[] = [];
   private last = performance.now();
+  /**
+   * Idle rendering (the user's call, 2026-11-20: the game ate CPU when left open). Full frame rate while
+   * something moves or for a moment after input; then the ambient motion runs at IDLE_FPS; after
+   * SLEEP_MS with no input nothing is drawn and the page's clouds pause, until a key, the mouse or an
+   * animation wakes it.
+   */
+  private lastInput = performance.now();
+  private asleep = false;
+  /** Frames actually drawn, for the play driver's frame-rate check. */
+  drawn = 0;
+  /** Told when the scene falls asleep or wakes, so the page can pause its own animations. */
+  onSleep?: (asleep: boolean) => void;
 
   private center = new THREE.Vector3();
   private viewSize = 10;
@@ -379,7 +397,23 @@ export class World {
     this.makeClouds();
     window.addEventListener('resize', () => this.resize());
     this.resize();
+    const wake = () => (this.lastInput = performance.now());
+    for (const ev of ['keydown', 'keyup', 'pointerdown', 'pointermove', 'wheel', 'resize', 'focus']) window.addEventListener(ev, wake, { passive: true });
     this.renderer.setAnimationLoop(() => this.frame());
+  }
+
+  /** Whether to draw this frame: always while busy, at IDLE_FPS while idle, never while asleep. */
+  private shouldDraw(now: number): boolean {
+    const quiet = now - this.lastInput;
+    const busy = this.tweens.length > 0 || quiet < ACTIVE_MS;
+    const asleep = !busy && quiet > SLEEP_MS;
+    if (asleep !== this.asleep) {
+      this.asleep = asleep;
+      this.onSleep?.(asleep);
+    }
+    if (busy) return true;
+    // A little slack, so a 60 Hz screen draws every other frame rather than drifting between rates.
+    return !asleep && now - this.last >= 1000 / IDLE_FPS - 4;
   }
 
   /** Camera position in 90° steps; 0 looks north. */
@@ -1844,6 +1878,8 @@ export class World {
 
   private frame(): void {
     const now = performance.now();
+    if (!this.shouldDraw(now)) return;
+    this.drawn++;
     const dt = Math.min((now - this.last) / 1000, 0.05);
     this.last = now;
 

@@ -10,6 +10,8 @@
 // world to settle and saves page-1.png, page-2.png... (for tile sheets and samples; solutions unused).
 // HOWTO=padWalls skips playing too: it opens How To Play on that entry (unlocking it first) and saves
 // howto-NN.png every HOWTO_MS (default 500) for HOWTO_SHOTS shots (default 16), one loop of its scene.
+// FRAMERATE=1 skips playing: on the first level it reports how often the scene draws after a key, idle,
+// and after a minute alone (it should draw nothing then), then once a key wakes it.
 // Uses CHROME (path to a Chrome/Chromium binary) or Playwright's cached Chromium. Talks to Chrome over
 // the DevTools protocol with a tiny built-in WebSocket client, so it needs no npm dependencies.
 import { spawn } from 'node:child_process';
@@ -118,7 +120,28 @@ const untilTitle = async () => {
   for (let i = 0; i < 50 && !(await titleUp()); i++) await sleep(100);
   return titleUp();
 };
-if (process.env.PAGES) {
+if (process.env.FRAMERATE === '1') {
+  // How often the scene draws on the first level given: just after a key, idle, and asleep (no input
+  // for a minute, when it should draw nothing and pause the page's clouds), then woken by a key again.
+  const id = Object.keys(solutions)[0];
+  await send('Page.navigate', { url: `${base}/?level=${id}` });
+  await sleep(4000);
+  const poke = () => evalJs("window.dispatchEvent(new KeyboardEvent('keydown', { code: 'ShiftLeft' }))");
+  const fps = async (ms) => {
+    const a = await evalJs('window.skytumbleFrames()');
+    await sleep(ms);
+    return Math.round((((await evalJs('window.skytumbleFrames()')) - a) * 1000) / ms);
+  };
+  await poke();
+  console.log(`${id}  after a key: ${await fps(1000)} fps`);
+  await sleep(3000);
+  console.log(`${id}  idle: ${await fps(3000)} fps`);
+  await sleep(56_000);
+  const asleep = await evalJs("document.body.classList.contains('asleep')");
+  console.log(`${id}  after a minute alone: ${await fps(3000)} fps, clouds ${asleep ? 'paused' : 'NOT paused'}`);
+  await poke();
+  console.log(`${id}  woken by a key: ${await fps(1000)} fps`);
+} else if (process.env.PAGES) {
   const pages = process.env.PAGES.split(';').filter(Boolean);
   for (const [i, q] of pages.entries()) {
     await send('Page.navigate', { url: `${base}/?${q}` });

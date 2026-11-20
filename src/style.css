@@ -150,6 +150,11 @@ body[data-theme='toybox'] #sky {
   animation: sky-drift var(--t) linear var(--d) infinite;
 }
 
+/* Left alone for a minute, the scene stops drawing; the clouds hold still with it. */
+body.asleep #sky * {
+  animation-play-state: paused;
+}
+
 @keyframes sky-drift {
   to {
     transform: translateX(170vw);
