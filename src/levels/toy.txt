@@ -145,3 +145,16 @@ switches: 0 0
 ...............h.
 ...............#.
 ...............G.
+
+=== toy-12
+par: 34
+name: Long Shot
+idea: Belts feed a lying block into a tube, and it shoots out wholly past the far end. Past the first tube, a normal block lands on a stub that ends in a plank; a tall block lands lying across the plank too, and rolls on. Grow tall, then work your way to the shrink switch: the last tube has two belts, made for a normal block.
+......................
+.###...........######.
+.###...........####.#.
+.#S##t>>>===##f####f#.
+.########.......#####.
+................#.##n.
+..........G##...#####.
+...........##===<<....
