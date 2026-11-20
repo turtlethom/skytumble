@@ -61,6 +61,13 @@ describe('design tools', () => {
     expect(hidden(level)).toEqual(['belt at 3,1 is behind the orange wall at 3,2']);
   });
 
+  it('see what a glass tube hides, straight south or one tile toward the middle', () => {
+    // West of the middle, a tube one south and one east covers the tile (toy-15's cube switch).
+    expect(hidden(toLevel(draft(['.c.......', '#S===####', '.......G.'])))).toEqual(['shape switch at 1,0 is behind the tube at 2,1']);
+    // A tube behind a tube, and a tile with only floor in front, say nothing.
+    expect(hidden(toLevel(draft(['..|......', 'S#|####G.', '..|......'])))).toEqual([]);
+  });
+
   it('lint the mistakes that cost the most rounds', () => {
     // A heavy switch first in reading order quietly takes the first group.
     expect(lint(draft(['....x', 'S#o#H', '....G'], [1, 0])).join('\n')).toContain('x@4,0→purple o@2,1→orange');

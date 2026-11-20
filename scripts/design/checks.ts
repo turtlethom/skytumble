@@ -287,8 +287,17 @@ export function hidden(level: Level): string[] {
       if (!tall(x, y + dy)) continue;
       const j = (y + dy) * level.width + x;
       out.push(`${color}${what} at ${x},${y} is behind the ${COLOR[level.groups[j]] ?? ''} wall at ${x},${y + dy}`);
-      break;
+      return;
     }
+    // A glass tube is about as tall as a wall. The camera looks north from the board's middle, so off
+    // centre it looks a little sideways: a tube just south, or one south and one tile toward the middle,
+    // covers the tile (toy-15's cube switch hid behind the south line's end). Tubes behind tubes are fine,
+    // and so are belts: a belt line reads by its continuation (toy-14's lines run behind its rungs).
+    if (t === Tile.Door || t === Tile.Conveyor) return;
+    const mid = (level.width - 1) / 2;
+    const xs = x === mid ? [x] : [x, x + (x < mid ? 1 : -1)];
+    const tube = xs.find((tx) => tx >= 0 && tx < level.width && y + 1 < level.height && level.tiles[(y + 1) * level.width + tx] === Tile.Door);
+    if (tube !== undefined) out.push(`${color}${what} at ${x},${y} is behind the tube at ${tube},${y + 1}`);
   });
   return out;
 }

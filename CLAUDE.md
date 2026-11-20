@@ -75,7 +75,7 @@ npm run -s make -- <template> <palette> <parLo> <parHi> [1-4] [want] [out]
                                           #   FROM=<raw> re-finishes without searching again
 npm run -s lint -- <file|id>...           # before solving: switches in reading order with colors,
                                           #   skippable belts, goal only reachable lying, what raised
-                                          #   walls hide (and whether a north-south flip fixes it), a board
+                                          #   walls and tubes hide (and whether a north-south flip fixes it), a board
                                           #   too big for the camera, pads aimed at walls (where each stops,
                                           #   a short stop over nothing, a sideways hop onto a wall); any belt that never
                                           #   pushes or pad that never fires from any reachable position
