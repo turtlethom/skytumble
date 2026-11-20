@@ -233,3 +233,19 @@ KKK#KKKKK#KKKKKK
 KKKKKK#KK#KKHKKK
 KKKKKK#KK#KK#KKK
 #KK#KKx####IGKK#
+
+=== toy-18
+par: 60
+name: Weigh Station
+idea: Each switch's weight says who must press it: heavy needs a standing block, extra-heavy a standing tall one, and soft takes anything, even the cube that alone rides the tube. Purple lays the way to the tube but takes away the bridge home, so you'll weigh in on it twice.
+switches: 2 1 0
+.......................
+.#x##S...####X...#####.
+.#####222t####111####c.
+.#####...####n...#####.
+...........0.......|...
+...........0.......|...
+.#####...##n##...#####.
+.#G###bbb#####000###o#.
+.#####...#####...#####.
+.......................
