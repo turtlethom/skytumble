@@ -131,3 +131,17 @@ switches: 0
 ..|............
 ..0............
 ..fC...........
+
+=== toy-11
+par: 32
+name: Brake
+idea: A brick wall in the tube stops the cube inside. Press the heavy switch as a normal block: the wall drops and becomes a stop halfway, but the gate before the goal comes up. Slide across as the cube, then turn normal and press the far switch. Become the cube too early and you're too light for either switch.
+switches: 0 0
+.................
+...###.......###.
+.#S##c==H==f#nf#.
+.#####.....###x#.
+.##x........####.
+...............h.
+...............#.
+...............G.
