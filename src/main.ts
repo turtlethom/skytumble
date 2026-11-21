@@ -17,6 +17,7 @@ import { esc } from './ui/html';
 import { SkyMap, firstUnsolved, signatureBadge } from './ui/map';
 import { Menu } from './ui/menu';
 import { loadProgress, resetProgress, saveProgress, starsFor } from './ui/progress';
+import { loadSettings, saveSettings } from './ui/settings';
 import type { GenerateRequest, GenerateResponse } from './worker';
 
 type Mode = { kind: 'menu' } | { kind: 'gen'; tier: Tier; seed: string } | { kind: 'hand'; id: string };
@@ -112,7 +113,8 @@ class Game {
     (action) => (action === 'back' ? this.back() : this.load({ kind: 'hand', id: action })),
     (root) => this.refreshLessons(root),
   );
-  private settings = new Menu($('settings'), (action) => (action === 'reset' ? this.open(this.confirmReset) : this.back()));
+  private prefs = loadSettings();
+  private settings = new Menu($('settings'), (action) => this.settingsAction(action), () => this.refreshSettings());
   private confirmReset = new Menu($('confirm-reset'), (action) => this.confirmResetAction(action));
   /** The open screens, bottom first; empty during play. */
   private panels: Panel[] = [];
@@ -162,6 +164,8 @@ class Game {
     const params = new URLSearchParams(location.search);
     this.themeOverride = THEMES[params.get('theme') ?? params.get('sheet') ?? ''] ?? null;
     if (params.has('fps')) this.readout.toggle();
+    // Turn the slide preview on for this visit only, without saving it (for screenshots).
+    if (params.has('slides')) this.prefs.slidePreview = true;
     // For approving a theme's readability without relying on color.
     if (params.has('gray')) document.documentElement.style.filter = 'grayscale(1)';
     if (params.has('summit') && params.has('sheet')) {
@@ -357,6 +361,7 @@ class Game {
     this.moves++;
     this.status = 'busy';
     this.world.showFlipPreviews([]);
+    this.world.showSlidePreviews([]);
     this.renderChrome();
 
     await this.animateStep(from, result, dir, scene);
@@ -422,12 +427,17 @@ class Game {
    */
   private updatePreviews(): void {
     const level = this.level;
-    if (!level?.ceiling) return this.world.showFlipPreviews([]);
+    if (!level) return this.world.showFlipPreviews([]), this.world.showSlidePreviews([]);
     const layer = this.state.layer ?? 0;
-    const spots = DIRS.map((d) => step(level, this.state, d))
-      .filter((r) => r.motions.some((m) => m.kind === 'flip') && (r.state.layer ?? 0) !== layer)
-      .map((r) => r.state.block);
-    this.world.showFlipPreviews(spots);
+    const results = DIRS.map((d) => step(level, this.state, d));
+    const flips = (r: (typeof results)[number]) => r.motions.some((m) => m.kind === 'flip') && (r.state.layer ?? 0) !== layer;
+    this.world.showFlipPreviews(level.ceiling ? results.filter(flips).map((r) => r.state.block) : []);
+    // The slide setting: where each move that slides (on ice or through a tube) leaves the block, unless
+    // it falls or flips (the flip preview already shows those).
+    const slides = this.prefs.slidePreview
+      ? results.filter((r) => r.outcome !== 'fall' && !flips(r) && r.motions.some((m) => m.kind === 'slide')).map((r) => r.state.block)
+      : [];
+    this.world.showSlidePreviews(slides);
   }
 
   private drainQueue(): void {
@@ -697,6 +707,20 @@ class Game {
   private openSettings(): void {
     this.settings.forget();
     this.open(this.settings);
+  }
+
+  private settingsAction(action: string): void {
+    if (action === 'reset') this.open(this.confirmReset);
+    else if (action === 'slides') {
+      this.prefs.slidePreview = !this.prefs.slidePreview;
+      saveSettings(this.prefs);
+      this.refreshSettings();
+      if (this.status === 'playing') this.updatePreviews();
+    } else this.back();
+  }
+
+  private refreshSettings(): void {
+    $('setting-slides').querySelector('.setting-value')!.textContent = this.prefs.slidePreview ? 'On' : 'Off';
   }
 
   private mainMenuAction(action: string): void {

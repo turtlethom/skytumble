@@ -45,6 +45,8 @@ const COLORS = {
   lockStone: 0x8a8a9a,
   /** The landing preview: the block's footprint where a flip would leave it. */
   preview: 0xcbb2ff,
+  /** The slide preview (a setting): where a slide would leave the block. A deep blue that reads on ice, snow and grass. */
+  slidePreview: 0x1f7ae0,
   /** Shape switches: a stone disc like the other switches, with a bar in the block's own color. */
   shapeStone: 0xc9c2b4,
   shapeBar: 0xd9a95f,
@@ -274,6 +276,7 @@ export class World {
   private bridgeMask = 0;
   /** Landing previews currently shown (each drawn twice: on your floor and on the other floor). */
   private previews: THREE.Object3D[] = [];
+  private slidePreviews: THREE.Object3D[] = [];
   /** Dirt and hanging rock per layer: hidden when you see a layer from behind, where it's only clutter. */
   private earths: THREE.Object3D[][] = [[], []];
   private flipGlows: THREE.MeshStandardMaterial[] = [];
@@ -469,6 +472,28 @@ export class World {
         parent.add(footprint);
         this.previews.push(footprint);
       }
+    }
+  }
+
+  /**
+   * The slide setting: one flat footprint per move that slides, where the move would leave the
+   * block, on the floor you're on.
+   */
+  showSlidePreviews(blocks: Block[]): void {
+    for (const p of this.slidePreviews) p.removeFromParent();
+    this.slidePreviews = [];
+    const color = COLORS.slidePreview;
+    for (const b of blocks) {
+      const n = blockLength(b);
+      const footprint = makeFootprint(
+        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide }),
+        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.95, depthWrite: false }),
+      );
+      setFootprint(footprint, b.o === 'X' ? n : 1, b.o === 'Y' ? n : 1);
+      const center = blockPosition(b);
+      footprint.position.set(center.x, FOOTPRINT_LIFT, center.z);
+      this.layerGroups[this.layer].add(footprint);
+      this.slidePreviews.push(footprint);
     }
   }
 

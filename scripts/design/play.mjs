@@ -224,7 +224,7 @@ if (process.env.FRAMERATE === '1') {
   check('leaving it for a level: title', await untilTitle());
 } else
 for (const [id, moves] of Object.entries(solutions)) {
-  await send('Page.navigate', { url: `${base}/?level=${id}` });
+  await send('Page.navigate', { url: `${base}/?level=${id}${process.env.QUERY ? `&${process.env.QUERY}` : ''}` });
   // A fresh load shows the chapter title, then the island rises. On a slow load the title comes late,
   // so wait for it to appear before waiting for it to go: any key sent during it would only skip it.
   await untilTitle();

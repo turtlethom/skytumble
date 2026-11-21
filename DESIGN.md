@@ -162,7 +162,7 @@ Shipped releases and finished build notes are in `DESIGN-archive.md`, word for w
 
 - **Next, in order:**
   1. ~~Tighten `glade-13`, `15` and `18`~~ **Done 2026-11-20, waiting on the user's play:** `walls` showed `glade-18` already passes and `glade-14` was the third idle color (orange bridges), so the three reworked are `glade-13`, `14` and `15`; see the *Playtest log*. Every Glade color now moves.
-  2. **Ice slide-end preview as a setting**, off by default (in Settings): marks where each possible slide would stop.
+  2. ~~Ice slide-end preview as a setting~~ **Built 2026-11-20, waiting on the user's look:** Settings → *Show where slides end* (off by default, saved apart from progress so a reset keeps it). At rest, every move that slides (ice, or a cube through a tube) gets a flat deep-blue footprint where the move leaves the block, after any belts; none for moves that fall or flip (the flip preview covers those). `?slides` turns it on for one visit, and `play.mjs` takes `QUERY=slides` for screenshots.
   3. **The user plays `glade-16`…`20` and the Glade maze** (never playtested); log their notes.
   4. **Then the paint workshop world** (split + paint): a look session (grill it) → tile sheet (paint colors chosen there) → lab → sign-off and frozen rules → 20 levels in batches of 5.
 - **Lessons that carry over:** every level its own idea, never a liked level's frame reused; mechanics mix in as ingredients; par and states climb, and the finale clearly tops the rest. No special piece that never acts or matters (`lint`; `analyze`'s UNUSED line), above all anything a script placed at random. Hand-draw a level's chain of reasons, and let generators fill in only colorings, placements and island shapes; random networks almost never need every piece. A tall block tips four tiles at a time, so its switches sit on its step. Time-box each level at three rebuilds and check in with the user. Hand levels over one or two at a time.
@@ -854,7 +854,7 @@ In a menu: ↑/↓ or J/K choose · Enter select · Esc or M back
 - **Ice is one-trick** (top pre-mortem): each ice puzzle has one "aha" and is dull once
   solved. Guarded by the two-decision rule; watch for it in playtest notes.
 - **Unreadable slides:** players can't predict where a slide ends. May need a slide-path
-  hint; the ice lab should show whether it does.
+  hint; the ice lab should show whether it does. Settings now offers a slide-end preview, off by default (2026-11-20).
 - Generated levels feel bland → compare against the reference levels; tune scoring.
   Generated shapes stay rectangular until archipelago generation lands.
 - "Handmade levels improve the generator" has no concrete method yet; design it with

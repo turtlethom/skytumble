@@ -105,7 +105,8 @@ goal reachable only lying. **Dead ends** counts states you can reach but never w
 one level. `/?sheet=<theme>` shows every tile in a theme (`&bridges=0` retracts the bridges), for
 approving readability before scenery; `/?sheet=toybox&toys` stands Toybox's sample toys on its floor; `/?sheet=peaks&aerie` shows Windy Peaks' rock structures and birds up close; `/?sheet=frost&summit` shows Frost Isle's reindeer up close; `/?sheet=<theme>&walls` shows a world's walls (raised, sunk, low stone) beside the tiles they mustn't be mistaken for (Starfall's on both floors; `&up` starts on the ceiling); `&theme=<theme>` previews a theme on any level; `&gray` shows
 the page in black and white, to check a tile reads without color. In the game,
-F (or `?fps`) toggles a hidden frame-rate readout, which also shows triangles and draw calls.
+F (or `?fps`) toggles a hidden frame-rate readout, which also shows triangles and draw calls. `?slides` turns on the
+slide-end preview (a Settings toggle, off by default) for one visit.
 
 ## Designing handmade levels
 
@@ -201,7 +202,7 @@ SHOTS=<scratch dir> npm run verify -- frost-
 It plays every optimal solution with real key events, reports WON/NOT WON at par, and saves start
 and end screenshots to read. Controls follow the screen, so the driver asks the game which arrow
 rolls which way (`window.skytumbleKeyFor`). Options for `verify`/`play.mjs`: `STEPS=1` (a shot
-after every move), `PEEK_AT=n` (hold Space after move n), `ROTATE=n` (quarter turns before playing), `TITLE_CHECK=1` (check when the chapter title shows, instead of playing), `FRAMES=n` (n shots during the last move, or move `FRAMES_AT`, `FRAME_MS` apart: slow the animation's constants in a throwaway build first), `PAGES='sheet=peaks&walls;sheet=peaks&walls&gray'` (screenshot each page instead of playing, as page-1.png…; `SETTLE` ms per page, default 4000; base URL is `http://localhost:<port>` with no `/skytumble`), `PAGE_JS='<js>'` (run on each page before its shot, e.g. `document.querySelector('[data-action=labs]').click()` for the Labs screen), `HOWTO=padWalls` (open How To Play on that entry, unlocking it, and save `howto-NN.png` every `HOWTO_MS` (500) for `HOWTO_SHOTS` (16) shots; run it as `npm run verify -- none` so no level plays). For the main menu, a plain headless screenshot of `/`
+after every move), `PEEK_AT=n` (hold Space after move n), `ROTATE=n` (quarter turns before playing), `QUERY=slides` (extra URL parameters for each level), `TITLE_CHECK=1` (check when the chapter title shows, instead of playing), `FRAMES=n` (n shots during the last move, or move `FRAMES_AT`, `FRAME_MS` apart: slow the animation's constants in a throwaway build first), `PAGES='sheet=peaks&walls;sheet=peaks&walls&gray'` (screenshot each page instead of playing, as page-1.png…; `SETTLE` ms per page, default 4000; base URL is `http://localhost:<port>` with no `/skytumble`), `PAGE_JS='<js>'` (run on each page before its shot, e.g. `document.querySelector('[data-action=labs]').click()` for the Labs screen), `HOWTO=padWalls` (open How To Play on that entry, unlocking it, and save `howto-NN.png` every `HOWTO_MS` (500) for `HOWTO_SHOTS` (16) shots; run it as `npm run verify -- none` so no level plays). For the main menu, a plain headless screenshot of `/`
 with `--virtual-time-budget=20000` is enough; the sky map and other screens need the driver, to click through to them. Gotchas:
 
 - `--virtual-time-budget` screenshots freeze CSS transitions mid-way; use the driver instead.
