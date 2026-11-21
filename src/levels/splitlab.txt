@@ -44,3 +44,26 @@ guard: off
 S##V#h#H###G
 ...#........
 ............
+
+=== splitlab-05
+par: 7
+name: Slipstream
+idea: Glass tubes take only cubes, so split to ride one. A belt pushes only the cube you just moved: the first cube waits on a belt that points at the edge, and the second, pushed toward it, is held where it lands. Join them and drop onto the goal.
+guard: off
+.............
+S##]#====v...
+.........>...
+.........G...
+.............
+
+=== splitlab-06
+par: 28
+name: Long Way Round
+idea: Each lane's switches lay the other lane's bridges, so the cubes take turns: move one until it has to wait for the other, then swap. A long walk on purpose: does moving two cubes this far drag?
+switches: 1 3 0 2
+guard: off
+..............G..
+...#o##0#o##2##..
+S##A..........#..
+...##o1###o3###..
+.................

@@ -1583,3 +1583,21 @@ Before a move: ↹ press Tab first, to move the other cube (a swap is free; it n
 11-15  ↹↑● ↓ → → →
 16-18  → → →✔
 ```
+
+## `splitlab-05` Slipstream
+
+```
+ 1- 5  → →✂ ↹→ ↹→ →
+ 6- 7  ↓ ↓✔
+```
+
+## `splitlab-06` Long Way Round
+
+```
+ 1- 5  → →✂ ↓ → →●
+ 6-10  ↹→● → → → →
+11-15  →● → → ↹→ →
+16-20  → → →● → →
+21-25  → → ↑ ↹→ →
+26-28  → ↓ ↑✔
+```

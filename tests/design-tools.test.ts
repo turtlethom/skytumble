@@ -3,6 +3,7 @@ import { solve } from '../src/game/solver';
 import { findLevel } from '../src/levels';
 import solutions from '../SOLUTIONS.md?raw';
 import { directions, solutionsMarkdown } from '../scripts/design/arrows';
+import { explore, movesText, pathTo } from '../scripts/design/explore';
 import { Draft, dropUnreachable, idleSpecials, quickRepresses, flipNS, hidden, lint, plainWalls, plankify, regrow, strip, switchOrder, toLevel, wallColors } from '../scripts/design/checks';
 
 const draft = (rows: string[], switches: number[] = []): Draft => ({ rows, switches, on: [], shape: 2 });
@@ -133,5 +134,21 @@ describe('design tools', () => {
     // Onto the switch, off it, onto it again: two presses two moves apart.
     expect(quickRepresses(level, ['right', 'left', 'right'])).toBe(1);
     expect(quickRepresses(level, ['right'])).toBe(0);
+  });
+  it('follow a split: swaps in the directions and in explored paths, splitters that cannot split', () => {
+    const level = findLevel('splitlab-01')!.level;
+    // ↹ marks a Tab before a roll, ✂ the move that splits; the count is rolls only.
+    const arrows = directions(level).join(' ');
+    expect(arrows).toContain('✂');
+    expect(arrows).toContain('↹');
+    // Explored paths carry the swaps, and the two cubes count as one state whichever moves.
+    const ex = explore(level);
+    const won = [...ex.nodes.keys()].find((k) => k.includes('+'))!;
+    expect(movesText(pathTo(ex, won))).toMatch(/^[UDLRT]+$/);
+    // Par counts rolls; the steps add the swaps.
+    const sol = solve(level)!;
+    expect(sol.steps.length).toBeGreaterThan(sol.moves.length);
+    expect(lint(draft(['.....', 'S#A##', '.....'])).join(' ')).toContain('onto nothing');
+    expect(idleSpecials(toLevel(draft(['.....', 'S#A##', '.....']))).join(' ')).toContain('never splits');
   });
 });
