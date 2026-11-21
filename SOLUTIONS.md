@@ -1555,30 +1555,30 @@ Before a move: ↹ press Tab first, to move the other cube (a swap is free; it n
 ## `splitlab-01` Two of a Kind
 
 ```
- 1- 5  → →✂ ↹↑ ↹→ ↑
+ 1- 5  → →✂ ↑ ↹→ ↑
  6- 6  ↑✔
 ```
 
 ## `splitlab-02` Reunion
 
 ```
- 1- 5  → →✂ → ↓ →
- 6-10  → ↑ ↹→ → →
+ 1- 5  → →✂ → → →
+ 6-10  ↑ ↹↓ → → →
 11-12  ↑ ↑✔
 ```
 
 ## `splitlab-03` Featherweight
 
 ```
- 1- 5  → →● → →✂ →
- 6-10  → → ↹→● ↑ →
+ 1- 5  → →● → →✂ →●
+ 6-10  ↑ → → ↹→ →
 11-14  → → → →✔
 ```
 
 ## `splitlab-04` Two Hands
 
 ```
- 1- 5  → →✂ → → →
+ 1- 5  → →✂ ↹→ → →
  6-10  ↹↑ → ↑● ↓ ↹→
 11-15  ↹↑● ↓ → → →
 16-18  → → →✔
@@ -1587,17 +1587,17 @@ Before a move: ↹ press Tab first, to move the other cube (a swap is free; it n
 ## `splitlab-05` Slipstream
 
 ```
- 1- 5  → →✂ ↹→ ↹→ →
+ 1- 5  → →✂ → ↹→ →
  6- 7  ↓ ↓✔
 ```
 
 ## `splitlab-06` Long Way Round
 
 ```
- 1- 5  → →✂ ↓ → →●
- 6-10  ↹→● → → → →
-11-15  →● → → ↹→ →
-16-20  → → →● → →
-21-25  → → ↑ ↹→ →
-26-28  → ↓ ↑✔
+ 1- 5  → →✂ →● → →
+ 6-10  ↹↓ → →● → →
+11-15  → → →● ↹→ →
+16-20  →● → → → →
+21-25  → ↹→ → → →
+26-28  ↑ ↑ ↑✔
 ```

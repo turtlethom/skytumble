@@ -48,7 +48,7 @@ export interface StepResult {
   locked?: { x: number; y: number }[];
   /** The moving cube rolled into the idle one at this cell: the two joined into a lying block. */
   joined?: { x: number; y: number };
-  /** The block split on the splitter it stands on; the second cube appeared at this cell. */
+  /** The block split on the splitter it stands on; the second cube appeared at this cell, and moves first. */
   split?: { x: number; y: number };
   /** A press took the floor from under the idle cube, which fell from this cell. */
   dropped?: { x: number; y: number };
@@ -559,18 +559,21 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
   if (other && !isSolid(view, other.x, other.y, bridges, state.hedges ?? 0)) return { ...fell(bridges), pressed, dropped: { ...other } };
 
   // A normal block standing on a splitter splits: one cube stays, the other appears on the marked
-  // side, unless that side is a gap or something stands there. The new cube presses nothing.
+  // side, unless that side is a gap or something stands there. The new cube presses nothing, and it
+  // moves first (the user's call): the one left on the splitter waits.
   let split: { x: number; y: number } | undefined;
+  let waiting = other;
   if (!other && block.o === 'S' && blockLength(block) === 2 && tileAt(view, block.x, block.y) === Tile.Splitter) {
     const { dx, dy } = DIR_DELTA[DIRS[groupAt(view, block.x, block.y)]];
     const [sx, sy] = [block.x + dx, block.y + dy];
     const after = { ...state, bridges };
     if (isSolid(view, sx, sy, bridges, state.hedges ?? 0) && !standsUp(view, sx, sy, after)) {
       split = { x: sx, y: sy };
-      block = withLength(block, 1);
+      waiting = { x: block.x, y: block.y };
+      block = withLength({ ...block, x: sx, y: sy }, 1);
     }
   }
-  const pair = split ? { other: split } : idle;
+  const pair = waiting ? { other: waiting } : {};
 
   // The goal takes a standing block of its shape: normal unless the goal is marked (group = length).
   const goalShape = (x: number, y: number) => (groupAt(view, x, y) > 0 ? groupAt(view, x, y) : 2);

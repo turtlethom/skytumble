@@ -1570,19 +1570,24 @@ export class World {
     this.showPair(state);
   }
 
-  /** A split: the block shrinks to a cube while the second cube slides out to the marked side. */
+  /**
+   * A split: the block shrinks to a cube and the second cube slides out to the marked side. The one
+   * that slides out moves first, so the moving block's mesh is the one that slides; the idle cube
+   * stays on the splitter.
+   */
   async splitApart(before: Block, state: State): Promise<void> {
-    const other = state.other!;
     const from = blockPosition({ x: before.x, y: before.y, o: 'S', n: 1 });
-    const to = blockPosition({ x: other.x, y: other.y, o: 'S', n: 1 });
+    const to = blockPosition(state.block);
     this.twin.visible = true;
     this.twin.rotation.set(0, 0, 0);
+    this.twin.position.copy(from);
     await this.tween(380, (t) => {
       const e = easeOutBack(t);
-      this.block.scale.set(1, 1 - 0.5 * Math.min(1, e), 1);
-      this.block.position.y = 0.98 * (1 - 0.5 * Math.min(1, e));
-      this.twin.scale.set(1, 0.5 * Math.min(1, t * 2), 1);
-      this.twin.position.set(from.x + (to.x - from.x) * e, to.y, from.z + (to.z - from.z) * e);
+      const half = 1 - 0.5 * Math.min(1, e);
+      this.twin.scale.set(1, half, 1);
+      this.twin.position.y = 0.98 * half;
+      this.block.scale.set(1, half, 1);
+      this.block.position.set(from.x + (to.x - from.x) * e, 0.98 * half, from.z + (to.z - from.z) * e);
     });
     this.placeBlock(state.block);
     this.showPair(state);

@@ -11,11 +11,11 @@ describe('splitting', () => {
   // A normal block rolls from x=0 lying over 1,2, then stands on the splitter at 3, which splits north.
   const level = parseLevel(['...#.', 'S##A#', '...#.']);
 
-  it('a standing normal block splits on a splitter: one cube stays, the other appears on the marked side', () => {
+  it('a standing normal block splits on a splitter: one cube stays, the other appears on the marked side and moves first', () => {
     const r = step(level, { block: { x: 1, y: 1, o: 'X' }, bridges: 0, layer: 0 }, 'right');
     expect(r.split).toEqual({ x: 3, y: 0 });
-    expect(r.state.block).toEqual(cube(3, 1));
-    expect(r.state.other).toEqual({ x: 3, y: 0 });
+    expect(r.state.block).toEqual(cube(3, 0));
+    expect(r.state.other).toEqual({ x: 3, y: 1 });
   });
 
   it('round-trips through the text format', () => {

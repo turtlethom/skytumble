@@ -442,7 +442,8 @@ export function idleSpecials(l: Level): string[] {
       for (const m of result.motions) {
         if (m.kind === 'push' || m.kind === 'fly') blockCells(m.from).forEach(([x, y]) => acted.add(`${x},${y}`));
       }
-      if (result.split) acted.add(`${result.state.block.x},${result.state.block.y}`);
+      // The cube left on the splitter is the idle one.
+      if (result.split && result.state.other) acted.add(`${result.state.other.x},${result.state.other.y}`);
     }
   }
   const out: string[] = [];
