@@ -1,4 +1,4 @@
-import { Block, DIR_DELTA, DIRS, Dir, Level, Move, State, Tile } from './types';
+import { Block, DIR_DELTA, DIRS, Dir, Level, Move, Paint, State, Tile } from './types';
 
 /** `bump`: something in the way stopped the roll, and nothing changed: it isn't a move. */
 export type Outcome = 'ok' | 'fall' | 'win' | 'bump';
@@ -52,6 +52,10 @@ export interface StepResult {
   split?: { x: number; y: number };
   /** A press took the floor from under the idle cube, which fell from this cell. */
   dropped?: { x: number; y: number };
+  /** Trays the block came to rest on, which painted it. */
+  painted?: { x: number; y: number }[];
+  /** Wash tiles the block came to rest on, which stripped its paint there. */
+  washed?: { x: number; y: number }[];
 }
 
 export interface Held {
@@ -65,7 +69,63 @@ export interface Held {
 
 export function initialState(level: Level): State {
   const block = withLength({ x: level.start.x, y: level.start.y, o: 'S' }, level.startShape ?? 2);
-  return { block, bridges: level.bridgesOn, layer: 0 };
+  // A cube is one color all over: its bottom color.
+  const start = level.startPaint && block.n === 1 ? ([level.startPaint[0], level.startPaint[0]] as [Paint, Paint]) : level.startPaint;
+  return { block, bridges: level.bridgesOn, layer: 0, ...painted(start) };
+}
+
+/** The paint field for a state: absent while unpainted, so unpainted states compare as before. */
+export function painted(p: [Paint, Paint] | undefined): { paint?: [Paint, Paint] } {
+  return p && (p[0] || p[1]) ? { paint: p } : {};
+}
+
+/**
+ * Where each half's color goes when the block tips over (a cube is one color). Standing, the bottom
+ * half ends nearer where it stood; lying along the roll, the half nearer the edge it tips over ends at
+ * the bottom; lying across the roll, nothing changes.
+ */
+export function rollPaint(b: Block, p: [Paint, Paint] | undefined, dir: Dir): [Paint, Paint] | undefined {
+  if (!p || blockLength(b) === 1) return p;
+  const [p0, p1] = p;
+  const forward = dir === 'right' || dir === 'down';
+  const along = b.o === 'S' || (b.o === 'X') === (dir === 'left' || dir === 'right');
+  if (!along) return p;
+  if (b.o === 'S') return forward ? [p0, p1] : [p1, p0];
+  return forward ? [p1, p0] : [p0, p1];
+}
+
+/** The color of the part of the block over a cell: a cube's, a lying block's half there, a standing block's top (seen from above). */
+export function partColor(b: Block, p: [Paint, Paint] | undefined, x: number, y: number): Paint {
+  if (!p) return 0;
+  if (blockLength(b) === 1) return p[0];
+  if (b.o === 'S') return p[1];
+  const i = blockCells(b).findIndex(([cx, cy]) => cx === x && cy === y);
+  return p[Math.max(i, 0)];
+}
+
+/** Two primaries mixed: red + blue purple, red + yellow orange, blue + yellow green. */
+const MIXES: Record<string, Paint> = { '1,2': 4, '1,3': 5, '2,3': 6 };
+const isPrimary = (c: Paint) => c >= 1 && c <= 3;
+const mixOf = (a: Paint, b: Paint): Paint => MIXES[[a, b].sort().join(',')] ?? 7;
+
+/** A tray's primary over a half: none takes it, the same primary stays, another mixes, a mix turns to mud. */
+export function coat(old: Paint, tray: Paint): Paint {
+  if (!old) return tray;
+  if (old === tray) return old;
+  return isPrimary(old) ? mixOf(old, tray) : 7;
+}
+
+/**
+ * A gate here that this part of the block can't pass: its color doesn't match the gate's exactly. A
+ * standing block stands wholly in the gate, so both halves must be that color (the user's call: halves
+ * of two colors never combine into a third; only a coat over a coat mixes). A lying block needs only its
+ * half over the gate, a cube its one color. Mud and no paint pass nothing.
+ */
+function gateHolds(level: Level, b: Block, p: [Paint, Paint] | undefined, x: number, y: number): boolean {
+  if (tileAt(level, x, y) !== Tile.Gate) return false;
+  const c = groupAt(level, x, y);
+  if (b.o === 'S' && blockLength(b) === 2) return p?.[0] !== c || p?.[1] !== c;
+  return partColor(b, p, x, y) !== c;
 }
 
 /** The block's length in tiles: 1 cube, 2 normal, 3 tall. */
@@ -218,13 +278,15 @@ function standsUp(level: Level, x: number, y: number, state: State): boolean {
  * The first thing in the way of a roll that would land on `to`, nearest the block first: a raised
  * wall or an upright hedge. Slides and belt pushes check `inTheWay` instead; flights fly over.
  */
-function obstacle(level: Level, state: State, from: Block, to: Block, dir: Dir): { x: number; y: number; hedge: boolean } | null {
+function obstacle(level: Level, state: State, from: Block, to: Block, dir: Dir, toPaint?: [Paint, Paint]): { x: number; y: number; hedge: boolean } | null {
   // A block in a tube leaves only through an open end: the cube by rolling, a longer one never by a roll.
   for (const [x, y] of blockCells(from)) if (tubeStops(level, x, y, from, dir, true)) return { x, y, hedge: false };
   const cells = blockCells(to);
   if (dir === 'left' || dir === 'up') cells.reverse();
   for (const [x, y] of cells) {
     if (standsUp(level, x, y, state)) return { x, y, hedge: tileAt(level, x, y) === Tile.Hedge };
+    // A gate holds like a raised wall for any part landing on it in the wrong color.
+    if (gateHolds(level, to, toPaint, x, y)) return { x, y, hedge: false };
     // A tube the block can't enter this way holds like a wall.
     if (tubeStops(level, x, y, to, dir, true)) return { x, y, hedge: false };
   }
@@ -256,10 +318,13 @@ function shift(b: Block, dir: Dir): Block {
  * hedge stops a slide or a push on the tile before it. A wall that came up under the block doesn't
  * hold it, since the block is already there.
  */
-function inTheWay(level: Level, state: State, from: Block, to: Block, dir: Dir): { x: number; y: number } | null {
+function inTheWay(level: Level, state: State, from: Block, to: Block, dir: Dir, paint?: [Paint, Paint]): { x: number; y: number } | null {
   for (const [x, y] of blockCells(from)) if (tubeStops(level, x, y, from, dir, false)) return { x, y };
   const on = new Set(blockCells(from).map(([x, y]) => y * level.width + x));
-  const hit = blockCells(to).find(([x, y]) => (!on.has(y * level.width + x) && standsUp(level, x, y, state)) || tubeStops(level, x, y, to, dir, false));
+  // A gate of the wrong color for the part moving onto it brakes like a raised wall.
+  const hit = blockCells(to).find(
+    ([x, y]) => (!on.has(y * level.width + x) && (standsUp(level, x, y, state) || gateHolds(level, to, paint, x, y))) || tubeStops(level, x, y, to, dir, false),
+  );
   return hit ? { x: hit[0], y: hit[1] } : null;
 }
 
@@ -276,11 +341,11 @@ function slides(level: Level, b: Block): boolean {
  * Slide along `dir` while the block slides (see `slides`); stops on leaving the ice or tube, which
  * leaves it on the first tile past it, or losing support, or on the tile before a raised wall (`hit`).
  */
-function slide(level: Level, state: State, b: Block, dir: Dir): { block: Block; hit: { x: number; y: number } | null } {
+function slide(level: Level, state: State, b: Block, dir: Dir, paint?: [Paint, Paint]): { block: Block; hit: { x: number; y: number } | null } {
   let cur = b;
   while (slides(level, cur)) {
     const next = shift(cur, dir);
-    const hit = inTheWay(level, state, cur, next, dir);
+    const hit = inTheWay(level, state, cur, next, dir, paint);
     if (hit) return { block: cur, hit };
     cur = next;
     if (!supported(level, cur, state.bridges)) break;
@@ -410,19 +475,25 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
   let block = rolled;
   let layer = state.layer ?? 0;
   let view = layerView(level, layer);
+  // Each half's color goes where the roll puts it; slides and pushes keep it.
+  let paint = rollPaint(state.block, state.paint, dir);
 
   // Rolling into something: the block stays put, even over a gap. A standing block has the weight
   // to topple a hedge along the roll, which costs a move, unless something standing beyond the hedge
   // stops it falling. Anything else holds, and no move happened.
-  const hit = obstacle(view, state, state.block, rolled, dir);
+  const hit = obstacle(view, state, state.block, rolled, dir, paint);
   const other = state.other;
   // Splitting: the moving cube rolling onto the idle one joins them into a lying block over their two
   // tiles. Nothing new is landed on, so nothing presses, slides or pushes.
   if (hit && other && hit.x === other.x && hit.y === other.y) {
     const { x: ax, y: ay } = state.block;
     const joined: Block = { x: Math.min(ax, other.x), y: Math.min(ay, other.y), o: ax === other.x ? 'Y' : 'X' };
-    const { other: _gone, ...whole } = state;
-    return { state: { ...whole, block: joined }, outcome: 'ok', rolled: joined, motions: [], toggled: 0, pressed: [], joined: { ...other } };
+    // Each cube's color stays on its half: the halves go in cell order, lower first.
+    const [mine, theirs] = [state.paint?.[0] ?? 0, state.otherPaint ?? 0];
+    const moverFirst = ax + ay < other.x + other.y;
+    const { other: _gone, otherPaint: _was, paint: _old, ...whole } = state;
+    const colors: [Paint, Paint] = moverFirst ? [mine, theirs] : [theirs, mine];
+    return { state: { ...whole, block: joined, ...painted(colors) }, outcome: 'ok', rolled: joined, motions: [], toggled: 0, pressed: [], joined: { ...other } };
   }
   if (hit) {
     const { x, y } = hit;
@@ -452,9 +523,9 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
   };
   // Hedges stay absent until one falls, so a level without any compares as it always has.
   const hedges = state.hedges ? { hedges: state.hedges } : {};
-  const idle = other ? { other } : {};
+  const idle = other ? { other, ...(state.otherPaint ? { otherPaint: state.otherPaint } : {}) } : {};
   const fell = (bridges: number, extra: Partial<StepResult> = {}): StepResult => ({
-    state: { block, bridges, layer, ...hedges, ...idle },
+    state: { block, bridges, layer, ...hedges, ...idle, ...painted(paint) },
     outcome: 'fall',
     rolled,
     motions,
@@ -466,7 +537,7 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
 
   const held: Held[] = [];
   const slideOn = (d: Dir) => {
-    const { block: to, hit } = slide(view, state, block, d);
+    const { block: to, hit } = slide(view, state, block, d, paint);
     moveTo('slide', d, to);
     if (hit) held.push({ ...hit, dir: d, belt: false, after: motions.length });
   };
@@ -487,7 +558,7 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
       pushed = true;
       // A wall where the belt would push holds the block where it is. The belt tries again only the
       // next time the block lands on it.
-      const hit = inTheWay(view, state, block, shift(block, push), push);
+      const hit = inTheWay(view, state, block, shift(block, push), push, paint);
       if (hit) {
         held.push({ ...hit, dir: push, belt: true, after: motions.length });
         continue;
@@ -544,6 +615,22 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
     }
   }
 
+  // A tray coats the part of the block resting on it (a cube all over, a lying block's half there, a
+  // standing block's bottom half), mixing with what's there; water strips that part bare.
+  const coated: { x: number; y: number }[] = [];
+  const washed: { x: number; y: number }[] = [];
+  blockCells(block).forEach(([x, y], i) => {
+    const t = tileAt(view, x, y);
+    if (t !== Tile.Tray && t !== Tile.Wash) return;
+    const p: [Paint, Paint] = paint ? [paint[0], paint[1]] : [0, 0];
+    const half = length === 1 || standing ? 0 : i;
+    const c = t === Tile.Wash ? 0 : coat(p[half], groupAt(view, x, y) as Paint);
+    if (length === 1) p[0] = p[1] = c;
+    else p[half] = c;
+    paint = p[0] || p[1] ? p : undefined;
+    (t === Tile.Wash ? washed : coated).push({ x, y });
+  });
+
   // A shape switch under a standing block sets its shape, right where it stands.
   let reshaped: StepResult['reshaped'];
   if (standing && tileAt(view, block.x, block.y) === Tile.ShapeSwitch) {
@@ -563,6 +650,7 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
   // moves first (the user's call): the one left on the splitter waits.
   let split: { x: number; y: number } | undefined;
   let waiting = other;
+  let waitingPaint = state.otherPaint;
   if (!other && block.o === 'S' && blockLength(block) === 2 && tileAt(view, block.x, block.y) === Tile.Splitter) {
     const { dx, dy } = DIR_DELTA[DIRS[groupAt(view, block.x, block.y)]];
     const [sx, sy] = [block.x + dx, block.y + dy];
@@ -571,9 +659,14 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
       split = { x: sx, y: sy };
       waiting = { x: block.x, y: block.y };
       block = withLength({ ...block, x: sx, y: sy }, 1);
+      // The top half pops out, in its color; the bottom half's color stays on the splitter.
+      if (paint) {
+        waitingPaint = paint[0];
+        paint = [paint[1], paint[1]];
+      }
     }
   }
-  const pair = waiting ? { other: waiting } : {};
+  const pair: { other?: { x: number; y: number }; otherPaint?: Paint } = waiting ? { other: waiting, ...(waitingPaint ? { otherPaint: waitingPaint } : {}) } : {};
 
   // The goal takes a standing block of its shape: normal unless the goal is marked (group = length).
   const goalShape = (x: number, y: number) => (groupAt(view, x, y) > 0 ? groupAt(view, x, y) : 2);
@@ -583,7 +676,7 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
     tileAt(view, block.x, block.y) === Tile.Goal &&
     blockLength(block) === goalShape(block.x, block.y);
   return {
-    state: { block, bridges, layer, ...hedges, ...pair },
+    state: { block, bridges, layer, ...hedges, ...pair, ...painted(paint) },
     outcome: won ? 'win' : 'ok',
     rolled,
     motions,
@@ -593,13 +686,23 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
     ...(held.length ? { held } : {}),
     ...(locked.length ? { locked } : {}),
     ...(split ? { split } : {}),
+    ...(coated.length ? { painted: coated } : {}),
+    ...(washed.length ? { washed } : {}),
   };
 }
 
 /** Swap which cube the arrows move. A free action: it never counts as a move. Unchanged if whole. */
 export function swap(state: State): State {
   if (!state.other) return state;
-  return { ...state, block: { x: state.other.x, y: state.other.y, o: 'S', n: 1 }, other: { x: state.block.x, y: state.block.y } };
+  const { paint: _p, otherPaint: _o, ...rest } = state;
+  const [mine, theirs] = [state.paint?.[0] ?? 0, state.otherPaint ?? 0];
+  return {
+    ...rest,
+    block: { x: state.other.x, y: state.other.y, o: 'S', n: 1 },
+    other: { x: state.block.x, y: state.block.y },
+    ...painted([theirs, theirs]),
+    ...(mine ? { otherPaint: mine } : {}),
+  };
 }
 
 /**

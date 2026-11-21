@@ -151,4 +151,12 @@ describe('design tools', () => {
     expect(lint(draft(['.....', 'S#A##', '.....'])).join(' ')).toContain('onto nothing');
     expect(idleSpecials(toLevel(draft(['.....', 'S#A##', '.....']))).join(' ')).toContain('never splits');
   });
+  it('lint paint: a gate whose colors no tray provides, and a gate nothing ever passes', () => {
+    const d = { ...draft(['.........', 'S#r#{#C..', '...#..#..', '...{###..', '.........']), shape: 1, gates: [2, 1] };
+    const warnings = lint(d).join(' ');
+    expect(warnings).toContain('blue gate, but no blue tray');
+    expect(warnings).toContain('gate at 4,1 is never passed');
+    // A purple gate needs red and blue: here blue is missing.
+    expect(lint({ ...d, gates: [4, 1] }).join(' ')).toContain('purple gate, but no blue tray');
+  });
 });

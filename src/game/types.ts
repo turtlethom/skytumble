@@ -38,7 +38,20 @@ export enum Tile {
    * side the splitter marks (group = index into DIRS), unless that side is a gap or a raised wall.
    */
   Splitter = 19,
+  /** A tray of wet paint (group = its primary color, 1-3): it coats the part of the block resting on it. */
+  Tray = 20,
+  /** A gate in a paint color (group = the color, 1-6): only a part of the block in that color passes onto it. */
+  Gate = 21,
+  /** Water: it strips the paint from the part of the block resting on it. */
+  Wash = 22,
 }
+
+/**
+ * Paint colors: 0 none, the primaries 1 red, 2 blue, 3 yellow, their mixes 4 purple (red + blue),
+ * 5 orange (red + yellow), 6 green (blue + yellow), and 7 mud (a coat on a mix), which passes no gate.
+ */
+export type Paint = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+export const PAINT_NAMES = ['none', 'red', 'blue', 'yellow', 'purple', 'orange', 'green', 'mud'] as const;
 
 /** Standing upright, lying along the x axis, or lying along the y axis. */
 export type Orientation = 'S' | 'X' | 'Y';
@@ -72,6 +85,8 @@ export interface Level {
   hedgeCells?: { x: number; y: number }[];
   /** The block's shape at the start (its length: 1 cube, 3 tall); absent means normal. */
   startShape?: 1 | 3;
+  /** The block's paint at the start, [bottom, top]; absent means unpainted. */
+  startPaint?: [Paint, Paint];
   /**
    * Optional second layer directly above the ground, same size and coordinates, walked upside
    * down. Bridge groups are shared between layers; the start is always on the ground.
@@ -91,6 +106,13 @@ export interface State {
    * `block`, so a swap exchanges the two. Absent while the block is whole.
    */
   other?: { x: number; y: number };
+  /**
+   * The block's paint, per half: a lying block's halves in `blockCells` order, a standing block's as
+   * [bottom, top], a cube's as [c, c]. Absent while unpainted.
+   */
+  paint?: [Paint, Paint];
+  /** The idle cube's paint after a split; absent while unpainted. */
+  otherPaint?: Paint;
 }
 
 export type Dir = 'up' | 'down' | 'left' | 'right';

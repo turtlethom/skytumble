@@ -1601,3 +1601,59 @@ Before a move: ↹ press Tab first, to move the other cube (a swap is free; it n
 21-25  → ↹→ → → →
 26-28  ↑ ↑ ↑✔
 ```
+
+## `paintlab-01` First Coat
+
+```
+ 1- 5  → → → ↓ ↓
+ 6-10  → → → ↑ ↑✔
+```
+
+## `paintlab-02` Two-Tone
+
+```
+ 1- 5  → ↓ ↓ → ↑
+ 6-10  → ↓ ← ↓ ↓
+11-12  ↓ →✔
+```
+
+## `paintlab-03` Full Coat
+
+```
+ 1- 5  → ↑ → ↓ ←
+ 6-10  ← ↑ → → ↓
+11-15  ← ↑ ← ↓ →
+16-19  ↓ ↓ ↓ ↓✔
+```
+
+## `paintlab-04` Mixing Bowl
+
+```
+ 1- 5  → → → ↓ ↓
+ 6-10  ↓ ↓ → → ↑
+11-14  ↑ → → →✔
+```
+
+## `paintlab-05` Double Dip
+
+```
+ 1- 5  → ↓ ↓ ↑ →
+ 6- 9  ↓ ↓ ↓ ↓✔
+```
+
+## `paintlab-06` Wash Up
+
+```
+ 1- 5  → → → → →
+ 6-10  ↓ ↓ → → →
+11-11  →✔
+```
+
+## `paintlab-07` Mixed Pair
+
+```
+ 1- 5  → →✂ → → →
+ 6-10  → ↓ ↹↓ → →
+11-15  → → ↑ ↓ →
+16-16  →✔
+```

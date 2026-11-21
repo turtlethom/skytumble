@@ -6,8 +6,8 @@ import { Block, DIR_DELTA, DIRS, Dir, Level, Move, State, Tile } from '../../src
 
 const keyOf = (s: State) => {
   // After a split the cubes are interchangeable (a swap is free): name the pair in a fixed order.
-  const cubes = s.other ? [`${s.block.x},${s.block.y}`, `${s.other.x},${s.other.y}`].sort().join('+') : '';
-  const where = s.other ? cubes : `${s.block.x},${s.block.y},${s.block.o},${s.block.n ?? 2}`;
+  const cubes = s.other ? [`${s.block.x},${s.block.y}:${s.paint?.[0] ?? 0}`, `${s.other.x},${s.other.y}:${s.otherPaint ?? 0}`].sort().join('+') : '';
+  const where = s.other ? cubes : `${s.block.x},${s.block.y},${s.block.o},${s.block.n ?? 2},${s.paint?.join('') ?? '00'}`;
   return `${where},${s.bridges},${s.layer ?? 0},${s.hedges ?? 0}`;
 };
 const blockKey = (b: Block, layer = 0) => `${b.x},${b.y},${b.o},${b.n ?? 2},${layer}`;

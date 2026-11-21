@@ -28,6 +28,7 @@ const LAYOUT: Record<string, { x: number; y: number; theme: string }> = {
   starlab: { x: 140, y: 45, theme: 'lab' },
   toylab: { x: 20, y: 74, theme: 'lab' },
   splitlab: { x: 60, y: 74, theme: 'lab' },
+  paintlab: { x: 100, y: 74, theme: 'lab' },
 };
 
 const SIGNATURE_LABEL: Record<string, string> = { walls: 'Hedges', ice: 'Ice & belts', pads: 'Launch pads', gravity: 'Gravity', shapes: 'Shapes' };

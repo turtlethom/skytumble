@@ -2,7 +2,7 @@
 // a solution doesn't need, regrow decoys that keep the puzzle, flip a board north to south, find what a
 // raised wall hides from the opening camera, and lint a draft for the mistakes that cost the most rounds.
 import { formatLevel, parseLevel } from '../../src/game/ascii';
-import { DIR_DELTA, DIRS, Dir, Level, Tile } from '../../src/game/types';
+import { DIR_DELTA, DIRS, Dir, Level, PAINT_NAMES, Paint, Tile } from '../../src/game/types';
 import { blockCells, findGoal, flight, initialState, isSolid, landing, layerView, step, successors, wallUp } from '../../src/game/rules';
 import { solve } from '../../src/game/solver';
 import { flipUses, iceUses, padUses, shapeUses } from '../../src/levels/validate';
@@ -19,6 +19,11 @@ export function switchOrder(level: Level): number[] {
   return out;
 }
 
+/** A level's gate colors in reading order, as a `gates:` line lists them. */
+export function gateOrder(level: Level): number[] {
+  return level.tiles.flatMap((t, i) => (t === Tile.Gate ? [level.groups[i]] : []));
+}
+
 const cellsOf = (b: { x: number; y: number; o: 'S' | 'X' | 'Y' }) => blockCells(b).map(([x, y]) => `${x},${y}`).join('+');
 
 /** A level as the tools hold it: text rows plus the options a design block carries. */
@@ -28,6 +33,10 @@ export interface Draft {
   /** Bridge groups that start extended. */
   on: number[];
   shape: number;
+  /** The block's paint at the start, [bottom, top]. */
+  paint?: [Paint, Paint];
+  /** Gate colors in reading order. */
+  gates?: number[];
 }
 
 export const COLOR = ['orange', 'purple', 'blue', 'red'];
@@ -36,7 +45,9 @@ const isWall = (t: Tile) => t === Tile.WallUp || t === Tile.WallDown;
 const isSwitch = (t: Tile) => t === Tile.SoftSwitch || t === Tile.HeavySwitch || t === Tile.ExtraHeavy;
 
 export function toLevel(d: Draft): Level {
-  return parseLevel(d.rows, d.switches, d.on.reduce((m, g) => m | (1 << g), 0), d.shape);
+  const level = parseLevel(d.rows, d.switches, d.on.reduce((m, g) => m | (1 << g), 0), d.shape, d.gates ?? []);
+  if (d.paint) level.startPaint = d.paint;
+  return level;
 }
 
 /** The level, or null if the rows don't parse. */
@@ -343,6 +354,13 @@ export function lint(d: Draft): string[] {
   const moved = new Set(allTiles.flatMap((t, i) => (colored(t, allGroups[i]) ? [allGroups[i]] : [])));
   for (const g of moved) if (!pressed.has(g) && allTiles.some((t, i) => (t === Tile.Bridge || t === Tile.BridgeReversed) && allGroups[i] === g)) out.push(`WARN: ${COLOR[g] ?? g} bridges have no switch: they never move`);
   for (const g of moved) if (!pressed.has(g) && allTiles.some((t, i) => isWall(t) && allGroups[i] === g)) out.push(`note: ${COLOR[g] ?? g} walls have no switch: they're low stone that never moves`);
+  // Gates need the primaries their color is made of, from trays or the start paint, or nothing can pass.
+  const have = new Set<number>([...l.tiles.flatMap((t, i) => (t === Tile.Tray ? [l.groups[i]] : [])), ...((l.startPaint ?? []) as number[])]);
+  const needs: Record<number, number[]> = { 1: [1], 2: [2], 3: [3], 4: [1, 2], 5: [1, 3], 6: [2, 3] };
+  for (const c of new Set(l.tiles.flatMap((t, i) => (t === Tile.Gate ? [l.groups[i]] : [])))) {
+    const missing = (needs[c] ?? []).filter((p) => !have.has(p) && !have.has(c));
+    if (missing.length) out.push(`WARN: a ${PAINT_NAMES[c]} gate, but no ${missing.map((p) => PAINT_NAMES[p]).join(' or ')} tray (or start in it): nothing can pass it`);
+  }
   // Splitters: the second cube needs a floor on the marked side, and appears there without pressing anything.
   l.tiles.forEach((t, i) => {
     if (t !== Tile.Splitter) return;
@@ -437,7 +455,11 @@ export function idleSpecials(l: Level): string[] {
   const ex = explore(l, 100_000);
   if (ex.truncated) return [];
   const acted = new Set<string>();
+  // Cells the block (or the idle cube) rests on in some reachable state: a tray there painted it, a gate there let it through.
+  const covered = new Set<string>();
   for (const { state } of ex.nodes.values()) {
+    blockCells(state.block).forEach(([x, y]) => covered.add(`${x},${y}`));
+    if (state.other) covered.add(`${state.other.x},${state.other.y}`);
     for (const { result } of successors(l, state)) {
       for (const m of result.motions) {
         if (m.kind === 'push' || m.kind === 'fly') blockCells(m.from).forEach(([x, y]) => acted.add(`${x},${y}`));
@@ -450,6 +472,7 @@ export function idleSpecials(l: Level): string[] {
   l.tiles.forEach((t, i) => {
     const [x, y] = [i % l.width, Math.floor(i / l.width)];
     if (t === Tile.Splitter && !acted.has(`${x},${y}`)) out.push(`WARN: the splitter at ${x},${y} never splits from any position the block can reach`);
+    if ((t === Tile.Tray || t === Tile.Gate || t === Tile.Wash) && !covered.has(`${x},${y}`)) out.push(`WARN: the ${t === Tile.Tray ? 'tray' : t === Tile.Wash ? 'wash' : 'gate'} at ${x},${y} is never ${t === Tile.Gate ? 'passed' : 'rested on'} from any position the block can reach`);
     if (t !== Tile.Conveyor && t !== Tile.Pad) return;
     if (!acted.has(`${x},${y}`)) out.push(`WARN: the ${t === Tile.Conveyor ? 'belt' : 'pad'} at ${x},${y} never ${t === Tile.Conveyor ? 'pushes' : 'fires'} from any position the block can reach: it's decoration that visibly does nothing`);
   });

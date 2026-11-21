@@ -2,7 +2,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { formatLevel, parseLevel } from '../../src/game/ascii';
 import { blockCells, initialState, play } from '../../src/game/rules';
-import { Block, DIR_DELTA, Dir, Level, Move, Tile } from '../../src/game/types';
+import { Block, DIR_DELTA, Dir, Level, Move, PAINT_NAMES, Paint, Tile } from '../../src/game/types';
+import { parseColors, parsePaint } from '../../src/levels/format';
 import { switchOrder } from './checks';
 
 /**
@@ -11,17 +12,23 @@ import { switchOrder } from './checks';
  *   !switches 0 1  switch target groups in reading order
  *   !on 1          bridge groups that start extended
  *   !shape cube    the shape the block starts in (cube, normal, tall)
+ *   !paint red     the block's paint at the start (a color, or two words: bottom then top)
+ *   !gates red purple  gate colors in reading order
  */
-export function parseBlock(lines: string[]): { rows: string[]; switches: number[]; on: number[]; shape: number } {
+export function parseBlock(lines: string[]): { rows: string[]; switches: number[]; on: number[]; shape: number; paint?: [Paint, Paint]; gates?: number[] } {
   const opt = (k: string) =>
     (lines.find((l) => l.startsWith(`!${k} `)) ?? '').split(/\s+/).slice(1).filter(Boolean).map(Number);
   const shapeWord = (lines.find((l) => l.startsWith('!shape ')) ?? '!shape normal').split(/\s+/)[1];
   const shape = { cube: 1, normal: 2, tall: 3 }[shapeWord] ?? 2;
-  return { rows: lines.filter((l) => !l.startsWith('!') && !l.startsWith('@')), switches: opt('switches'), on: opt('on'), shape };
+  const paint = parsePaint((lines.find((l) => l.startsWith('!paint ')) ?? '').slice(7)) ?? undefined;
+  const gates = parseColors((lines.find((l) => l.startsWith('!gates ')) ?? '').slice(7));
+  return { rows: lines.filter((l) => !l.startsWith('!') && !l.startsWith('@')), switches: opt('switches'), on: opt('on'), shape, ...(paint ? { paint } : {}), ...(gates.length ? { gates } : {}) };
 }
 
-export function build(rows: string[], switches: number[], on: number[], shape = 2): Level {
-  return parseLevel(rows, switches, on.reduce((mask, g) => mask | (1 << g), 0), shape);
+export function build(rows: string[], switches: number[], on: number[], shape = 2, paint?: [Paint, Paint], gates: number[] = []): Level {
+  const level = parseLevel(rows, switches, on.reduce((mask, g) => mask | (1 << g), 0), shape, gates);
+  if (paint) level.startPaint = paint;
+  return level;
 }
 
 /** Where a layer's row sits in the level text: the ceiling follows the ground and a `---` line. */
@@ -86,12 +93,12 @@ export async function loadDesigns(arg: string): Promise<Design[]> {
       .map((block, i) => {
         const lines = block.split('\n');
         const parsed = parseBlock(lines);
-        const { switches, on, shape } = parsed;
+        const { switches, on, shape, paint, gates } = parsed;
         // A template reads as its most open version (`?` floor, `%` ice), as lint reads it, so the
         // diagnosis lint points to works on the same file.
         const rows = parsed.rows.map((r) => r.replace(/\?/g, '#').replace(/%/g, '~'));
         const name = lines.find((l) => l.startsWith('@'))?.slice(1) ?? `#${i + 1}`;
-        const level = build(rows, switches, on, shape);
+        const level = build(rows, switches, on, shape, paint, gates);
         // Re-print the rows from the parsed level so every layer is full height and width, and the
         // ceiling starts where textRow expects it.
         return { name, rows: formatLevel(level).split('\n'), switches, on, level };
@@ -115,7 +122,10 @@ export function fromLevel(name: string, level: Level): Design {
 /** Print a design as a block that analyze.ts, sim.ts and search.ts read back. */
 export function designBlock(d: Design): string {
   const shape = { 1: '!shape cube', 3: '!shape tall' }[d.level.startShape ?? 2] ?? '';
-  const opts = [d.switches.length ? `!switches ${d.switches.join(' ')}` : '', d.on.length ? `!on ${d.on.join(' ')}` : '', shape];
+  const paint = d.level.startPaint ? `!paint ${PAINT_NAMES[d.level.startPaint[0]]} ${PAINT_NAMES[d.level.startPaint[1]]}` : '';
+  const gateColors = d.level.tiles.flatMap((t, i) => (t === Tile.Gate ? [PAINT_NAMES[d.level.groups[i]]] : []));
+  const gates = gateColors.length ? `!gates ${gateColors.join(' ')}` : '';
+  const opts = [d.switches.length ? `!switches ${d.switches.join(' ')}` : '', d.on.length ? `!on ${d.on.join(' ')}` : '', shape, paint, gates];
   return [`@${d.name}`, ...opts.filter(Boolean), ...d.rows].join('\n');
 }
 
@@ -128,6 +138,17 @@ export function parseMoves(text: string): Move[] {
     if (!d) throw new Error(`Bad move '${p}': use U D L R, or T for a swap`);
     return d;
   });
+}
+
+/**
+ * The block's paint in a trace: `g/p` for a two-color block (lying: halves in cell order; standing:
+ * bottom/top), `g` for a cube, '' while unpainted. · is an unpainted half.
+ */
+export function paintText(s: { block: Block; paint?: [Paint, Paint]; other?: unknown; otherPaint?: Paint }): string {
+  const c = (p: Paint) => '·rbypogm'[p];
+  const mine = s.paint ? (s.block.n === 1 ? c(s.paint[0]) : `${c(s.paint[0])}/${c(s.paint[1])}`) : '';
+  const idle = s.other && s.otherPaint ? ` idle ${c(s.otherPaint)}` : '';
+  return mine || idle ? ` ${mine || '·'}${idle}` : '';
 }
 
 /** Short text for a step's motions: `push-left→(9,4) fly-left→(3,4)`. */

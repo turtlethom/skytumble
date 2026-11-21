@@ -4,6 +4,8 @@ const CONVEYOR_CHARS: Record<Dir, string> = { up: '^', down: 'v', left: '<', rig
 const PAD_CHARS: Record<Dir, string> = { up: 'U', down: 'D', left: 'L', right: 'R' };
 /** Splitters by the side the second cube appears on. */
 const SPLITTER_CHARS: Record<Dir, string> = { up: 'A', down: 'V', left: '[', right: ']' };
+/** Paint trays by color: red, blue, yellow (index + 1). Every gate is `{`, colored by `gateColors`. */
+const TRAY_CHARS = 'ruy';
 /** One character per switch color, groups 0-3: a wall starting up, a wall starting down, a reversed bridge. */
 const WALLS_UP = 'HIJK';
 const WALLS_DOWN = 'hijk';
@@ -31,13 +33,16 @@ const MAX_HEDGES = 9;
  *   h i j k  the same, starting lowered
  *   a b d e  bridge in group 0 / 1 / 2 / 3 that is out when a digit bridge of its group is in
  *   &  toppling hedge
+ *   r u y  paint tray, red / blue / yellow: coats the part of the block resting on it (coats mix)
+ *   {  gate: only a part in its color passes onto it (colors from `gateColors`, in reading order)
+ *   s  wash: strips the paint from the part of the block resting on it
  *   [ ] A V  splitter: a normal block standing on it splits into two cubes, the second to the
  *            west / east / north / south
  * A line of dashes (`---`) ends the ground and starts the ceiling layer: the same grid seen from
  * above, cell for cell directly over the ground (not mirrored). The start is on the ground.
  * Switches target group 0 unless `switchGroups` lists groups in reading order (ground, then ceiling).
  */
-export function parseLevel(rows: string[], switchGroups: number[] = [], bridgesOn = 0, startShape = 2): Level {
+export function parseLevel(rows: string[], switchGroups: number[] = [], bridgesOn = 0, startShape = 2, gateColors: number[] = []): Level {
   const split = rows.findIndex((r) => /^-{3,}\s*$/.test(r));
   const groundRows = split < 0 ? rows : rows.slice(0, split);
   const ceilingRows = split < 0 ? null : rows.slice(split + 1);
@@ -46,6 +51,7 @@ export function parseLevel(rows: string[], switchGroups: number[] = [], bridgesO
   const width = Math.max(...[...groundRows, ...(ceilingRows ?? [])].map((r) => r.length));
   let start = { x: -1, y: -1 };
   let switchIndex = 0;
+  let gateIndex = 0;
   const hedgeCells: { x: number; y: number }[] = [];
 
   const grid = (lines: string[], ground: boolean) => {
@@ -83,6 +89,14 @@ export function parseLevel(rows: string[], switchGroups: number[] = [], bridgesO
         } else if ('^v<>'.includes(c)) {
           tile = Tile.Conveyor;
           group = DIRS.findIndex((d) => CONVEYOR_CHARS[d] === c);
+        } else if (TRAY_CHARS.includes(c)) {
+          tile = Tile.Tray;
+          group = TRAY_CHARS.indexOf(c) + 1;
+        } else if (c === '{') {
+          tile = Tile.Gate;
+          group = gateColors[gateIndex++] ?? 1;
+        } else if (c === 's') {
+          tile = Tile.Wash;
         } else if ('[]AV'.includes(c)) {
           tile = Tile.Splitter;
           group = DIRS.findIndex((d) => SPLITTER_CHARS[d] === c);
@@ -158,6 +172,9 @@ const CHARS: Record<Tile, string> = {
   [Tile.FlipLocked]: '?',
   [Tile.Door]: '?',
   [Tile.Splitter]: '?',
+  [Tile.Tray]: '?',
+  [Tile.Gate]: '{',
+  [Tile.Wash]: 's',
 };
 
 export function formatLevel(level: Level): string {
@@ -181,6 +198,7 @@ export function formatLevel(level: Level): string {
         else if (t === Tile.Conveyor) row += CONVEYOR_CHARS[DIRS[l.groups[i]]];
         else if (t === Tile.Pad) row += PAD_CHARS[DIRS[l.groups[i]]];
         else if (t === Tile.Splitter) row += SPLITTER_CHARS[DIRS[l.groups[i]]];
+        else if (t === Tile.Tray) row += TRAY_CHARS[l.groups[i] - 1];
         else if (t === Tile.ShapeSwitch) row += Object.keys(SHAPE_SWITCHES).find((k) => SHAPE_SWITCHES[k] === l.groups[i]);
         else if (t === Tile.Goal && l.groups[i] > 0) row += Object.keys(SHAPE_GOALS).find((k) => SHAPE_GOALS[k] === l.groups[i]);
         else row += CHARS[t];

@@ -3,6 +3,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { Draft, openTemplate } from './checks';
 import { loadDesigns, parseBlock } from './lib';
+import { Tile } from '../../src/game/types';
 
 export async function loadDrafts(arg: string): Promise<(Draft & { name: string })[]> {
   if (existsSync(arg)) {
@@ -12,9 +13,17 @@ export async function loadDrafts(arg: string): Promise<(Draft & { name: string }
       .filter((b) => b && !b.startsWith('The template'))
       .map((b, i) => {
         const lines = b.split('\n');
-        const { rows, switches, on, shape } = parseBlock(lines);
-        return { name: lines.find((l) => l.startsWith('@'))?.slice(1) ?? `#${i + 1}`, rows: openTemplate(rows), switches, on, shape };
+        const { rows, switches, on, shape, paint, gates } = parseBlock(lines);
+        return { name: lines.find((l) => l.startsWith('@'))?.slice(1) ?? `#${i + 1}`, rows: openTemplate(rows), switches, on, shape, ...(paint ? { paint } : {}), ...(gates ? { gates } : {}) };
       });
   }
-  return (await loadDesigns(arg)).map((d) => ({ name: d.name, rows: d.rows, switches: d.switches, on: d.on, shape: d.level.startShape ?? 2 }));
+  return (await loadDesigns(arg)).map((d) => ({
+    name: d.name,
+    rows: d.rows,
+    switches: d.switches,
+    on: d.on,
+    shape: d.level.startShape ?? 2,
+    ...(d.level.startPaint ? { paint: d.level.startPaint } : {}),
+    gates: d.level.tiles.flatMap((t, i) => (t === Tile.Gate ? [d.level.groups[i]] : [])),
+  }));
 }

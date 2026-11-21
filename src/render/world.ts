@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Motion, blockCells, blockLength, bridgeOut, flightLandings, hedgeFell, isBridge, isWall, layerView, ringLocked, tileAt as levelTileAt, wallUp } from '../game/rules';
-import { Block, DIR_DELTA, DIRS, Dir, Level, State, Tile } from '../game/types';
+import { Block, DIR_DELTA, DIRS, Dir, Level, Paint, State, Tile } from '../game/types';
 import { ForestScenery } from './forest';
 import { FrostScenery } from './frost';
 import { CONVEYOR_COLORS, cssColor } from './palette';
@@ -47,6 +47,8 @@ const COLORS = {
   preview: 0xcbb2ff,
   /** The splitter's stand-in marks (dashed cut line and wedge), and the marker over the active cube. */
   splitMat: 0x2b3038,
+  /** Water in a wash tile: pale, so it never reads as blue paint. */
+  wash: 0xd8f1f6,
   splitMark: 0xffffff,
   activeMarker: 0xffffff,
   /** The slide preview (a setting): where a slide would leave the block. A deep blue that reads on ice, snow and grass. */
@@ -266,6 +268,13 @@ export class World {
   /** A bright square on the floor around the cube the arrows move. */
   private activeRing!: THREE.Group;
   private split = false;
+  /** Paint coats over the block's two halves (local +y, then −y) and over the idle cube. */
+  private coats!: [THREE.Mesh, THREE.Mesh];
+  private twinCoat!: THREE.Mesh;
+  /** Old colors fading out over new coats, after a tray. */
+  private fades: THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>[] = [];
+    /** The paint the next placement of the block shows; a roll carries the old coats until it lands. */
+  private blockPaint: [Paint, Paint] | undefined;
   /** While the marker hops to the other cube after a swap: where from, and when it started. */
   private markerHop: { from: THREE.Vector3; start: number } | null = null;
   /**
@@ -324,6 +333,8 @@ export class World {
   private switches = new Map<number, THREE.Object3D>();
   private bridges: BridgeView[] = [];
   private walls: WallView[] = [];
+  /** Stencil gates: the sheet that sinks while a block of the gate's color stands in it. */
+  private gates: { layer: number; x: number; y: number; sheet: THREE.Group; down: boolean }[] = [];
   /** Pad landing marks by cell, and the level and color they are drawn for (see showLandings). */
   private landingMarks = new Map<number, THREE.Object3D>();
   private marksFor: { level: Level; color?: number } | null = null;
@@ -423,6 +434,19 @@ export class World {
     this.twin.scale.set(1, 0.5, 1);
     this.twin.visible = false;
     this.frames[0].add(this.twin);
+    // Paint coats: a shell a hair bigger than each half, so the block's own color never shows through.
+    const half = new THREE.BoxGeometry(1.004, 0.985, 1.004);
+    const coat = (parent: THREE.Object3D, y: number) => {
+      const m = new THREE.Mesh(half, paintMaterial(1));
+      m.position.y = y;
+      m.visible = false;
+      parent.add(m);
+      return m;
+    };
+    this.coats = [coat(this.block, 0.49), coat(this.block, -0.49)];
+    this.twinCoat = new THREE.Mesh(new THREE.BoxGeometry(1.004, 1.97, 1.004), paintMaterial(1, true));
+    this.twinCoat.visible = false;
+    this.twin.add(this.twinCoat);
     const arrowGeom = new THREE.ConeGeometry(0.36, 0.7, 4).rotateX(Math.PI);
     this.activeMarker = new THREE.Mesh(
       arrowGeom,
@@ -576,6 +600,7 @@ export class World {
     this.switches.clear();
     this.bridges = [];
     this.walls = [];
+    this.gates = [];
     this.tubes = [];
     this.lowWalls = [[], []];
     this.hedges.clear();
@@ -1090,6 +1115,95 @@ export class World {
       return g;
     }
 
+    if (tile === Tile.Tray) {
+      // A stand-in until the studio's look: a dark rim around a sunken square of wet paint.
+      g.add(floorTile(jitter, this.theme, layer), earth(jitter, this.theme));
+      const rim = box(0.9, 0.05, 0.9, COLORS.splitMat, { roughness: 0.7 });
+      rim.position.y = 0.025;
+      // Its own copy: wet paint is glossier than the coat on a block.
+      const wet = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.02, 0.74), paintMaterial(group as Paint).clone());
+      wet.position.y = 0.05;
+      (wet.material as THREE.MeshStandardMaterial).roughness = 0.25;
+      g.add(rim, wet);
+      return g;
+    }
+
+    if (tile === Tile.Wash) {
+      // A stand-in: a tray of pale water with a few bubbles, so it never reads as blue paint.
+      g.add(floorTile(jitter, this.theme, layer), earth(jitter, this.theme));
+      const rim = box(0.9, 0.05, 0.9, COLORS.splitMat, { roughness: 0.7 });
+      rim.position.y = 0.025;
+      const water = box(0.74, 0.02, 0.74, COLORS.wash, { roughness: 0.1 });
+      water.position.y = 0.05;
+      g.add(rim, water);
+      for (const [bx, bz, r] of [[-0.2, -0.15, 0.06], [0.18, 0.1, 0.08], [-0.05, 0.22, 0.05], [0.22, -0.22, 0.04]]) {
+        const bubble = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1, transparent: true, opacity: 0.85 }));
+        bubble.position.set(bx, 0.06, bz);
+        bubble.scale.y = 0.5;
+        g.add(bubble);
+      }
+      return g;
+    }
+
+    if (tile === Tile.Gate) {
+      // A stencil gate (the user's pick): sheets in the gate's color with a block-shaped hole cut out,
+      // held by short posts. In a straight run, one sheet across the middle; where the gate is open on
+      // both axes (a corner or junction), a sheet on every open side, so the block always passes through
+      // one (the user saw a block slide along a single sheet at 04's junction). Low, so it hides nothing.
+      // The sheets sink into the floor while a block of the gate's color is on the tile (setGates).
+      g.add(floorTile(jitter, this.theme, layer), earth(jitter, this.theme));
+      const mat = paintMaterial(group as Paint);
+      const postMat = new THREE.MeshStandardMaterial({ color: COLORS.splitMat, roughness: 0.7 });
+      const sheet = new THREE.Group();
+      const posts = new Set<string>();
+      // A sheet along x (spanning east-west) or along z, centered at (cx, cz).
+      const stencil = (alongX: boolean, cx: number, cz: number) => {
+        const [w, h, hole, d] = [0.84, 0.6, 0.3, 0.1];
+        const side = (w - hole) / 2;
+        const part = (a: number, pw: number, ph: number, y0: number) => {
+          const m = new THREE.Mesh(new THREE.BoxGeometry(alongX ? pw : d, ph, alongX ? d : pw), mat);
+          m.position.set(cx + (alongX ? a : 0), y0, cz + (alongX ? 0 : a));
+          m.castShadow = true;
+          sheet.add(m);
+        };
+        const band = (h - hole) / 2;
+        part(-(hole + side) / 2, side, h, 0.4);
+        part((hole + side) / 2, side, h, 0.4);
+        part(0, hole, band, 0.4 + (hole + band) / 2);
+        part(0, hole, band, 0.4 - (hole + band) / 2);
+        // A rail along the top, wider than the sheet, so an edge-on gate still shows a bar of color.
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(alongX ? 0.9 : 0.18, 0.07, alongX ? 0.18 : 0.9), mat);
+        rail.position.set(cx, 0.4 + h / 2 + 0.035, cz);
+        rail.castShadow = true;
+        sheet.add(rail);
+        for (const e of [-0.47, 0.47]) posts.add(`${(cx + (alongX ? e : 0)).toFixed(2)},${(cz + (alongX ? 0 : e)).toFixed(2)}`);
+        // The slot it sinks into, painted, so the gate's color shows from above even when the camera
+        // sees the sheet edge-on, and while it's down.
+        const slot = new THREE.Mesh(new THREE.BoxGeometry(alongX ? 0.9 : 0.2, 0.025, alongX ? 0.2 : 0.9), mat);
+        slot.position.set(cx, 0.0125, cz);
+        g.add(slot);
+      };
+      const open = this.gateOpenings(layer, x, y);
+      const bothAxes = (open.n || open.s) && (open.e || open.w);
+      if (!bothAxes) stencil(!(open.e || open.w), 0, 0);
+      else {
+        if (open.n) stencil(true, 0, -0.45);
+        if (open.s) stencil(true, 0, 0.45);
+        if (open.w) stencil(false, -0.45, 0);
+        if (open.e) stencil(false, 0.45, 0);
+      }
+      for (const key of posts) {
+        const [px, pz] = key.split(',').map(Number);
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.8, 0.1), postMat);
+        post.position.set(px, 0.4, pz);
+        post.castShadow = true;
+        g.add(post);
+      }
+      g.add(sheet);
+      this.gates.push({ layer, x, y, sheet, down: false });
+      return g;
+    }
+
     if (tile === Tile.Splitter) {
       // A stand-in until Splatter Studio's look (a cutting mat): a dashed cut line across the tile and
       // a wedge pointing to the side the second cube appears on.
@@ -1244,9 +1358,11 @@ export class World {
     this.layer = state.layer ?? 0;
     this.buildBlueprints(state.bridges);
     this.frames[this.layer].add(this.block);
+    this.blockPaint = state.paint;
     this.placeBlock(state.block);
     this.block.visible = true;
     this.showPair(state);
+    this.setGates(state, false);
     this.goalMarker?.scale.setScalar(1);
     for (const view of this.tiles.values()) {
       view.obj.position.y = view.baseY;
@@ -1559,6 +1675,8 @@ export class World {
     }
     this.activeMarker.visible = this.split;
     this.activeRing.visible = this.split;
+    this.twinCoat.visible = !!state.otherPaint;
+    if (state.otherPaint) this.twinCoat.material = paintMaterial(state.otherPaint, true);
     this.blockMat.emissive.set(this.split ? this.blockMat.color : 0x000000);
     this.blockMat.emissiveIntensity = this.split ? 0.18 : 0;
   }
@@ -1566,6 +1684,7 @@ export class World {
   /** A swap: the marker hops to the other cube, and the glow and dimming change places. */
   swapCubes(state: State): void {
     this.markerHop = { from: this.activeMarker.position.clone(), start: performance.now() };
+    this.blockPaint = state.paint;
     this.placeBlock(state.block);
     this.showPair(state);
   }
@@ -1581,6 +1700,8 @@ export class World {
     this.twin.visible = true;
     this.twin.rotation.set(0, 0, 0);
     this.twin.position.copy(from);
+    this.twinCoat.visible = !!state.otherPaint;
+    if (state.otherPaint) this.twinCoat.material = paintMaterial(state.otherPaint, true);
     await this.tween(380, (t) => {
       const e = easeOutBack(t);
       const half = 1 - 0.5 * Math.min(1, e);
@@ -1589,6 +1710,7 @@ export class World {
       this.block.scale.set(1, half, 1);
       this.block.position.set(from.x + (to.x - from.x) * e, 0.98 * half, from.z + (to.z - from.z) * e);
     });
+    this.blockPaint = state.paint;
     this.placeBlock(state.block);
     this.showPair(state);
   }
@@ -1602,6 +1724,7 @@ export class World {
       this.block.position.lerpVectors(a, b, squeeze);
       this.twin.position.lerpVectors(b, a, squeeze);
     });
+    this.blockPaint = state.paint;
     this.placeBlock(state.block);
     this.showPair(state);
   }
@@ -1618,7 +1741,108 @@ export class World {
     this.activeRing.visible = false;
   }
 
+  /** Which sides of a gate open onto floor, ignoring other gates (a two-tile gate side by side). */
+  private gateOpenings(layer: number, x: number, y: number): { n: boolean; s: boolean; e: boolean; w: boolean } {
+    const level = this.level;
+    if (!level) return { n: true, s: true, e: false, w: false };
+    const view = layerView(level, layer);
+    const open = (cx: number, cy: number) => levelTileAt(view, cx, cy) !== Tile.Empty && levelTileAt(view, cx, cy) !== Tile.Gate;
+    return { n: open(x, y - 1), s: open(x, y + 1), e: open(x + 1, y), w: open(x - 1, y) };
+  }
+
+  /** Sink the sheets of gates these blocks will rest on, as a move starts, so nothing passes through them. */
+  openGates(blocks: Block[]): void {
+    const cells = new Set(blocks.flatMap((b) => blockCells(b).map(([x, y]) => `${x},${y}`)));
+    this.moveGates((g) => g.down || (g.layer === this.layer && cells.has(`${g.x},${g.y}`)), true);
+  }
+
+  /** Gates down where a block (or the idle cube) rests, up everywhere else. */
+  setGates(state: State, animate = true): void {
+    const cells = new Set(blockCells(state.block).map(([x, y]) => `${x},${y}`));
+    if (state.other) cells.add(`${state.other.x},${state.other.y}`);
+    this.moveGates((g) => g.layer === (state.layer ?? 0) && cells.has(`${g.x},${g.y}`), animate);
+  }
+
+  private moveGates(down: (g: { layer: number; x: number; y: number; down: boolean }) => boolean, animate: boolean): void {
+    const changes = this.gates.filter((g) => down(g) !== g.down);
+    for (const g of changes) {
+      g.down = !g.down;
+      g.sheet.visible = true;
+      if (!animate) {
+        g.sheet.position.y = g.down ? -0.8 : 0;
+        g.sheet.visible = !g.down;
+      }
+    }
+    if (!animate || !changes.length) return;
+    void this.tween(GATE_MS, (t) => {
+      for (const g of changes) {
+        const e = easeOut(t);
+        g.sheet.position.y = g.down ? -0.8 * e : -0.8 * (1 - e);
+        if (t === 1) g.sheet.visible = !g.down;
+      }
+    });
+  }
+
+    /** The paint to show from the next placement on (the end of a roll, a slide, a sync). */
+  carryPaint(p: [Paint, Paint] | undefined): void {
+    this.blockPaint = p;
+  }
+
+  /**
+   * A tray painted the block: the new coats go on at once and the old colors (or the bare block) fade
+   * out over them, under a slight swell. It never holds up the next move (the user's call): a roll
+   * started mid-fade carries the fading shells along, and they clear when it lands.
+   */
+  paintBlock(state: State): void {
+    const b = state.block;
+    const before = coatColors(b, this.blockPaint);
+    this.blockPaint = state.paint;
+    this.showCoats(b);
+    const after = coatColors(b, state.paint);
+    const fades: THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>[] = [];
+    after.forEach((c, i) => {
+      if (c === before[i]) return;
+      const mat = (before[i] ? paintMaterial(before[i]) : this.blockMat).clone();
+      mat.transparent = true;
+      const fade = new THREE.Mesh(fadeGeometry, mat);
+      fade.position.y = this.coats[i].position.y;
+      this.block.add(fade);
+      fades.push(fade);
+    });
+    this.fades.push(...fades);
+    void this.tween(PAINT_FADE_MS, (t) => {
+      const s = 1 + 0.06 * Math.sin(t * Math.PI);
+      for (const f of fades) {
+        f.material.opacity = 1 - easeOut(t);
+        f.scale.set(s, 1, s);
+      }
+    }).then(() => this.clearFades(fades));
+  }
+
+  /** Take fading coats off the block: when they finish, or early, when the block is placed anew. */
+  private clearFades(which = this.fades.slice()): void {
+    for (const f of which) {
+      if (!f.parent) continue;
+      f.removeFromParent();
+      f.material.dispose();
+    }
+    this.fades = this.fades.filter((f) => !which.includes(f));
+  }
+
+  /** Which coat shows which half: the halves' order depends on how the block lies (see State.paint). */
+  private showCoats(b: Block): void {
+    coatColors(b, this.blockPaint).forEach((c, i) => {
+      const coat = this.coats[i];
+      coat.visible = c > 0;
+      coat.scale.set(1, 1, 1);
+      if (c) coat.material = paintMaterial(c);
+    });
+  }
+
   private placeBlock(b: Block): void {
+    // A fade from a tray belongs to the pose it started in.
+    this.clearFades();
+    this.showCoats(b);
     this.block.rotation.set(0, 0, 0);
     // The mesh is a normal block (two tiles long); stretch it along its length for other shapes.
     this.block.scale.set(1, blockLength(b) / 2, 1);
@@ -3544,6 +3768,73 @@ function makeStars(): THREE.Points {
 
 const footprintBar = new THREE.BoxGeometry(1, 0.004, 1);
 const footprintFill = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+
+/** The colors of the block's two coats, local +y then −y, for its pose (see State.paint for the halves' order). */
+function coatColors(b: Block, p: [Paint, Paint] | undefined): [Paint, Paint] {
+  if (!p) return [0, 0];
+  if (blockLength(b) === 1) return [p[0], p[0]];
+  return b.o === 'S' ? [p[1], p[0]] : b.o === 'X' ? [p[0], p[1]] : [p[1], p[0]];
+}
+
+/** A fading coat sits just outside the coat under it. */
+const fadeGeometry = new THREE.BoxGeometry(1.012, 0.99, 1.012);
+const PAINT_FADE_MS = 380;
+/** A stencil gate's sheet sinking or rising. */
+const GATE_MS = 140;
+
+/**
+ * Paint colors by index (see Paint): stand-ins until the studio's tile sheet. Plain hues, spread in
+ * brightness so neighbors still differ in black and white; mud a dull brown.
+ */
+const PAINT_COLORS = [0xffffff, 0xd8302a, 0x2357d6, 0xf4cf2e, 0x8a3fc4, 0xf28a1e, 0x2f9e44, 0x6e5a3e];
+
+/**
+ * Paint, by color: splattered in lighter and darker shades of its color, so it looks like paint (the
+ * user's call over stripes and dots). The same splatter every load (a fixed seed).
+ * `dim` is the idle cube's darker copy. Cached: one material each.
+ */
+const paintMats = new Map<string, THREE.MeshStandardMaterial>();
+function paintMaterial(color: Paint, dim = false): THREE.MeshStandardMaterial {
+  const key = `${color}${dim ? 'd' : ''}`;
+  let mat = paintMats.get(key);
+  if (mat) return mat;
+  const base = new THREE.Color(PAINT_COLORS[color]);
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  ctx.fillStyle = `#${base.getHexString()}`;
+  ctx.fillRect(0, 0, size, size);
+  // A small seeded generator, so the splatter is the same every time.
+  let seed = color * 7919;
+  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const shade = (k: number) => `#${base.clone().multiplyScalar(k).getHexString()}`;
+  // Draw each splat on all four sides as well, so the texture tiles without seams.
+  const blot = (x: number, y: number, r: number) => {
+    for (const ox of [-size, 0, size]) for (const oy of [-size, 0, size]) {
+      ctx.beginPath();
+      ctx.arc(x + ox, y + oy, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  };
+  for (let i = 0; i < 14; i++) {
+    ctx.fillStyle = shade(rand() < 0.5 ? 0.6 + rand() * 0.12 : 1.2 + rand() * 0.15);
+    const [x, y, r] = [rand() * size, rand() * size, 5 + rand() * 11];
+    blot(x, y, r);
+    // A ring of droplets thrown off each splat, smaller further out.
+    const drops = 4 + Math.floor(rand() * 6);
+    for (let d = 0; d < drops; d++) {
+      const a = rand() * Math.PI * 2;
+      const dist = r * (1.3 + rand() * 1.4);
+      blot(x + Math.cos(a) * dist, y + Math.sin(a) * dist, 1 + rand() * r * 0.25);
+    }
+  }
+  const map = new THREE.CanvasTexture(canvas);
+  map.colorSpace = THREE.SRGBColorSpace;
+  mat = new THREE.MeshStandardMaterial({ map, roughness: 0.45, color: dim ? 0x6b6b6b : 0xffffff });
+  paintMats.set(key, mat);
+  return mat;
+}
 
 /** A flat rectangle lying on a floor: a bright border and a faint fill. Sized by setFootprint. */
 function makeFootprint(fill: THREE.MeshBasicMaterial, edge: THREE.MeshBasicMaterial): THREE.Group {

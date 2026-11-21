@@ -7,7 +7,7 @@
 //   a playtester's moves.
 import { blockCells, hedgeFell, initialState, isBridge, isBridged, isSolid, isWall, layerView, play, tileAt, wallUp } from '../../src/game/rules';
 import { Level, State, Tile } from '../../src/game/types';
-import { describeMotions, loadDesigns, parseMoves } from './lib';
+import { describeMotions, loadDesigns, paintText, parseMoves } from './lib';
 
 const [arg, movesArg, name] = process.argv.slice(2);
 if (!arg || movesArg === undefined) {
@@ -64,10 +64,10 @@ for (const dir of moves) {
   const hit = r.bumped ? `${r.knocked ? 'TOPPLED' : 'BUMPED'}(${r.bumped.x},${r.bumped.y})${r.bridged ? ` →bridged(${r.bridged.x},${r.bridged.y})` : ''}` : '';
   const held = (r.held ?? []).map((h) => `${h.belt ? 'HELD' : r.motions[h.after - 1]?.kind === 'fly' ? (r.outcome === 'fall' ? 'CRASH' : 'SHORT') : 'BRAKE'}(${h.x},${h.y})`).join(' ');
   const locked = r.locked ? `LOCKED(${r.locked.map((c) => `${c.x},${c.y}`).join(' ')})` : '';
-  const extra = [describeMotions(r.motions), held, locked, r.pressed.length ? 'PRESS' : '', r.broke ? 'BROKE' : '', hit, joined, split, dropped].filter(Boolean);
+  const extra = [describeMotions(r.motions), held, locked, r.pressed.length ? 'PRESS' : '', r.painted ? 'PAINT' : '', r.washed ? 'WASH' : '', r.broke ? 'BROKE' : '', hit, joined, split, dropped].filter(Boolean);
   const up = d.level.ceiling ? (r.state.layer ? ' ceiling' : ' ground') : '';
   const shape = b.n === 1 ? 'cube ' : b.n === 3 ? 'tall ' : '';
-  console.log(`${String(rolls).padStart(3)} ${dir[0].toUpperCase()} → ${shape}${b.o}(${b.x},${b.y})${up} ${r.outcome}${extra.length ? `  ${extra.join(' ')}` : ''}`);
+  console.log(`${String(rolls).padStart(3)} ${dir[0].toUpperCase()} → ${shape}${b.o}(${b.x},${b.y})${up}${paintText(r.state)} ${r.outcome}${extra.length ? `  ${extra.join(' ')}` : ''}`);
   s = r.state;
   if (process.env.SHOW === '1') console.log(board(d.rows, d.level, s));
   if (r.outcome === 'fall' || r.outcome === 'win') break;

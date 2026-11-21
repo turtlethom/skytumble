@@ -1,6 +1,6 @@
 import './style.css';
 import { randomSeed } from './game/rng';
-import { initialState, step, swap } from './game/rules';
+import { initialState, rollPaint, step, swap } from './game/rules';
 import { solve } from './game/solver';
 import { Block, DIRS, Dir, Level, State, TIERS, Tier, Tile } from './game/types';
 import { CAMPAIGN, LABS, TUTORIAL, chapterOf, findLevel, lessonUnlocked, nextOnTrack, trackOf } from './levels';
@@ -415,6 +415,10 @@ class Game {
   private async animateStep(from: State, result: ReturnType<typeof step>, dir: Dir, scene: number): Promise<void> {
     if (result.joined) return this.world.joinCubes(result.state);
     if (result.bumped) return this.world.bump(from.block, result.bumped, dir, !!result.knocked, result.bridged);
+    // Stencil gates the block will rest on sink before it gets there.
+    this.world.openGates([result.rolled, result.state.block]);
+    // The roll carries each half's color to where it lands; the coats switch over as it lands.
+    this.world.carryPaint(rollPaint(from.block, from.paint, dir));
     await this.world.roll(from.block, result.rolled, dir);
     // Belts a wall held flare right after the motion before them, without holding up the next move; a
     // slide a wall braked inside a glass tube knocks, and the next motion waits for that.
@@ -435,10 +439,14 @@ class Game {
       const before = result.motions.length ? result.motions[result.motions.length - 1].to : result.rolled;
       await this.world.reshape(before, result.state.block);
     }
+    // A tray painted the block: the fade runs on without holding up the next move (never on the same
+    // move as a split: a splitter is its own tile).
+    if (result.painted || result.washed) this.world.paintBlock(result.state);
     if (result.split) {
       const before = result.motions.length ? result.motions[result.motions.length - 1].to : result.rolled;
       await this.world.splitApart(before, result.state);
     }
+    this.world.setGates(result.state);
     await Promise.all([result.toggled ? this.world.setBridges(result.state.bridges) : null, this.world.setWalls(result.state)]);
   }
 

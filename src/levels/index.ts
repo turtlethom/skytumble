@@ -15,6 +15,7 @@ import peakslab from './peakslab.txt?raw';
 import starlab from './starlab.txt?raw';
 import toylab from './toylab.txt?raw';
 import splitlab from './splitlab.txt?raw';
+import paintlab from './paintlab.txt?raw';
 
 /** Every chapter: the Tutorial, then the campaign in play order, then the labs. Add a chapter by adding its .txt file here. */
 export const CHAPTERS: Chapter[] = [
@@ -44,9 +45,11 @@ export const CHAPTERS: Chapter[] = [
   parseChapter('toylab', toylab),
   // Splitting into two cubes, for Splatter Studio's split lab playtest.
   parseChapter('splitlab', splitlab),
+  // Paint trays, gates and two-tone blocks, for Splatter Studio's paint lab playtest.
+  parseChapter('paintlab', paintlab),
 ];
 
-const LAB_IDS = new Set(['lab', 'windlab', 'gravlab', 'shapelab', 'gladelab', 'frostlab', 'peakslab', 'starlab', 'toylab', 'splitlab']);
+const LAB_IDS = new Set(['lab', 'windlab', 'gravlab', 'shapelab', 'gladelab', 'frostlab', 'peakslab', 'starlab', 'toylab', 'splitlab', 'paintlab']);
 
 /** Outside the story and off the sky map, opened from the main menu. */
 export const TUTORIAL: Chapter = CHAPTERS.find((c) => c.id === 'tutorial')!;

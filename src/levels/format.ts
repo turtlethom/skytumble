@@ -1,5 +1,5 @@
 import { parseLevel } from '../game/ascii';
-import { Level } from '../game/types';
+import { Level, PAINT_NAMES, Paint } from '../game/types';
 
 /**
  * Chapter files (src/levels/<chapter>.txt) hold handmade levels as text:
@@ -15,10 +15,29 @@ import { Level } from '../game/types';
  *   bridges-on: 1                 optional: bridge groups that start extended
  *   guard: off                    optional: a teaching level skips the signature's one-trick guard
  *   shape: cube                   optional: start as a cube or a tall block (default: the normal block)
+ *   paint: red blue               optional: the block's paint at the start, bottom then top (one word: all over)
+ *   gates: red purple             optional: gate colors in reading order (default red)
  *   S~~~~#G                       grid rows, in the format of game/ascii.ts
  *
  * Grid rows never contain ':', so any "key: value" line is a field.
  */
+
+/** Color words (`red blue`, `none`, ...) as paint colors. */
+export function parseColors(text: string): Paint[] {
+  return text.split(/\s+/).filter(Boolean).map((w) => {
+    const c = (PAINT_NAMES as readonly string[]).indexOf(w);
+    if (c < 0 || w === 'mud') throw new Error(`expected a color (${PAINT_NAMES.slice(0, 7).join(', ')}), got '${w}'`);
+    return c as Paint;
+  });
+}
+
+/** `red`, `red blue` (bottom, top) or `none`: a start paint, or null for unpainted. */
+export function parsePaint(text: string): [Paint, Paint] | null {
+  const colors = parseColors(text);
+  if (!colors.length) return null;
+  const pair: [Paint, Paint] = [colors[0], colors[1] ?? colors[0]];
+  return pair[0] || pair[1] ? pair : null;
+}
 
 export interface HandmadeLevel {
   id: string;
@@ -94,7 +113,7 @@ export function parseChapter(id: string, text: string): Chapter {
 
   const levels = drafts.map((d): HandmadeLevel => {
     for (const key of d.fields.keys()) {
-      if (!['name', 'idea', 'par', 'switches', 'bridges-on', 'guard', 'shape'].includes(key)) fail(d.line, `unknown field '${key}'`);
+      if (!['name', 'idea', 'par', 'switches', 'bridges-on', 'guard', 'shape', 'paint', 'gates'].includes(key)) fail(d.line, `unknown field '${key}'`);
     }
     if (d.rows.length === 0) fail(d.line, `${d.id} has no grid`);
     const numbers = (key: string) =>
@@ -109,7 +128,9 @@ export function parseChapter(id: string, text: string): Chapter {
     try {
       const shape = d.fields.get('shape') ?? 'normal';
       if (!(shape in START_SHAPES)) fail(d.line, `shape: expected cube, normal or tall, got '${shape}'`);
-      level = parseLevel(d.rows, numbers('switches'), bridgesOn, START_SHAPES[shape]);
+      level = parseLevel(d.rows, numbers('switches'), bridgesOn, START_SHAPES[shape], parseColors(d.fields.get('gates') ?? ''));
+      const paint = parsePaint(d.fields.get('paint') ?? '');
+      if (paint) level.startPaint = paint;
     } catch (err) {
       return fail(d.line, `${d.id}: ${(err as Error).message}`);
     }

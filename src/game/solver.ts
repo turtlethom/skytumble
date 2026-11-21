@@ -27,21 +27,29 @@ function blockKey(level: Level, s: State, b: State['block']): number {
  * A number per state. After a split the two cubes are interchangeable (a swap is free), so the key
  * puts the lower cell first. Levels with splitters have no hedges, which keeps the key a safe integer.
  */
-export function stateKey(level: Level, s: State, splits = level.tiles.includes(Tile.Splitter)): number {
-  if (!splits) return blockKey(level, s, s.block);
+/** Whether a level's states carry paint: it has trays or starts painted. */
+export const hasPaint = (level: Level) => !!level.startPaint || level.tiles.includes(Tile.Tray) || level.tiles.includes(Tile.Wash);
+
+export function stateKey(level: Level, s: State, splits = level.tiles.includes(Tile.Splitter), paints = hasPaint(level)): number {
+  // Paint: eight colors per half (levels with paint have no hedges either).
+  const colors = (s.paint?.[0] ?? 0) * 8 + (s.paint?.[1] ?? 0);
+  if (!splits) return paints ? blockKey(level, s, s.block) * 64 + colors : blockKey(level, s, s.block);
   const cells = level.width * level.height;
-  if (!s.other) return blockKey(level, s, s.block) * (cells + 1);
+  if (!s.other) return (blockKey(level, s, s.block) * 64 + colors) * (cells * 8 + 1);
+  // The two cubes in a fixed order, each with its color.
   const a = s.block.y * level.width + s.block.x;
   const b = s.other.y * level.width + s.other.x;
-  const [lo, hi] = a < b ? [s.block, s.other] : [s.other, s.block];
-  return blockKey(level, s, { x: lo.x, y: lo.y, o: 'S', n: 1 }) * (cells + 1) + hi.y * level.width + hi.x + 1;
+  const [ca, cb] = [s.paint?.[0] ?? 0, s.otherPaint ?? 0];
+  const [lo, loColor, hi, hiColor] = a < b ? [s.block, ca, s.other, cb] : [s.other, cb, s.block, ca];
+  return (blockKey(level, s, { x: lo.x, y: lo.y, o: 'S', n: 1 }) * 64 + loColor) * (cells * 8 + 1) + (hi.y * level.width + hi.x) * 8 + hiColor + 1;
 }
 
 /** Breadth-first search for the shortest solution, or null if the level is unsolvable. */
 export function solve(level: Level, from: State = initialState(level)): Solution | null {
   const start = from;
   const splits = level.tiles.includes(Tile.Splitter);
-  const key = (s: State) => stateKey(level, s, splits);
+  const paints = hasPaint(level);
+  const key = (s: State) => stateKey(level, s, splits, paints);
   const parent = new Map<number, { prev: number; steps: Move[]; state: State } | null>();
   const startKey = key(start);
   parent.set(startKey, null);
