@@ -11,6 +11,8 @@ import { Stardust } from './stardust';
 import { ReindeerCloseUp } from './ridge';
 import { StarfallScenery } from './starfall';
 import { StudioScenery } from './studio';
+import { SplatterScenery } from './splatter';
+import { StudioCat } from './cat';
 import { NEUTRAL, Theme, WallStone } from './themes';
 import { ToyboxScenery } from './toybox';
 import { makeToySamples, plasticEnvironment } from './toys';
@@ -238,6 +240,7 @@ const SCENERY: Partial<Record<Theme['sky'], () => Scenery>> = {
   toybox: () => new ToyboxScenery(),
   stars: () => new StarfallScenery(),
   studio: () => new StudioScenery(),
+  splatter: () => new SplatterScenery(),
 };
 
 /** Three.js view of a level. Holds no game rules: the controller tells it what happened. */
@@ -727,6 +730,16 @@ export class World {
     this.layerGroups[0].add(sample.group);
     this.sampleUpdate = (s) => sample.update(s);
     if (this.scenery instanceof FrostScenery) this.scenery.ridge.group.visible = false;
+  }
+
+  /** Splatter Studio's cat up close (`?sheet=splatter&cat`), beside the block, for approving it. */
+  showCatCloseUp(): void {
+    const cat = new StudioCat();
+    cat.group.scale.setScalar(0.5);
+    cat.group.position.set(this.center.x + 2, 0, this.center.z);
+    cat.group.rotation.y = -Math.PI / 2 + 0.4;
+    this.layerGroups[0].add(cat.group);
+    this.sampleUpdate = (s) => cat.update(s);
   }
 
   /** What the last frame cost, for the frame-rate readout. */

@@ -103,7 +103,7 @@ goal reachable only lying. **Dead ends** counts states you can reach but never w
 
 `/levels.html` is the level index (mini-maps, validation status, play links); `/?level=<id>` opens
 one level. `/?sheet=<theme>` shows every tile in a theme (`&bridges=0` retracts the bridges), for
-approving readability before scenery; `/?sheet=toybox&toys` stands Toybox's sample toys on its floor; `/?sheet=peaks&aerie` shows Windy Peaks' rock structures and birds up close; `/?sheet=frost&summit` shows Frost Isle's reindeer up close; `/?sheet=<theme>&walls` shows a world's walls (raised, sunk, low stone) beside the tiles they mustn't be mistaken for (Starfall's on both floors; `&up` starts on the ceiling); `&theme=<theme>` previews a theme on any level; `&gray` shows
+approving readability before scenery; `/?sheet=toybox&toys` stands Toybox's sample toys on its floor; `/?sheet=peaks&aerie` shows Windy Peaks' rock structures and birds up close; `/?sheet=frost&summit` shows Frost Isle's reindeer up close; `/?sheet=splatter&cat` shows Splatter Studio's cat up close; `/?sheet=<theme>&walls` shows a world's walls (raised, sunk, low stone) beside the tiles they mustn't be mistaken for (Starfall's on both floors; `&up` starts on the ceiling); `&theme=<theme>` previews a theme on any level; `&gray` shows
 the page in black and white, to check a tile reads without color. In the game,
 F (or `?fps`) toggles a hidden frame-rate readout, which also shows triangles and draw calls. `?slides` turns on the
 slide-end preview (a Settings toggle, off by default) for one visit.
@@ -224,7 +224,7 @@ src/levels/    chapter .txt files, format.ts (parser), validate.ts (checks + one
 src/render/    Three.js world (tiles, animations, push cue), palette.ts (belt colors by direction),
                themes.ts (each chapter's look; rules in DESIGN.md's *Chapter themes*),
                scenery.ts (what a world's surroundings provide), forest.ts, frost.ts and peaks.ts (each world's
-               scenery; the big clouds behind the game are `#sky` in the page), toybox.ts (Toybox's scenery), toys.ts
+               scenery; the big clouds behind the game are `#sky` in the page), toybox.ts (Toybox's scenery), splatter.ts (Splatter Studio's room: walls, windows, paintings, easels, furniture, lamps), cat.ts (its cat), toys.ts
                (its toys and plastic reflections), starfall.ts (Starfall's scenery), stardust.ts (flip sparkles), aerie.ts (Windy Peaks' arches, nests and birds), ridge.ts (Frost Isle's ridge, reindeer and cable towers), grove.ts (First Glade's hills, trees and butterflies), studio.ts (the Tutorial's dark studio)
 src/ui/        progress (localStorage), map (the sky map and Labs screen; island layout per chapter),
                menu (a keyboard-driven button list: main menu, Esc menu, Settings)

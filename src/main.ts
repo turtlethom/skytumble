@@ -188,6 +188,10 @@ class Game {
       });
       return;
     }
+    if (params.has('cat') && params.has('sheet')) {
+      void this.start(toySampleFloor(), 0).then(() => this.world.showCatCloseUp());
+      return;
+    }
     if (params.has('toys')) {
       void this.start(toySampleFloor(), 0).then(() => this.world.showToySamples());
       return;

@@ -226,8 +226,15 @@ body[data-theme='splatter'] .brand h1 {
   color: #fbe9cf;
 }
 
+/* Paintings on the far walls can hang behind the level's text: a dark warm panel keeps it readable. */
 body[data-theme='splatter'] .brand p {
-  color: #f3e3c9;
+  color: #f6ead6;
+  width: fit-content;
+  margin-left: -8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(42, 27, 18, 0.66);
+  text-shadow: none;
 }
 
 /* Toybox: a pastel sunset, lavender above and peach below, with ivory panels and a brick-red highlight. */
