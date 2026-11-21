@@ -74,3 +74,34 @@ export function starWallSampleFloor(): Level {
     '##############',
   ], [0, 2]);
 }
+
+/**
+ * Splatter Studio's tiles (`?sheet=splatter`, `&painted` coats the block orange below and green on top):
+ * the paint trays, the six gate colors, water and the cutting-mat splitter, beside the switches, belts,
+ * tubes, planks, walls and bridges they mix with, so paint can be judged against switch and belt colors.
+ * Six gates in a north-south run, as in a corridor (one sheet each), and a seventh at a junction.
+ * Not a puzzle.
+ */
+export function splatterSheet(painted: boolean): Level {
+  const level = parseLevel(
+    [
+      '#o#o#o#o##x#x#x#x#',
+      '##################',
+      '#r#u#y##s###]#####',
+      '##################',
+      '.{.{.{.{.{.{..{###',
+      '##################',
+      '#^#v#<#>##==##ff#G',
+      '##################',
+      '#H#h##0011##C#####',
+      '##################',
+      'S#################',
+    ],
+    [0, 1, 2, 3, 0, 1, 2, 3],
+    3,
+    2,
+    [1, 2, 3, 4, 5, 6, 4],
+  );
+  if (painted) level.startPaint = [5, 6];
+  return level;
+}

@@ -1156,32 +1156,28 @@ export class World {
       const postMat = new THREE.MeshStandardMaterial({ color: COLORS.splitMat, roughness: 0.7 });
       const sheet = new THREE.Group();
       const posts = new Set<string>();
-      // A sheet along x (spanning east-west) or along z, centered at (cx, cz).
+      // A sheet along x (spanning east-west) or along z, centered at (cx, cz): one panel with its color's
+      // shapes cut out (stencilGeometry), so the gate names its color, and its primaries, without color.
       const stencil = (alongX: boolean, cx: number, cz: number) => {
-        const [w, h, hole, d] = [0.84, 0.6, 0.3, 0.1];
-        const side = (w - hole) / 2;
-        const part = (a: number, pw: number, ph: number, y0: number) => {
-          const m = new THREE.Mesh(new THREE.BoxGeometry(alongX ? pw : d, ph, alongX ? d : pw), mat);
-          m.position.set(cx + (alongX ? a : 0), y0, cz + (alongX ? 0 : a));
-          m.castShadow = true;
-          sheet.add(m);
-        };
-        const band = (h - hole) / 2;
-        part(-(hole + side) / 2, side, h, 0.4);
-        part((hole + side) / 2, side, h, 0.4);
-        part(0, hole, band, 0.4 + (hole + band) / 2);
-        part(0, hole, band, 0.4 - (hole + band) / 2);
+        const h = 0.6;
+        const panel = new THREE.Mesh(stencilGeometry(group as Paint), mat);
+        panel.position.set(cx, 0.4, cz);
+        if (!alongX) panel.rotation.y = Math.PI / 2;
+        panel.castShadow = true;
+        sheet.add(panel);
         // A rail along the top, wider than the sheet, so an edge-on gate still shows a bar of color.
         const rail = new THREE.Mesh(new THREE.BoxGeometry(alongX ? 0.9 : 0.18, 0.07, alongX ? 0.18 : 0.9), mat);
         rail.position.set(cx, 0.4 + h / 2 + 0.035, cz);
         rail.castShadow = true;
         sheet.add(rail);
         for (const e of [-0.47, 0.47]) posts.add(`${(cx + (alongX ? e : 0)).toFixed(2)},${(cz + (alongX ? 0 : e)).toFixed(2)}`);
-        // The slot it sinks into, painted, so the gate's color shows from above even when the camera
-        // sees the sheet edge-on, and while it's down.
-        const slot = new THREE.Mesh(new THREE.BoxGeometry(alongX ? 0.9 : 0.2, 0.025, alongX ? 0.2 : 0.9), mat);
-        slot.position.set(cx, 0.0125, cz);
-        g.add(slot);
+        // A flat plate on the floor where it sinks, painted and cut with the same shapes, so the gate's
+        // color and shapes show from above even when the camera sees the sheet edge-on, and while it's down.
+        const plate = new THREE.Mesh(stencilGeometry(group as Paint, 0.02), mat);
+        plate.rotation.set(-Math.PI / 2, 0, alongX ? 0 : Math.PI / 2);
+        plate.position.set(cx, 0.012, cz);
+        plate.receiveShadow = true;
+        g.add(plate);
       };
       const open = this.gateOpenings(layer, x, y);
       const bothAxes = (open.n || open.s) && (open.e || open.w);
@@ -1207,10 +1203,14 @@ export class World {
     if (tile === Tile.Splitter) {
       // A stand-in until Splatter Studio's look (a cutting mat): a dashed cut line across the tile and
       // a wedge pointing to the side the second cube appears on.
-      // A dark mat over the whole tile, so it never reads as floor, with bold white marks.
+      // A dark mat over the whole tile, so it never reads as floor, with bold white marks. In Splatter
+      // Studio it's a green cutting mat with a light grid (the look session's pick).
       g.add(floorTile(jitter, this.theme, layer), earth(jitter, this.theme));
       const { dx, dy } = DIR_DELTA[DIRS[group]];
-      const mat = box(0.92, 0.04, 0.92, COLORS.splitMat, { roughness: 0.8 });
+      const studio = this.theme.id === 'splatter';
+      const mat = studio
+        ? new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.04, 0.92), new THREE.MeshStandardMaterial({ map: cuttingMatTexture(), roughness: 0.75 }))
+        : box(0.92, 0.04, 0.92, COLORS.splitMat, { roughness: 0.8 });
       mat.position.y = 0.02;
       mat.receiveShadow = true;
       g.add(mat);
@@ -3321,13 +3321,85 @@ function detailMaterials(id: string, shades: number[], style: Theme['floor']['st
   }
   const mats = [1, 2, 3, 4].map((seed) => {
     const map =
-      style === 'snow' ? snowTexture(shades, seed) : style === 'slate' ? slateTexture(shades, seed) : style === 'meadow' ? meadowTexture(shades, seed) : detailTexture(shades, seed);
+      style === 'snow'
+        ? snowTexture(shades, seed)
+        : style === 'slate'
+          ? slateTexture(shades, seed)
+          : style === 'meadow'
+            ? meadowTexture(shades, seed)
+            : style === 'canvas'
+              ? canvasTexture(shades, seed)
+              : detailTexture(shades, seed);
     const mat = new THREE.MeshStandardMaterial({ map, roughness: 1 });
     mat.userData.keptBetweenLevels = true;
     return mat;
   });
   detailCache.set(id, mats);
   return mats;
+}
+
+/**
+ * Primed canvas: a fine weave of crossing threads in the floor's own shades, a lighter primed sheen and
+ * a few faint tonal smudges, so no paint color ever shows on a tile top. Seeded per variant.
+ */
+function canvasTexture(shades: number[], seed: number): THREE.CanvasTexture {
+  const size = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const [dark, base, lit] = shades.map(cssColor);
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, size, size);
+  let s = seed * 9973;
+  const rand = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+  // Soft smudges of light and shade, like a primed surface brushed on.
+  for (let i = 0; i < 4; i++) {
+    const g = ctx.createRadialGradient(rand() * size, rand() * size, 0, rand() * size, rand() * size, 70 + rand() * 60);
+    g.addColorStop(0, rand() < 0.5 ? lit : dark);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalAlpha = 0.05;
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, size, size);
+  }
+  // The weave: thin threads both ways, slightly uneven.
+  ctx.globalAlpha = 0.16;
+  ctx.strokeStyle = dark;
+  ctx.lineWidth = 1;
+  for (let i = 0; i < size; i += 4) {
+    const wobble = rand() * 0.8;
+    ctx.beginPath();
+    ctx.moveTo(0, i + wobble);
+    ctx.lineTo(size, i + wobble);
+    ctx.moveTo(i + wobble, 0);
+    ctx.lineTo(i + wobble, size);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 0.1;
+  ctx.strokeStyle = lit;
+  for (let i = 2; i < size; i += 4) {
+    ctx.beginPath();
+    ctx.moveTo(0, i);
+    ctx.lineTo(size, i);
+    ctx.stroke();
+  }
+  // Where the canvas folds over its frame: a soft shade round the edge, so each tile reads as one canvas.
+  ctx.globalAlpha = 1;
+  const edge = 14;
+  for (const [x0, y0, w, h, gx0, gy0, gx1, gy1] of [
+    [0, 0, size, edge, 0, 0, 0, edge],
+    [0, size - edge, size, edge, 0, size, 0, size - edge],
+    [0, 0, edge, size, 0, 0, edge, 0],
+    [size - edge, 0, edge, size, size, 0, size - edge, 0],
+  ]) {
+    const g = ctx.createLinearGradient(gx0, gy0, gx1, gy1);
+    g.addColorStop(0, 'rgba(120, 100, 70, 0.28)');
+    g.addColorStop(1, 'rgba(120, 100, 70, 0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x0, y0, w, h);
+  }
+  const map = new THREE.CanvasTexture(canvas);
+  map.colorSpace = THREE.SRGBColorSpace;
+  return map;
 }
 
 /** Holes per side of a pegboard tile: small and shallow, so they read as texture rather than openings. */
@@ -3683,6 +3755,33 @@ function earth(jitter: number, theme: Theme): THREE.Object3D {
   dirt.position.y = -0.4;
   g.add(dirt);
   if (theme.earth.style === 'plain') return g;
+  if (theme.earth.style === 'drips') {
+    // Paint run down the tile's sides and hanging underneath, in off-palette colors only, so nothing
+    // here echoes a switch, belt or paint color (look session: drips in browns, ochres, creams, greys).
+    let s = Math.floor(jitter * 1e6) + 7;
+    const rand = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+    const count = 1 + Math.floor(rand() * 3);
+    for (let i = 0; i < count; i++) {
+      const color = DRIP_COLORS[Math.floor(rand() * DRIP_COLORS.length)];
+      const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.35 });
+      const side = Math.floor(rand() * 4);
+      const along = (rand() - 0.5) * 0.7;
+      const len = 0.1 + rand() * 0.22;
+      // Down a side face, from just under the top.
+      const run = new THREE.Mesh(new THREE.CapsuleGeometry(0.025 + rand() * 0.015, len, 3, 6), mat);
+      const [nx, nz] = [[0, -1], [0, 1], [-1, 0], [1, 0]][side];
+      run.position.set(nx ? nx * 0.495 : along, -0.04 - len / 2, nz ? nz * 0.495 : along);
+      g.add(run);
+      // And a drop hanging below the tile.
+      if (rand() < 0.6) {
+        const drop = new THREE.Mesh(new THREE.SphereGeometry(0.035 + rand() * 0.03, 8, 6), mat);
+        drop.position.set((rand() - 0.5) * 0.6, -0.65 - rand() * 0.15, (rand() - 0.5) * 0.6);
+        drop.scale.y = 1.6;
+        g.add(drop);
+      }
+    }
+    return g;
+  }
   if (theme.earth.style === 'roots' || theme.earth.style === 'glowroots') {
     const clump = new THREE.Mesh(clumpGeometry, new THREE.MeshStandardMaterial({ color: theme.earth.soil, roughness: 1 }));
     clump.position.y = -0.62;
@@ -3775,6 +3874,95 @@ function coatColors(b: Block, p: [Paint, Paint] | undefined): [Paint, Paint] {
   if (blockLength(b) === 1) return [p[0], p[0]];
   return b.o === 'S' ? [p[1], p[0]] : b.o === 'X' ? [p[0], p[1]] : [p[1], p[0]];
 }
+
+/**
+ * A gate's stencil sheet, 0.84 by 0.6 and 0.1 thick, centered, with its color's shapes cut through:
+ * red a circle, blue a square, yellow a triangle; a mix both of its primaries' shapes side by side
+ * (purple circle and square, orange circle and triangle, green square and triangle). The shapes tell the
+ * colors apart in black and white, where red, blue and purple look alike. One geometry per color.
+ */
+const stencilCache = new Map<number, THREE.BufferGeometry>();
+const GATE_SHAPES: Record<number, ('circle' | 'square' | 'triangle')[]> = {
+  1: ['circle'],
+  2: ['square'],
+  3: ['triangle'],
+  4: ['circle', 'square'],
+  5: ['circle', 'triangle'],
+  6: ['square', 'triangle'],
+};
+function stencilGeometry(color: Paint, d = 0.1): THREE.BufferGeometry {
+  const key = color * 1000 + Math.round(d * 1000);
+  const cached = stencilCache.get(key);
+  if (cached) return cached;
+  const [w, h] = [0.84, 0.6];
+  const outline = new THREE.Shape();
+  outline.moveTo(-w / 2, -h / 2);
+  outline.lineTo(w / 2, -h / 2);
+  outline.lineTo(w / 2, h / 2);
+  outline.lineTo(-w / 2, h / 2);
+  outline.lineTo(-w / 2, -h / 2);
+  const shapes = GATE_SHAPES[color] ?? [];
+  const pair = shapes.length === 2;
+  const size = pair ? 0.28 : 0.42;
+  shapes.forEach((kind, k) => {
+    const cx = pair ? (k === 0 ? -0.2 : 0.2) : 0;
+    const hole = new THREE.Path();
+    if (kind === 'circle') hole.absarc(cx, 0, size / 2, 0, Math.PI * 2, true);
+    else if (kind === 'square') {
+      hole.moveTo(cx - size / 2, -size / 2);
+      hole.lineTo(cx - size / 2, size / 2);
+      hole.lineTo(cx + size / 2, size / 2);
+      hole.lineTo(cx + size / 2, -size / 2);
+      hole.lineTo(cx - size / 2, -size / 2);
+    } else {
+      // An equilateral triangle about as wide as the square, sitting a little low so it looks centered.
+      const r = size * 0.62;
+      const lift = -r * 0.15;
+      hole.moveTo(cx, r + lift);
+      hole.lineTo(cx + r * 0.866, -r * 0.5 + lift);
+      hole.lineTo(cx - r * 0.866, -r * 0.5 + lift);
+      hole.lineTo(cx, r + lift);
+    }
+    outline.holes.push(hole);
+  });
+  const geom = new THREE.ExtrudeGeometry(outline, { depth: d, bevelEnabled: false, curveSegments: 20 });
+  geom.translate(0, 0, -d / 2);
+  // The splatter texture tiles over the panel instead of stretching from the shape's coordinates.
+  const uv = geom.attributes.uv;
+  for (let v = 0; v < uv.count; v++) uv.setXY(v, uv.getX(v) * 1.2, uv.getY(v) * 1.2);
+  stencilCache.set(key, geom);
+  return geom;
+}
+
+/** A green self-healing cutting mat: a light grid, every fourth line stronger. Shared. */
+let sharedCuttingMat: THREE.CanvasTexture | null = null;
+function cuttingMatTexture(): THREE.CanvasTexture {
+  if (sharedCuttingMat) return sharedCuttingMat;
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  ctx.fillStyle = '#2f6b52';
+  ctx.fillRect(0, 0, size, size);
+  for (let i = 0; i <= 16; i++) {
+    const p = (i / 16) * size;
+    ctx.strokeStyle = i % 4 === 0 ? 'rgba(220, 240, 225, 0.75)' : 'rgba(220, 240, 225, 0.3)';
+    ctx.lineWidth = i % 4 === 0 ? 1.5 : 1;
+    ctx.beginPath();
+    ctx.moveTo(p, 0);
+    ctx.lineTo(p, size);
+    ctx.moveTo(0, p);
+    ctx.lineTo(size, p);
+    ctx.stroke();
+  }
+  sharedCuttingMat = new THREE.CanvasTexture(canvas);
+  sharedCuttingMat.colorSpace = THREE.SRGBColorSpace;
+  sharedCuttingMat.userData = { keptBetweenLevels: true };
+  return sharedCuttingMat;
+}
+
+/** Drips under a canvas floor: off-palette paint only (browns, ochres, creams, greys). */
+const DRIP_COLORS = [0x7a5638, 0xb0854a, 0xd8c7a0, 0x8b8680, 0x5e4b3c, 0xc4a777];
 
 /** A fading coat sits just outside the coat under it. */
 const fadeGeometry = new THREE.BoxGeometry(1.012, 0.99, 1.012);

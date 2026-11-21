@@ -205,6 +205,31 @@ body[data-theme='peaks'] #sky i {
   top: calc(var(--y) - 3vh);
 }
 
+/* Splatter Studio: a painter's studio on a lamp-lit evening, warm umber above, an amber glow below the
+   board, with cream canvas panels and a deep paint-red highlight. The room comes later. */
+body[data-theme='splatter'] {
+  --accent: #b23a2e;
+  --accent-ink: #fff8ee;
+  --glass: rgba(255, 249, 238, 0.88);
+  --glass-border: rgba(255, 244, 226, 0.95);
+  --shadow: 0 6px 24px rgba(40, 22, 10, 0.35);
+  --panel: linear-gradient(180deg, #fbf5e8, #efe2c8);
+  --panel-edge: #b23a2e;
+  --select: #b23a2e;
+  --title: #b23a2e;
+  --btn: #fffaf0;
+  --btn-edge: #d4bf98;
+  background: radial-gradient(ellipse at 50% 70%, #d9a46a 0%, #9c6a43 34%, #5b3d2a 68%, #33241b 100%);
+}
+
+body[data-theme='splatter'] .brand h1 {
+  color: #fbe9cf;
+}
+
+body[data-theme='splatter'] .brand p {
+  color: #f3e3c9;
+}
+
 /* Toybox: a pastel sunset, lavender above and peach below, with ivory panels and a brick-red highlight. */
 body[data-theme='toybox'] {
   --accent: #a8483f;

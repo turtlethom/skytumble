@@ -8,7 +8,7 @@ import { isLesson, lessonDone, lessonPrompt } from './levels/lessons';
 import { HandmadeLevel } from './levels/format';
 import { MECHANICS, Mechanic, mechanicsIn } from './levels/mechanics';
 import { MENU_LEVEL } from './levels/menuScene';
-import { tileSheet, toySampleFloor, wallSampleFloor, starWallSampleFloor } from './levels/sheet';
+import { splatterSheet, tileSheet, toySampleFloor, wallSampleFloor, starWallSampleFloor } from './levels/sheet';
 import { NEUTRAL, THEMES, Theme, themeForLevel } from './render/themes';
 import { World } from './render/world';
 import { ChapterArrival } from './ui/arrival';
@@ -193,7 +193,9 @@ class Game {
       return;
     }
     if (params.has('sheet')) {
-      void this.start(tileSheet(Number(params.get('bridges') ?? 15)), 0);
+      // Splatter Studio has tiles of its own: paint, gates, water and the splitter.
+      const sheet = this.themeOverride?.id === 'splatter' ? splatterSheet(params.has('painted')) : tileSheet(Number(params.get('bridges') ?? 15));
+      void this.start(sheet, 0);
       return;
     }
     this.load(this.mode);

@@ -4,16 +4,16 @@
  */
 export interface Theme {
   /** Also set as `data-theme` on the page body, where the sky gradient and text colors are styled. */
-  id: 'neutral' | 'night' | 'forest' | 'frost' | 'peaks' | 'toybox' | 'studio';
+  id: 'neutral' | 'night' | 'forest' | 'frost' | 'peaks' | 'toybox' | 'studio' | 'splatter';
   /** What surrounds the level. */
-  sky: 'clouds' | 'stars' | 'forest' | 'frost' | 'peaks' | 'toybox' | 'studio';
+  sky: 'clouds' | 'stars' | 'forest' | 'frost' | 'peaks' | 'toybox' | 'studio' | 'splatter';
   hemi: { sky: number; ground: number; intensity: number };
   sun: { color: number; intensity: number };
   block: { color: number; edge: number; roughness?: number };
   /** Walkable ground. `detail` lists shades of one color, darkest first, painted over each tile: as soft blotches, as snow, as slate, or as holes in a pegboard, or as meadow grass. */
-  floor: { color: number; detail?: number[]; style?: 'snow' | 'slate' | 'pegboard' | 'meadow' };
+  floor: { color: number; detail?: number[]; style?: 'snow' | 'slate' | 'pegboard' | 'meadow' | 'canvas' };
   /** Under the tiles: a block of soil, and rock spikes, a clump with dangling roots, icicles, jagged shards, dangling pegs, roots with glowing tips, or nothing more. */
-  earth: { soil: number; hanging: number; style: 'rock' | 'roots' | 'icicles' | 'shards' | 'pegs' | 'glowroots' | 'plain' };
+  earth: { soil: number; hanging: number; style: 'rock' | 'roots' | 'icicles' | 'shards' | 'pegs' | 'glowroots' | 'plain' | 'drips' };
   fragile: { light: number; dark: number; weathered?: boolean };
   /**
    * A finish for mechanics. Their shapes and color coding never change. `snow` is a color laid on
@@ -187,6 +187,24 @@ const STUDIO: Theme = {
   finish: { switchBase: 0xc9cfdc, bridgeGhost: 0.12 },
 };
 
+/**
+ * Splatter Studio: a painter's studio on a lamp-lit evening (look session 2026-11-20). Stretched canvas
+ * floors on wooden frames, paint dripping down the sides and from underneath in off-palette browns,
+ * ochres, creams and greys, and a mid-grey plaster block. The room is warm; the board is lit near-neutral
+ * so paint reads true. The tile sheet stage: no room, light or cat yet.
+ */
+const SPLATTER: Theme = {
+  id: 'splatter',
+  sky: 'splatter',
+  hemi: { sky: 0xf4efe6, ground: 0x8c7b67, intensity: 1.05 },
+  sun: { color: 0xfff7ec, intensity: 1.9 },
+  block: { color: 0x9b9893, edge: 0x4e4c48, roughness: 0.95 },
+  floor: { color: 0xeee5d1, detail: [0xd6c9ae, 0xe6dcc6, 0xf3ecdc], style: 'canvas' },
+  earth: { soil: 0x8f6c47, hanging: 0x7b6650, style: 'drips' },
+  fragile: { light: 0xcfae80, dark: 0xa8865a },
+  finish: { switchBase: 0xd9d0c0 },
+};
+
 /** Chapters with a world of their own; any other chapter uses NEUTRAL. */
 export const CHAPTER_THEMES: Record<string, Theme> = {
   tutorial: STUDIO,
@@ -205,10 +223,13 @@ export const CHAPTER_THEMES: Record<string, Theme> = {
   starlab: NIGHT,
   // Toybox's grey brick walls with shapes, on its pegboard.
   toylab: TOYBOX,
+  // Splatter Studio's labs, judged on its canvas.
+  splitlab: SPLATTER,
+  paintlab: SPLATTER,
 };
 
 /** Every theme by id, so `?theme=forest` can preview one on any level or on the tile sheet. */
-export const THEMES: Record<string, Theme> = { neutral: NEUTRAL, night: NIGHT, forest: FOREST, frost: FROST, peaks: PEAKS, toybox: TOYBOX, studio: STUDIO };
+export const THEMES: Record<string, Theme> = { neutral: NEUTRAL, night: NIGHT, forest: FOREST, frost: FROST, peaks: PEAKS, toybox: TOYBOX, studio: STUDIO, splatter: SPLATTER };
 
 /** The theme for a handmade level, from the chapter in its id (`star-03` is in `star`). */
 export function themeForLevel(id: string): Theme {
