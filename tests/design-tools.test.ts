@@ -4,6 +4,7 @@ import { findLevel } from '../src/levels';
 import solutions from '../SOLUTIONS.md?raw';
 import { directions, solutionsMarkdown } from '../scripts/design/arrows';
 import { explore, movesText, pathTo } from '../scripts/design/explore';
+import { levelColors } from '../scripts/design/checks';
 import { Draft, dropUnreachable, idleSpecials, quickRepresses, flipNS, hidden, lint, plainWalls, plankify, regrow, strip, switchOrder, toLevel, wallColors } from '../scripts/design/checks';
 
 const draft = (rows: string[], switches: number[] = []): Draft => ({ rows, switches, on: [], shape: 2 });
@@ -158,5 +159,9 @@ describe('design tools', () => {
     expect(warnings).toContain('gate at 4,1 is never passed');
     // A purple gate needs red and blue: here blue is missing.
     expect(lint({ ...d, gates: [4, 1] }).join(' ')).toContain('purple gate, but no blue tray');
+  });
+  it('list a paint level\'s colors, for rotating them through a chapter', () => {
+    expect(levelColors(findLevel('paintlab-04')!.level)).toEqual(['red', 'yellow', 'orange']);
+    expect(levelColors(findLevel('glade-01')!.level)).toEqual([]);
   });
 });

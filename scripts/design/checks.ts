@@ -19,6 +19,16 @@ export function switchOrder(level: Level): number[] {
   return out;
 }
 
+/**
+ * The paint colors a level uses (trays, gates, the start paint), by name, in color order. Paint levels
+ * should rotate their colors through a chapter (the user's call: red and blue were only examples).
+ */
+export function levelColors(level: Level): string[] {
+  const used = new Set<number>([...level.tiles.flatMap((t, i) => (t === Tile.Tray || t === Tile.Gate ? [level.groups[i]] : [])), ...(level.startPaint ?? [])]);
+  used.delete(0);
+  return [...used].sort().map((c) => PAINT_NAMES[c]);
+}
+
 /** A level's gate colors in reading order, as a `gates:` line lists them. */
 export function gateOrder(level: Level): number[] {
   return level.tiles.flatMap((t, i) => (t === Tile.Gate ? [level.groups[i]] : []));

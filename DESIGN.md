@@ -411,6 +411,8 @@ levels, sparkles over the block, the satellite, frame rate) stay open if they co
 | Splits | The top half pops out in its color, the bottom half's stays on the splitter; a swap trades them |
 | Palette risk | Red, blue, purple and orange are switch colors, yellow and green belt colors: paint has to read apart by its splatter look and the gate frames. Settled on the studio's tile sheet |
 
+**Colors rotate** (the user's call, 2026-11-21: "red and blue are just the examples, each level should have a rotation of colors, to keep it varied and go with the paint/splatter theme"): every paint level picks its own colors, and a chapter cycles through all six; `analyze` lists each level's colors and flags two in a row with the same set. The lab was recolored to follow it (yellow; red and yellow; blue; yellow and red into orange; blue and yellow into green; orange after washing off blue; purple).
+
 Levels, one rule question each: `paintlab-01` First Coat (red tray; red gate passes, blue holds), `02` Two-Tone (red and blue halves through a two-tile gate), `03` Full Coat (a standing block in a gate needs both halves), `04` Mixing Bowl (blue over a red half makes purple), `05` Double Dip (two trays side by side coat both halves at once: reds, then blues, a purple block; replaced Halves Together when blending went), `06` Wash Up (a wrong mix makes mud; wash it off and recoat), `07` Mixed Pair (split, each cube mixes its own purple, rejoin and stand the purple block in the gate). The green-and-pink `05` Repaint goes: coats no longer replace.
 
 | Level | Par | States | The idea |
@@ -765,6 +767,8 @@ works and what doesn't. Claude writes the code and designs handmade levels from 
 feedback; batches of 5 levels per round.
 
 ## Playtest log
+
+**2026-11-21 — Paint Lab committed; colors rotate.** Committed. "we want varied colors. red and blue are just the examples, each level should have a rotation of colors" → A design rule now: each paint level its own colors, cycling all six through a chapter; `analyze` flags two levels in a row with the same set. The lab recolored to cover every color (pars unchanged).
 
 **2026-11-21 — Paint Lab, gates at a junction.** "at an intersection, say for example in 04, i do not like how that gate looks. because going to the right makes it fade through the gate" → A gate open on both axes now has a sheet on each open side, so the block always crosses one. Seen while checking: a sheet the camera sees edge-on read as a thin pole, so sheets got thicker, with a wider rail on top and a painted slot below.
 

@@ -9,13 +9,22 @@ import { initialState, play } from '../../src/game/rules';
 import { solve } from '../../src/game/solver';
 import { flipUses, iceUses, padUses, shapeUses } from '../../src/levels/validate';
 import { diagnose, explore } from './explore';
+import { levelColors } from './checks';
 import { build, describeMotions, designBlock, loadDesigns, paintText, textRow, touched } from './lib';
 
 const env = (k: string) => process.env[k] === '1';
+// Paint levels rotate their colors: two in a row with the same set get flagged.
+let lastColors: { name: string; set: string } | null = null;
 for (const arg of process.argv.slice(2)) {
   for (const d of await loadDesigns(arg)) {
     const { rows, switches, on, level } = d;
     console.log(`\n@${d.name}`);
+    const colors = levelColors(level);
+    if (colors.length) {
+      const set = colors.join(', ');
+      console.log(`colors [${set}]${lastColors?.set === set ? `  SAME COLORS as ${lastColors.name}: rotate them` : ''}`);
+      lastColors = { name: d.name, set };
+    }
     if (env('BLOCK')) console.log(designBlock(d));
     const sol = solve(level);
     const ex = explore(level);
