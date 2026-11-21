@@ -37,7 +37,9 @@ describe('level tracks', () => {
     const frost = CAMPAIGN.find((c) => c.id === 'frost')!.levels;
     expect(nextOnTrack(frost[frost.length - 1].id)?.id).toBe('wind-01');
     expect(nextOnTrack(TUTORIAL.levels[TUTORIAL.levels.length - 1].id)).toBeNull();
-    const lastCampaign = CAMPAIGN[CAMPAIGN.length - 1].levels;
+    // A world can show on the map before its levels exist: the track ends at the last level there is.
+    const filled = CAMPAIGN.filter((c) => c.levels.length);
+    const lastCampaign = filled[filled.length - 1].levels;
     expect(nextOnTrack(lastCampaign[lastCampaign.length - 1].id)).toBeNull();
     const lastLab = LABS[LABS.length - 1].levels;
     expect(nextOnTrack(lastLab[lastLab.length - 1].id)).toBeNull();

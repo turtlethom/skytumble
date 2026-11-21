@@ -11,13 +11,15 @@ import { Progress } from './progress';
 const NATURAL_WIDTH = 1000;
 const W = 160;
 const H = 90;
+// Six worlds in a zigzag, 26 apart, so the sixth fits inside the 160-wide box (it would have gone at 170).
 const LAYOUT: Record<string, { x: number; y: number; theme: string }> = {
   // Two rows far enough apart for full islands of 20 stones: neighbors overlap sideways, so they can't overlap in height.
-  glade: { x: 20, y: 23, theme: 'glade' },
-  frost: { x: 50, y: 70, theme: 'frost' },
-  wind: { x: 80, y: 23, theme: 'peaks' },
-  star: { x: 110, y: 70, theme: 'night' },
-  toy: { x: 140, y: 23, theme: 'toy' },
+  glade: { x: 15, y: 23, theme: 'glade' },
+  frost: { x: 41, y: 70, theme: 'frost' },
+  wind: { x: 67, y: 23, theme: 'peaks' },
+  star: { x: 93, y: 70, theme: 'night' },
+  toy: { x: 119, y: 23, theme: 'toy' },
+  paint: { x: 145, y: 70, theme: 'splatter' },
   lab: { x: 20, y: 16, theme: 'lab' },
   windlab: { x: 60, y: 16, theme: 'lab' },
   gravlab: { x: 100, y: 16, theme: 'lab' },
@@ -125,7 +127,11 @@ export class SkyMap {
   /** Jump to the neighbouring island, landing on its first unsolved level. */
   private hop(delta: number): void {
     const from = this.chapters.findIndex((c) => c.levels.includes(this.levels[this.selected]));
-    const chapter = this.chapters[(from + delta + this.chapters.length) % this.chapters.length];
+    // Skip islands with no levels yet (a world shown before its levels exist).
+    let at = from;
+    do at = (at + delta + this.chapters.length) % this.chapters.length;
+    while (!this.chapters[at].levels.length && at !== from);
+    const chapter = this.chapters[at];
     const target = chapter.levels.find((h) => !solved(this.progress, h)) ?? chapter.levels[0];
     this.select(this.levels.indexOf(target));
   }
@@ -170,13 +176,17 @@ export class SkyMap {
       .join('');
     return `
       <section class="sm-island ${theme}"
-               style="left:${(x / W) * 100}%;top:${(y / H) * 100}%;--delay:${-i * 1.7}s;--cols:${stoneColumns(c.levels.length)}">
+               style="left:${(x / W) * 100}%;top:${(y / H) * 100}%;--delay:${-i * 1.7}s;--cols:${stoneColumns(c.levels.length || 20)}">
         <div class="sm-top">
           <header>
             <h3>${esc(c.title.replace(/\s*\(.*\)$/, ''))}</h3>
             ${badge ? `<span class="sm-badge">${esc(badge)}</span>` : ''}
           </header>
-          <p class="sm-progress">${done}/${c.levels.length} solved · <span class="stars">★</span> ${stars}/${c.levels.length * 3}</p>
+          ${
+            c.levels.length
+              ? `<p class="sm-progress">${done}/${c.levels.length} solved · <span class="stars">★</span> ${stars}/${c.levels.length * 3}</p>`
+              : '<p class="sm-progress">Coming soon</p>'
+          }
           <div class="sm-nodes">${nodes}</div>
         </div>
       </section>`;
@@ -208,6 +218,9 @@ export function stoneColumns(stones: number): number {
 }
 
 /** What an island's badge says on the sky map. */
+/** Worlds whose mechanics have no one-trick guard (no signature), labeled by hand. */
+const WORLD_LABEL: Record<string, string> = { paint: 'Split & paint' };
+
 export function signatureBadge(c: Chapter): string {
-  return c.signature ? (SIGNATURE_LABEL[c.signature] ?? c.signature) : 'Basics';
+  return c.signature ? (SIGNATURE_LABEL[c.signature] ?? c.signature) : (WORLD_LABEL[c.id] ?? 'Basics');
 }

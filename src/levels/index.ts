@@ -5,6 +5,7 @@ import lab from './lab.txt?raw';
 import shapelab from './shapelab.txt?raw';
 import star from './star.txt?raw';
 import toy from './toy.txt?raw';
+import paint from './paint.txt?raw';
 import wind from './wind.txt?raw';
 import windlab from './windlab.txt?raw';
 import tutorial from './tutorial.txt?raw';
@@ -25,6 +26,8 @@ export const CHAPTERS: Chapter[] = [
   parseChapter('wind', wind),
   parseChapter('star', star),
   parseChapter('toy', toy),
+  // Splatter Studio: splitting and paint. Its island shows on the map before its levels exist.
+  parseChapter('paint', paint),
   // The rule prototypes from the ice lab playtest.
   parseChapter('lab', lab),
   // Launch-pad prototypes for the Windy Peaks lab playtest.

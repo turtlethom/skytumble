@@ -213,6 +213,7 @@ export const CHAPTER_THEMES: Record<string, Theme> = {
   wind: PEAKS,
   star: NIGHT,
   toy: TOYBOX,
+  paint: SPLATTER,
   // A lab, but walls and hedges are for this world, and a green hedge has to read on its grass.
   gladelab: FOREST,
   // Frost Isle's walls are granite in the snow, and they have to be judged there.

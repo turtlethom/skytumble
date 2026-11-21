@@ -1086,6 +1086,14 @@ body.at-menu .bottom {
   --cliff-dark: #5e2522;
 }
 
+/* Splatter Studio: a canvas top on a wooden stretcher frame, with a paint-red rim. */
+.sm-island.splatter {
+  --top: linear-gradient(#f6efdf, #e4d6ba);
+  --edge: #b23a2e;
+  --cliff: #8f6c47;
+  --cliff-dark: #5b3d2a;
+}
+
 @keyframes bob {
   0%,
   100% {

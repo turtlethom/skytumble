@@ -162,7 +162,7 @@ Shipped releases and finished build notes are in `DESIGN-archive.md`, word for w
 
 **Pick up here** (updated 2026-11-21). **All five worlds are at 20** (First Glade, Frost Isle, Windy Peaks, Starfall, Toybox). The sixth, **Splatter Studio** (split + paint), has both its labs built and its rules frozen; nothing of its look or levels is built yet. Committed locally through the paint freeze; the live site has the Split Lab's first four levels (pushed `2062566`), and the rest waits for the user's word to push. Hand every level over with its directions.
 
-- **Next: Splatter Studio's look** (the paint workshop world; see *Splatter Studio: the look*). **Status:** tile sheet committed; the room, light, furniture and cat built (with the user; the cat's size approved, try 2 of 4); next the map island and 20 levels. Both labs are done and their rules **frozen**: splitting (2026-11-20, Split Lab) and paint with mixing (2026-11-21, Paint Lab). The look plan stands, revisited only where the labs changed what a piece shows: gates are now stencil sheets that sink (a sheet on every open side at junctions), paint is a splatter in six colors plus mud, a wash tile was added, and the palette overlaps switch and belt colors (settle on the tile sheet). Order: the tile sheet (canvas floor, grey plaster block, trays, gates, splitter mat, wash, active-cube marker) for approval, then the room, light and cat, then 20 levels in batches of 5.
+- **Next: Splatter Studio's look** (the paint workshop world; see *Splatter Studio: the look*). **Status:** tile sheet committed; the room, light, furniture and cat built (with the user; the cat's size approved, try 2 of 4); the map island built; next the first batch of levels. Both labs are done and their rules **frozen**: splitting (2026-11-20, Split Lab) and paint with mixing (2026-11-21, Paint Lab). The look plan stands, revisited only where the labs changed what a piece shows: gates are now stencil sheets that sink (a sheet on every open side at junctions), paint is a splatter in six colors plus mud, a wash tile was added, and the palette overlaps switch and belt colors (settle on the tile sheet). Order: the tile sheet (canvas floor, grey plaster block, trays, gates, splitter mat, wash, active-cube marker) for approval, then the room, light and cat, then 20 levels in batches of 5.
 - **Lessons that carry over:** every level its own idea, never a liked level's frame reused; mechanics mix in as ingredients; par and states climb, and the finale clearly tops the rest. No special piece that never acts or matters (`lint`; `analyze`'s UNUSED line), above all anything a script placed at random. Hand-draw a level's chain of reasons, and let generators fill in only colorings, placements and island shapes; random networks almost never need every piece. A tall block tips four tiles at a time, so its switches sit on its step. Time-box each level at three rebuilds and check in with the user. Hand levels over one or two at a time.
 - **Animation lesson:** each kind of blocked jump has its own animation (fling, hop, crash); a fix for one must leave the others as the user liked them, checked frame by frame on a slowed build (a throwaway probe level in a lab chapter, constants slowed ~10×, `FRAMES`).
 - **Pushing** goes through the `gh` login (`git -c credential.helper= -c credential.helper='!gh auth git-credential' push origin main`); always ask first.
@@ -466,7 +466,7 @@ Pitched and approved 2026-11-20, built 2026-11-21, all five. Stand-ins on the ne
 | Active cube | A marker floating above it, plus a glow on it and a dim on the other |
 | Life | A studio cat, the world's mascot. **Capped at four tries**, then a simpler blocky cat on a shelf with only its tail moving (Claude's recommendation, taken over "no cap") |
 | Budget | Ambient motion is cut first to hold about 60 fps on the user's laptop |
-| Island | The next sky-map slot, (170, 70) |
+| Island | The lower right of the zigzag, (145, 70); all six islands respaced 26 apart to fit the box |
 
 **Split lab** (built 2026-11-20, **rules frozen** the same day after the user played all six; core four first, `splitlab-05` Slipstream and `06` Long Way Round after the user plays those). Plain stand-ins on the neutral lab tiles. One rule question per level: `splitlab-01` Two of a Kind (the split and the swap), `02` Reunion (when cubes join), `03` Featherweight (weights, splitting twice), `04` Two Hands (each cube does what the other can't: one holds a raised wall down by resting on its tile).
 
@@ -768,6 +768,8 @@ works and what doesn't. Claude writes the code and designs handmade levels from 
 feedback; batches of 5 levels per round.
 
 ## Playtest log
+
+**2026-11-21 — Splatter Studio on the sky map.** The world is a chapter now (`paint`, `src/levels/paint.txt`, no levels yet): its island sits at the lower right of the zigzag, canvas top, paint-red rim, wooden frame below, labeled *Split & paint* and *Coming soon* until levels exist. The six islands are respaced 26 apart (the look plan's (170, 70) was outside the 160-wide box), so neighbors in a row now touch at their edges. Hopping between islands skips empty ones, and the end-of-campaign test looks at the last chapter with levels.
 
 **2026-11-21 — Splatter Studio's room committed.** "fps is at 60 so that's good" → Committed. Next: its island on the sky map.
 
