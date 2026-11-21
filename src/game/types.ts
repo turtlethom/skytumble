@@ -33,6 +33,11 @@ export enum Tile {
   FlipLocked = 17,
   /** A glass tube (group 0 east-west, 1 north-south): only the cube rides it, entering and leaving through its open ends. */
   Door = 18,
+  /**
+   * A normal block standing on it splits into two cubes: one stays here, the other appears on the
+   * side the splitter marks (group = index into DIRS), unless that side is a gap or a raised wall.
+   */
+  Splitter = 19,
 }
 
 /** Standing upright, lying along the x axis, or lying along the y axis. */
@@ -81,9 +86,17 @@ export interface State {
   layer?: number;
   /** Which way each hedge fell: three bits per hedge, 0 still up, otherwise its index in DIRS + 1. Absent means none fell. */
   hedges?: number;
+  /**
+   * After a split: the idle cube, standing where it was left. The cube the arrows move is always
+   * `block`, so a swap exchanges the two. Absent while the block is whole.
+   */
+  other?: { x: number; y: number };
 }
 
 export type Dir = 'up' | 'down' | 'left' | 'right';
+
+/** A roll, or a swap of which cube the arrows move (free: it never counts as a move). */
+export type Move = Dir | 'swap';
 
 export const DIRS: readonly Dir[] = ['up', 'down', 'left', 'right'];
 

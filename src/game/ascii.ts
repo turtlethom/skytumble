@@ -2,6 +2,8 @@ import { DIRS, Dir, Level, Tile } from './types';
 
 const CONVEYOR_CHARS: Record<Dir, string> = { up: '^', down: 'v', left: '<', right: '>' };
 const PAD_CHARS: Record<Dir, string> = { up: 'U', down: 'D', left: 'L', right: 'R' };
+/** Splitters by the side the second cube appears on. */
+const SPLITTER_CHARS: Record<Dir, string> = { up: 'A', down: 'V', left: '[', right: ']' };
 /** One character per switch color, groups 0-3: a wall starting up, a wall starting down, a reversed bridge. */
 const WALLS_UP = 'HIJK';
 const WALLS_DOWN = 'hijk';
@@ -29,6 +31,8 @@ const MAX_HEDGES = 9;
  *   h i j k  the same, starting lowered
  *   a b d e  bridge in group 0 / 1 / 2 / 3 that is out when a digit bridge of its group is in
  *   &  toppling hedge
+ *   [ ] A V  splitter: a normal block standing on it splits into two cubes, the second to the
+ *            west / east / north / south
  * A line of dashes (`---`) ends the ground and starts the ceiling layer: the same grid seen from
  * above, cell for cell directly over the ground (not mirrored). The start is on the ground.
  * Switches target group 0 unless `switchGroups` lists groups in reading order (ground, then ceiling).
@@ -79,6 +83,9 @@ export function parseLevel(rows: string[], switchGroups: number[] = [], bridgesO
         } else if ('^v<>'.includes(c)) {
           tile = Tile.Conveyor;
           group = DIRS.findIndex((d) => CONVEYOR_CHARS[d] === c);
+        } else if ('[]AV'.includes(c)) {
+          tile = Tile.Splitter;
+          group = DIRS.findIndex((d) => SPLITTER_CHARS[d] === c);
         } else if ('UDLR'.includes(c)) {
           tile = Tile.Pad;
           group = DIRS.findIndex((d) => PAD_CHARS[d] === c);
@@ -149,7 +156,8 @@ const CHARS: Record<Tile, string> = {
   [Tile.WallDown]: '?',
   [Tile.Hedge]: '&',
   [Tile.FlipLocked]: '?',
-  [Tile.Door]: 'A',
+  [Tile.Door]: '?',
+  [Tile.Splitter]: '?',
 };
 
 export function formatLevel(level: Level): string {
@@ -172,6 +180,7 @@ export function formatLevel(level: Level): string {
         else if (t === Tile.Flip && l.groups[i] >= 0) row += RINGS_OPEN[l.groups[i]];
         else if (t === Tile.Conveyor) row += CONVEYOR_CHARS[DIRS[l.groups[i]]];
         else if (t === Tile.Pad) row += PAD_CHARS[DIRS[l.groups[i]]];
+        else if (t === Tile.Splitter) row += SPLITTER_CHARS[DIRS[l.groups[i]]];
         else if (t === Tile.ShapeSwitch) row += Object.keys(SHAPE_SWITCHES).find((k) => SHAPE_SWITCHES[k] === l.groups[i]);
         else if (t === Tile.Goal && l.groups[i] > 0) row += Object.keys(SHAPE_GOALS).find((k) => SHAPE_GOALS[k] === l.groups[i]);
         else row += CHARS[t];

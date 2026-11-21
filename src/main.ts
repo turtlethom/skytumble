@@ -1,8 +1,8 @@
 import './style.css';
 import { randomSeed } from './game/rng';
-import { initialState, step } from './game/rules';
+import { initialState, step, swap } from './game/rules';
 import { solve } from './game/solver';
-import { Block, DIRS, Dir, Level, State, TIERS, Tier } from './game/types';
+import { Block, DIRS, Dir, Level, State, TIERS, Tier, Tile } from './game/types';
 import { CAMPAIGN, LABS, TUTORIAL, chapterOf, findLevel, lessonUnlocked, nextOnTrack, trackOf } from './levels';
 import { isLesson, lessonDone, lessonPrompt } from './levels/lessons';
 import { HandmadeLevel } from './levels/format';
@@ -127,10 +127,11 @@ class Game {
   private level: Level | null = null;
   private par = 0;
   private state!: State;
-  private history: State[] = [];
+  /** States before each roll or swap, for undo; a swap isn't a move, so it doesn't count. */
+  private history: { state: State; counted: boolean }[] = [];
   private moves = 0;
   private status: Status = 'loading';
-  private queued: Dir | null = null;
+  private queued: Dir | 'swap' | null = null;
   private requestId = 0;
   private toastTimer = 0;
   /** Counts what the world has been asked to show, so work overtaken by a newer request can stop. */
@@ -343,6 +344,20 @@ class Game {
     this.animating = this.playMove(this.level, dir);
   }
 
+  /** Tab: move the other cube from now on. Free: it never counts as a move, but undo takes it back. */
+  private swapCubes(): void {
+    if (!this.level || !this.state.other) return;
+    if (this.status === 'busy') {
+      this.queued = 'swap';
+      return;
+    }
+    if (this.status !== 'playing') return;
+    this.history.push({ state: this.state, counted: false });
+    this.state = swap(this.state);
+    this.world.swapCubes(this.state);
+    this.updatePreviews();
+  }
+
   private async playMove(level: Level, dir: Dir): Promise<void> {
     const scene = this.scene;
     const from = this.state;
@@ -357,7 +372,7 @@ class Game {
       this.drainQueue();
       return;
     }
-    this.history.push(from);
+    this.history.push({ state: from, counted: true });
     this.moves++;
     this.status = 'busy';
     this.world.showFlipPreviews([]);
@@ -370,7 +385,8 @@ class Game {
 
     if (result.outcome === 'fall') {
       this.queued = null;
-      await this.world.fall(level, result.state.block, result.broke);
+      if (result.dropped) await this.world.dropTwin();
+      else await this.world.fall(level, result.state.block, result.broke);
       if (scene !== this.scene) return;
       this.status = 'fallen';
       // In the Tutorial the panel says what went wrong, in place of the prompt.
@@ -397,6 +413,7 @@ class Game {
 
   /** Show one move: the roll, whatever carries the block after it, and the switches it presses. */
   private async animateStep(from: State, result: ReturnType<typeof step>, dir: Dir, scene: number): Promise<void> {
+    if (result.joined) return this.world.joinCubes(result.state);
     if (result.bumped) return this.world.bump(from.block, result.bumped, dir, !!result.knocked, result.bridged);
     await this.world.roll(from.block, result.rolled, dir);
     // Belts a wall held flare right after the motion before them, without holding up the next move; a
@@ -417,6 +434,10 @@ class Game {
     if (result.reshaped) {
       const before = result.motions.length ? result.motions[result.motions.length - 1].to : result.rolled;
       await this.world.reshape(before, result.state.block);
+    }
+    if (result.split) {
+      const before = result.motions.length ? result.motions[result.motions.length - 1].to : result.rolled;
+      await this.world.splitApart(before, result.state);
     }
     await Promise.all([result.toggled ? this.world.setBridges(result.state.bridges) : null, this.world.setWalls(result.state)]);
   }
@@ -443,15 +464,17 @@ class Game {
   private drainQueue(): void {
     const next = this.queued;
     this.queued = null;
-    if (next) this.move(next);
+    if (next === 'swap') this.swapCubes();
+    else if (next) this.move(next);
   }
 
   private undo(): void {
     if (!this.level || (this.status !== 'playing' && this.status !== 'fallen')) return;
-    const prev = this.history.pop();
-    if (!prev) return;
+    const entry = this.history.pop();
+    if (!entry) return;
+    const prev = entry.state;
     this.state = prev;
-    this.moves--;
+    if (entry.counted) this.moves--;
     this.status = 'playing';
     this.world.syncState(prev);
     this.updatePreviews();
@@ -565,6 +588,7 @@ class Game {
     $('btn-new').hidden = $('fell-next').hidden = this.lessonLocksNext();
     $('btn-map').textContent = lesson ? 'Levels' : 'Map';
     $('moves').textContent = String(this.moves);
+    document.body.classList.toggle('has-splits', !!this.level?.tiles.includes(Tile.Splitter));
     $('par').textContent = this.level && this.status !== 'loading' ? String(this.par) : '–';
     const best = this.progress.best[this.levelKey()];
     $('best').textContent = best ? '★'.repeat(best) : '–';
@@ -809,6 +833,12 @@ class Game {
         e.preventDefault();
         if (e.repeat) return;
         this.move(this.world.gridDirForScreen(KEY_DIRS[e.code]));
+        return;
+      }
+      if (e.code === 'Tab') {
+        // Swap cubes after a split. Tab never moves focus in play.
+        e.preventDefault();
+        if (!e.repeat) this.swapCubes();
         return;
       }
       if (e.code === 'Space' && this.world.twoLayers) {

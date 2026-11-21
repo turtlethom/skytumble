@@ -1,4 +1,4 @@
-import { Block, DIR_DELTA, DIRS, Dir, Level, State, Tile } from './types';
+import { Block, DIR_DELTA, DIRS, Dir, Level, Move, State, Tile } from './types';
 
 /** `bump`: something in the way stopped the roll, and nothing changed: it isn't a move. */
 export type Outcome = 'ok' | 'fall' | 'win' | 'bump';
@@ -46,6 +46,12 @@ export interface StepResult {
   held?: Held[];
   /** Locked flip rings the block came to rest fully on: a press of their color would open them. */
   locked?: { x: number; y: number }[];
+  /** The moving cube rolled into the idle one at this cell: the two joined into a lying block. */
+  joined?: { x: number; y: number };
+  /** The block split on the splitter it stands on; the second cube appeared at this cell. */
+  split?: { x: number; y: number };
+  /** A press took the floor from under the idle cube, which fell from this cell. */
+  dropped?: { x: number; y: number };
 }
 
 export interface Held {
@@ -197,8 +203,12 @@ function inTube(level: Level, b: Block): boolean {
   return blockCells(b).some(([x, y]) => tileAt(level, x, y) === Tile.Door);
 }
 
-/** Something standing there stops a hedge falling onto it: a raised wall or another hedge still up. */
+/**
+ * Something standing there: a raised wall, a hedge still up, or the idle cube after a split. It stops
+ * a slide, a push or a flight, and a hedge falling onto it; a roll into the idle cube joins the two.
+ */
 function standsUp(level: Level, x: number, y: number, state: State): boolean {
+  if (state.other && state.other.x === x && state.other.y === y) return true;
   const t = tileAt(level, x, y);
   if (isWall(t)) return wallUp(t, groupAt(level, x, y), state.bridges, level.bridgesOn);
   return t === Tile.Hedge && !hedgeFell(groupAt(level, x, y), state.hedges ?? 0);
@@ -405,6 +415,15 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
   // to topple a hedge along the roll, which costs a move, unless something standing beyond the hedge
   // stops it falling. Anything else holds, and no move happened.
   const hit = obstacle(view, state, state.block, rolled, dir);
+  const other = state.other;
+  // Splitting: the moving cube rolling onto the idle one joins them into a lying block over their two
+  // tiles. Nothing new is landed on, so nothing presses, slides or pushes.
+  if (hit && other && hit.x === other.x && hit.y === other.y) {
+    const { x: ax, y: ay } = state.block;
+    const joined: Block = { x: Math.min(ax, other.x), y: Math.min(ay, other.y), o: ax === other.x ? 'Y' : 'X' };
+    const { other: _gone, ...whole } = state;
+    return { state: { ...whole, block: joined }, outcome: 'ok', rolled: joined, motions: [], toggled: 0, pressed: [], joined: { ...other } };
+  }
   if (hit) {
     const { x, y } = hit;
     const { dx, dy } = DIR_DELTA[dir];
@@ -433,8 +452,9 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
   };
   // Hedges stay absent until one falls, so a level without any compares as it always has.
   const hedges = state.hedges ? { hedges: state.hedges } : {};
+  const idle = other ? { other } : {};
   const fell = (bridges: number, extra: Partial<StepResult> = {}): StepResult => ({
-    state: { block, bridges, layer, ...hedges },
+    state: { block, bridges, layer, ...hedges, ...idle },
     outcome: 'fall',
     rolled,
     motions,
@@ -534,17 +554,33 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
     }
   }
 
-  // A switch can retract the bridge the block is resting on.
+  // A switch can retract the bridge the block is resting on, or the one under the idle cube.
   if (!supported(view, block, bridges, state.hedges ?? 0)) return { ...fell(bridges), pressed };
+  if (other && !isSolid(view, other.x, other.y, bridges, state.hedges ?? 0)) return { ...fell(bridges), pressed, dropped: { ...other } };
+
+  // A normal block standing on a splitter splits: one cube stays, the other appears on the marked
+  // side, unless that side is a gap or something stands there. The new cube presses nothing.
+  let split: { x: number; y: number } | undefined;
+  if (!other && block.o === 'S' && blockLength(block) === 2 && tileAt(view, block.x, block.y) === Tile.Splitter) {
+    const { dx, dy } = DIR_DELTA[DIRS[groupAt(view, block.x, block.y)]];
+    const [sx, sy] = [block.x + dx, block.y + dy];
+    const after = { ...state, bridges };
+    if (isSolid(view, sx, sy, bridges, state.hedges ?? 0) && !standsUp(view, sx, sy, after)) {
+      split = { x: sx, y: sy };
+      block = withLength(block, 1);
+    }
+  }
+  const pair = split ? { other: split } : idle;
 
   // The goal takes a standing block of its shape: normal unless the goal is marked (group = length).
   const goalShape = (x: number, y: number) => (groupAt(view, x, y) > 0 ? groupAt(view, x, y) : 2);
   const won =
+    !pair.other &&
     block.o === 'S' &&
     tileAt(view, block.x, block.y) === Tile.Goal &&
     blockLength(block) === goalShape(block.x, block.y);
   return {
-    state: { block, bridges, layer, ...hedges },
+    state: { block, bridges, layer, ...hedges, ...pair },
     outcome: won ? 'win' : 'ok',
     rolled,
     motions,
@@ -553,7 +589,34 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
     ...(reshaped ? { reshaped } : {}),
     ...(held.length ? { held } : {}),
     ...(locked.length ? { locked } : {}),
+    ...(split ? { split } : {}),
   };
+}
+
+/** Swap which cube the arrows move. A free action: it never counts as a move. Unchanged if whole. */
+export function swap(state: State): State {
+  if (!state.other) return state;
+  return { ...state, block: { x: state.other.x, y: state.other.y, o: 'S', n: 1 }, other: { x: state.block.x, y: state.block.y } };
+}
+
+/**
+ * Every move from a state, for the solver and the design tools: each roll, and after a split each
+ * roll of the idle cube too, behind a swap (a free swap only matters before a roll).
+ */
+export function successors(level: Level, state: State): { steps: Move[]; result: StepResult }[] {
+  const out = DIRS.map((d) => ({ steps: [d] as Move[], result: step(level, state, d) }));
+  if (state.other) {
+    const swapped = swap(state);
+    for (const d of DIRS) out.push({ steps: ['swap', d], result: step(level, swapped, d) });
+  }
+  return out;
+}
+
+/** Apply one move: a roll, or a free swap (outcome 'ok', nothing moves). */
+export function play(level: Level, state: State, move: Move): StepResult {
+  if (move !== 'swap') return step(level, state, move);
+  const s = swap(state);
+  return { state: s, outcome: 'ok', rolled: s.block, motions: [], toggled: 0, pressed: [] };
 }
 
 export function findGoal(level: Level): { x: number; y: number; layer: number } | null {

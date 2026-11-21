@@ -1,8 +1,8 @@
 // Shared helpers for the level-design tools in this folder.
 import { existsSync, readFileSync } from 'node:fs';
 import { formatLevel, parseLevel } from '../../src/game/ascii';
-import { blockCells, initialState, step } from '../../src/game/rules';
-import { Block, DIR_DELTA, Dir, Level, Tile } from '../../src/game/types';
+import { blockCells, initialState, play } from '../../src/game/rules';
+import { Block, DIR_DELTA, Dir, Level, Move, Tile } from '../../src/game/types';
 import { switchOrder } from './checks';
 
 /**
@@ -31,7 +31,7 @@ export const textRow = (level: Level, layer: number, y: number) => (layer ? leve
  * Cells the block covers anywhere along a solution, including tiles passed mid-slide (not mid-flight),
  * as `x,row` keys in the level text's coordinates (see textRow).
  */
-export function touched(level: Level, moves: Dir[]): Set<string> {
+export function touched(level: Level, moves: Move[]): Set<string> {
   const seen = new Set<string>();
   let layer = 0;
   const mark = (b: { x: number; y: number; o: 'S' | 'X' | 'Y' }) =>
@@ -39,8 +39,10 @@ export function touched(level: Level, moves: Dir[]): Set<string> {
   let s = initialState(level);
   mark(s.block);
   for (const d of moves) {
-    const r = step(level, s, d);
+    const r = play(level, s, d);
     mark(r.rolled);
+    // A split's second cube appears on the splitter's side: that tile is used too.
+    if (r.split) mark({ ...r.split, o: 'S' });
     // Bumping a wall or a hedge is using it, though the block never rests there.
     if (r.bumped) seen.add(`${r.bumped.x},${textRow(level, layer, r.bumped.y)}`);
     for (const m of r.motions) {
@@ -117,13 +119,13 @@ export function designBlock(d: Design): string {
   return [`@${d.name}`, ...opts.filter(Boolean), ...d.rows].join('\n');
 }
 
-/** Parse moves written as letters (`RRDL`, spaces allowed) or full words (`right,down`). */
-export function parseMoves(text: string): Dir[] {
-  const words: Record<string, Dir> = { U: 'up', D: 'down', L: 'left', R: 'right' };
+/** Parse moves written as letters (`RRDL`, spaces allowed, `T` a swap after a split) or full words (`right,down,swap`). */
+export function parseMoves(text: string): Move[] {
+  const words: Record<string, Move> = { U: 'up', D: 'down', L: 'left', R: 'right', T: 'swap', S: 'swap' };
   const parts = text.includes(',') ? text.split(',') : [...text.replace(/\s+/g, '')];
   return parts.map((p) => {
     const d = words[p.trim()[0]?.toUpperCase()];
-    if (!d) throw new Error(`Bad move '${p}': use U D L R`);
+    if (!d) throw new Error(`Bad move '${p}': use U D L R, or T for a swap`);
     return d;
   });
 }

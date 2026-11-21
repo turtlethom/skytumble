@@ -160,7 +160,7 @@ Shipped releases and finished build notes are in `DESIGN-archive.md`, word for w
 
 **Pick up here** (paused 2026-11-20, the user went to sleep). Everything is committed and live through `9aa9b49`: **all five worlds are at 20** (First Glade, Frost Isle, Windy Peaks, Starfall, Toybox), Toybox finished and pushed 2026-11-20 along with idle rendering and the stuck-in-tube look. The next stretch was planned in a grilling session the same day: see *After Toybox: the paint workshop* below. Hand every level over with its directions.
 
-- **Next: the paint workshop world** (split + paint). The parked items are all done (2026-11-20): `glade-13`…`15` tightened and played fine, the slide-end preview is a Settings toggle (live), and `glade-16`…`20` played without problems. Start with a look session (grill it), then the tile sheet (paint colors chosen there), lab, sign-off and frozen rules, then 20 levels in batches of 5.
+- **Next: Splatter Studio's split lab** (the paint workshop world, named in the look session 2026-11-20; see *Splatter Studio: the look* below). **Status:** the split rules and Split Lab's core four (`splitlab-01`…`04`) are built, played and liked ("it fits the vision"). Next: `05` Slipstream (tubes and belts with two cubes) and `06` Long Way Round (the swap-tedium probe), then freeze the split rules, then the paint lab. The order changed in that session: **lab first, then the look.** Pitch the split lab's levels (one rule question each), build them with plain stand-in pieces on the neutral lab tiles, freeze; then the paint lab, freeze; then the studio look (tile sheet, room, cat); then 20 levels in batches of 5. The parked items are all done (`glade-13`…`15` tightened, the slide-end preview setting live, `glade-16`…`20` played fine).
 - **Lessons that carry over:** every level its own idea, never a liked level's frame reused; mechanics mix in as ingredients; par and states climb, and the finale clearly tops the rest. No special piece that never acts or matters (`lint`; `analyze`'s UNUSED line), above all anything a script placed at random. Hand-draw a level's chain of reasons, and let generators fill in only colorings, placements and island shapes; random networks almost never need every piece. A tall block tips four tiles at a time, so its switches sit on its step. Time-box each level at three rebuilds and check in with the user. Hand levels over one or two at a time.
 - **Animation lesson:** each kind of blocked jump has its own animation (fling, hop, crash); a fix for one must leave the others as the user liked them, checked frame by frame on a slowed build (a throwaway probe level in a lab chapter, constants slowed ~10×, `FRAMES`).
 - **Pushing** goes through the `gh` login (`git -c credential.helper= -c credential.helper='!gh auth git-credential' push origin main`); always ask first.
@@ -379,7 +379,7 @@ levels, sparkles over the block, the satellite, frame rate) stay open if they co
 
 | Area | Decision |
 |---|---|
-| World | A paint workshop. Standalone: its own difficulty curve, playable in any order. Look, island and name settled in its own look session |
+| World | **Splatter Studio**, a painter's studio. Standalone: its own difficulty curve, playable in any order. Look and name settled in the look session (below) |
 | Staging | Split and merge in levels 1–8; paint from level 9, as walls and tubes arrived in the walls worlds |
 | Splitting | Standing on a splitter tile splits a normal block into two cubes. The lab starts with them side by side (the splitter shows which side) and tries a paired tile elsewhere as a variant. Only a normal block splits |
 | Merging | Rolling one cube beside the other joins them into a lying normal block. The block must be whole for the goal |
@@ -392,11 +392,51 @@ levels, sparkles over the block, the satellite, frame rate) stay open if they co
 | Mix-ins | Walls, belts and tubes. Launch pads come in later batches, once split and paint are frozen. No ice |
 | Two-cube rule | The validator's guard against swap tedium: every level's solution must have both cubes do something the other couldn't (pass its own gate, press a soft switch, hold a wall down, cross where only a cube fits), and the tools report the share of moves spent swapping |
 | Solver | Measure the solver and searches on lab levels before freezing anything; boards may have to stay compact |
-| Process | The usual recipe: look session → tile sheet → lab (splitting, merging, swapping, two-tone, solver speed) → sign-off and frozen rules → 20 levels in batches of 5, handed over one or two at a time. The parked items go first (see *Pick up here*) |
+| Process | Changed in the look session: **lab first, then the look**, since the mechanic, not the look, is the likeliest failure. Split lab (splitting, merging, swapping, the marker, weights, solver speed) → freeze → paint lab (trays, two-tone, gates) → freeze, both with plain stand-in pieces on the neutral lab tiles → the studio look → 20 levels in batches of 5, handed over one or two at a time |
 
 - **Assumptions:** a single-color gate is one tile, passed by a cube of its color or by a block whose half over it matches. The rules freeze after lab sign-off; the two-tone orientation rule is the hardest to undo once levels exist.
 - **Risks:** swap tedium; too much to track (two cubes, two colors, which half is which); paint colors against switch colors; solver speed; scope, at about seven new rules the largest of any world.
 - **Parked items settled in the same session:** the ice slide-end preview becomes a setting, off by default; `glade-13`, `15` and `18` get tightened; the user will play `glade-16`…`20`.
+
+**Splatter Studio: the look** (look session 2026-11-20; a plan, revisited only where the labs change what a piece must show). Nothing is built.
+
+| Area | Decision |
+|---|---|
+| Place | A painter's studio. The board floats in a vast room: far walls hung with canvases, tall windows, easels on a floor far below fading into haze |
+| First feel | Playful mess. Toybox landed with friends for all four reasons offered: lots to look at, bright colors, it felt like a place, and the mechanics fit it |
+| Scope | More look work than Toybox, the richest world yet |
+| Look goal | All of: named on sight with the text hidden, friends call it the best-looking world, and colors read at a glance, in black and white too. The user alone approves; friends see it when it ships |
+| Floor | Stretched canvas: each tile a small primed canvas on a frame |
+| The mess | Tile sides, undersides, the air and the scenery; never on tile tops, and rolling leaves no marks. Drips use **off-palette colors only** (browns, creams, ochres, greys), so nothing echoes a switch, belt or paint (Claude's recommendation, taken over "any colors") |
+| Light | Lamp-lit evening, warm amber in the room, kept apart from Starfall by warm against cool. **The board is lit near-neutral** (a work lamp overhead), so paint reads true (Claude's recommendation, taken over "warm everywhere"). If paints still go muddy, retune the paints |
+| Bare block | Mid-grey plaster, to stand out on the pale canvas |
+| Paints | Green and pink, each with a pattern: broad brush strokes and stippled dabs. If black and white fails: bolder strokes and bigger dabs. Belts (pink down, green left) stay in; patterns and the belts' arrows keep them apart, checked with belts beside paints |
+| Pieces | Splitter: a cutting mat with a ruler line. Gates: stencil frames. Paint tiles: sunken trays of wet paint |
+| Active cube | A marker floating above it, plus a glow on it and a dim on the other |
+| Life | A studio cat, the world's mascot. **Capped at four tries**, then a simpler blocky cat on a shelf with only its tail moving (Claude's recommendation, taken over "no cap") |
+| Budget | Ambient motion is cut first to hold about 60 fps on the user's laptop |
+| Island | The next sky-map slot, (170, 70) |
+
+**Split lab** (built 2026-11-20; core four first, `splitlab-05` Slipstream and `06` Long Way Round after the user plays those). Plain stand-ins on the neutral lab tiles. One rule question per level: `splitlab-01` Two of a Kind (the split and the swap), `02` Reunion (when cubes join), `03` Featherweight (weights, splitting twice), `04` Two Hands (each cube does what the other can't: one holds a raised wall down by resting on its tile).
+
+| Rule (pending the lab's sign-off) | Decision |
+|---|---|
+| Swap cost | **Free.** Tab never counts toward moves or par; the directions still show each swap (⇆), and the tools report the share of swaps |
+| Joining | **Roll into it.** Cubes join only when the moving cube rolls toward the other one, onto its tile; the joined block lies across the two tiles they stood on. Cubes side by side stay apart (Claude's recommendation: joining is deliberate, and it works like a bump) |
+| Split blocked | **No split.** If the marked side is a gap or a raised wall, the block stays whole on the splitter, like a bump; a splitter never kills (Claude's recommendation) |
+| Idle cube on a belt | **Only the mover.** A belt pushes only the cube that moved; the idle one waits |
+| Details settled while building | The idle cube stands in the way like a raised wall for slides, belt pushes and flights (only a roll into it joins). A split's second cube presses nothing where it appears (`lint` warns on a switch beside a splitter). A press that takes the bridge from under the idle cube drops it (a fall). A joined block standing on a splitter splits again |
+
+| Level | Par | States | Swaps | The idea |
+|---|---|---|---|---|
+| `splitlab-01` Two of a Kind | 6 | 67 | 2 | The block splits beside a one-tile corridor up to the goal; joining the cubes side by side leaves a block lying across it, so swap, walk the other cube into the corridor's mouth and roll in to join upright |
+| `splitlab-02` Reunion | 12 | 75 | 1 | Two lanes with staggered holes that a normal block can't cross; the first cube rolls right past the second without joining, both weave through, and join under the goal |
+| `splitlab-03` Featherweight | 14 | 361 | 1 | Press the heavy switch while whole (it lays the first bridge), split, cross three planks in a row as cubes; the second cube presses a soft switch for the second bridge, then rolls into the first on the planks |
+| `splitlab-04` Two Hands | 18 | 181 | 3 | Two walls on one switch, one always up. One cube parks on the far wall, the other presses twice, and the parked cube holds that wall down until the other joins it there |
+
+- **Build notes:** the active cube is always `state.block` and the idle one `state.other`, so a swap exchanges them and the rules stay single-block; the solver treats the two cubes as interchangeable (one state per pair). Stand-ins (redone after the first look): a dark mat with a white cut line and a white arrow toward the split side; a dimmed idle cube; a glow, a white floor square and a bobbing white arrow on the moving cube, the arrow hopping over on a swap. "Splitting twice" moved out of `splitlab-03` to keep it short. Solver speed: every lab level solves instantly, with at most 437 reachable states.
+
+- **Risks:** swap tedium (the user's pre-mortem pick, so the split lab answers it first); green and pink next to the belts; warm room light leaking onto the paints; the cat. The look is easy to change; the frozen rules are not, above all two-tone orientation.
 
 **Frost Isle's new levels** (batch 1 approved and live 2026-11-07). Walls in 10, 11 and 13; the other three wall levels, the maze among them, come in 14–20. States climb through the batch, and the peak beats `frost-08` (22 moves, 387 states):
 
@@ -674,6 +714,14 @@ works and what doesn't. Claude writes the code and designs handmade levels from 
 feedback; batches of 5 levels per round.
 
 ## Playtest log
+
+**2026-11-20 — Split Lab, core four.** "i like the first four labs, it fits the vision." → Committed. Next: `splitlab-05` Slipstream and `06` Long Way Round, then freeze the split rules.
+
+**2026-11-20 — `splitlab-04` Two Hands, and joining.** "when a cube is sitting on a down wall, then the other cube hits the button, the wall shoots through the cube, and you can phase through the wall" → A drawing bug, not the rules: the wall already waited under the idle cube, but the renderer only checked the moving block. Fixed: it stays down under the idle cube until that cube rolls off. "visually i can now tell which cube is active which is great." On joining by rolling into the other cube ("Does having that extra move into it allow for more puzzles?"): Claude laid out the trade (rolling into keeps side-by-side positions, parking beside the other cube and choosing when to join; joining on touch saves a move but rules those out and makes accidental joins a hazard), and the user kept **roll into**.
+
+**2026-11-20 — `splitlab-01` Two of a Kind, first look.** "i hate the tile marker. it is not distinct at all, as well as the arrow pointing to the active cube. I was not sure which one was active to begin with." → The splitter is now a dark mat over the whole tile with a bold white cut line and a big white arrow toward the split side (it read as grass before). The moving cube gets a white square on the floor around it, wider than the tile so it shows past the cube, and a bigger white arrow with a dark outline over it; the idle cube is dimmed further (42% of the block's color, was 55%).
+
+**2026-11-20 — Splatter Studio look session (grilling).** Five rounds: a painter's studio, playful mess, more look than Toybox; canvas floor, lamp-lit, grey plaster block, green and pink paints with brush patterns, cutting-mat splitters, stencil gates, paint trays, a marker over the active cube, a studio cat. Challenged on building the look before the lab when the mechanic is the likelier failure → lab first, then the look. Claude disagreed on three calls (warm board light, any-color drips, an uncapped cat) and the user took all three recommendations. Recorded as *Splatter Studio: the look*.
 
 **2026-11-20 — Glade, the parked plays.** "i played glade-16-20, but its fine? I don't remember having problems with it. 13, 14, and 15 are fine too." → No changes; First Glade is settled. The slide-end preview was checked ("oh i see it now"; it shows nothing until a slide is one move away, which at the start of nearly every level it isn't) and kept as an off-by-default setting, committed and pushed.
 

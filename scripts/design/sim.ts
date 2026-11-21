@@ -5,7 +5,7 @@
 //   raised, and fallen hedges (their own tile and any gap they bridged) as '_'. SHOW=1 draws the board after
 //   every move. Stops at the first fall or win. Use it to check a route you have in mind, or to replay
 //   a playtester's moves.
-import { blockCells, hedgeFell, initialState, isBridge, isBridged, isSolid, isWall, layerView, step, tileAt, wallUp } from '../../src/game/rules';
+import { blockCells, hedgeFell, initialState, isBridge, isBridged, isSolid, isWall, layerView, play, tileAt, wallUp } from '../../src/game/rules';
 import { Level, State, Tile } from '../../src/game/types';
 import { describeMotions, loadDesigns, parseMoves } from './lib';
 
@@ -21,6 +21,7 @@ if (!d) throw new Error(`No design named '${name}' in ${arg}`);
 function board(rows: string[], full: Level, s: State): string {
   const at = (layer: number, x: number, y: number) => `${layer},${x},${y}`;
   const body = new Set(blockCells(s.block).map(([x, y]) => at(s.layer ?? 0, x, y)));
+  const idle = s.other ? at(s.layer ?? 0, s.other.x, s.other.y) : null;
   return rows
     .map((r, row) => {
       if (/^-{3,}/.test(r)) return r;
@@ -30,6 +31,7 @@ function board(rows: string[], full: Level, s: State): string {
       return [...r.padEnd(full.width, '.')]
         .map((c, x) => {
           if (body.has(at(layer, x, y))) return s.block.o === 'S' ? '@' : '=';
+          if (idle === at(layer, x, y)) return '*';
           const t = tileAt(level, x, y);
           const g = level.groups[y * level.width + x];
           if (isBridge(t) && !isSolid(level, x, y, s.bridges)) return ',';
@@ -46,16 +48,26 @@ function board(rows: string[], full: Level, s: State): string {
 let s = initialState(d.level);
 const moves = parseMoves(movesArg);
 console.log(`@${d.name}  start ${s.block.o}(${s.block.x},${s.block.y})`);
-for (const [i, dir] of moves.entries()) {
-  const r = step(d.level, s, dir);
+let rolls = 0;
+for (const dir of moves) {
+  const r = play(d.level, s, dir);
+  if (dir === 'swap') {
+    s = r.state;
+    console.log(`    T → swap: the cube at (${s.block.x},${s.block.y}) moves now`);
+    continue;
+  }
+  rolls++;
+  const joined = r.joined ? `JOIN(${r.joined.x},${r.joined.y})` : '';
+  const split = r.split ? `SPLIT→(${r.split.x},${r.split.y})` : '';
+  const dropped = r.dropped ? `IDLE CUBE FELL(${r.dropped.x},${r.dropped.y})` : '';
   const b = r.state.block;
   const hit = r.bumped ? `${r.knocked ? 'TOPPLED' : 'BUMPED'}(${r.bumped.x},${r.bumped.y})${r.bridged ? ` →bridged(${r.bridged.x},${r.bridged.y})` : ''}` : '';
   const held = (r.held ?? []).map((h) => `${h.belt ? 'HELD' : r.motions[h.after - 1]?.kind === 'fly' ? (r.outcome === 'fall' ? 'CRASH' : 'SHORT') : 'BRAKE'}(${h.x},${h.y})`).join(' ');
   const locked = r.locked ? `LOCKED(${r.locked.map((c) => `${c.x},${c.y}`).join(' ')})` : '';
-  const extra = [describeMotions(r.motions), held, locked, r.pressed.length ? 'PRESS' : '', r.broke ? 'BROKE' : '', hit].filter(Boolean);
+  const extra = [describeMotions(r.motions), held, locked, r.pressed.length ? 'PRESS' : '', r.broke ? 'BROKE' : '', hit, joined, split, dropped].filter(Boolean);
   const up = d.level.ceiling ? (r.state.layer ? ' ceiling' : ' ground') : '';
   const shape = b.n === 1 ? 'cube ' : b.n === 3 ? 'tall ' : '';
-  console.log(`${String(i + 1).padStart(3)} ${dir[0].toUpperCase()} → ${shape}${b.o}(${b.x},${b.y})${up} ${r.outcome}${extra.length ? `  ${extra.join(' ')}` : ''}`);
+  console.log(`${String(rolls).padStart(3)} ${dir[0].toUpperCase()} → ${shape}${b.o}(${b.x},${b.y})${up} ${r.outcome}${extra.length ? `  ${extra.join(' ')}` : ''}`);
   s = r.state;
   if (process.env.SHOW === '1') console.log(board(d.rows, d.level, s));
   if (r.outcome === 'fall' || r.outcome === 'win') break;

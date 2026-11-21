@@ -1,17 +1,23 @@
 // Whole-level exploration for the design tools: every reachable state, which of them can still
 // win, where each pad sends the block, and a map of where the block can get to. diagnose() turns
 // it into a report that says *why* a draft is unsolvable instead of just "UNSOLVABLE".
-import { blockCells, bridgeOut, findGoal, flight, initialState, isRing, isSolid, isWall, landing, layerView, step, tileAt } from '../../src/game/rules';
-import { Block, DIR_DELTA, DIRS, Dir, Level, State, Tile } from '../../src/game/types';
+import { blockCells, bridgeOut, findGoal, flight, initialState, isRing, isSolid, isWall, landing, layerView, successors, tileAt } from '../../src/game/rules';
+import { Block, DIR_DELTA, DIRS, Dir, Level, Move, State, Tile } from '../../src/game/types';
 
-const keyOf = (s: State) => `${s.block.x},${s.block.y},${s.block.o},${s.block.n ?? 2},${s.bridges},${s.layer ?? 0},${s.hedges ?? 0}`;
+const keyOf = (s: State) => {
+  // After a split the cubes are interchangeable (a swap is free): name the pair in a fixed order.
+  const cubes = s.other ? [`${s.block.x},${s.block.y}`, `${s.other.x},${s.other.y}`].sort().join('+') : '';
+  const where = s.other ? cubes : `${s.block.x},${s.block.y},${s.block.o},${s.block.n ?? 2}`;
+  return `${where},${s.bridges},${s.layer ?? 0},${s.hedges ?? 0}`;
+};
 const blockKey = (b: Block, layer = 0) => `${b.x},${b.y},${b.o},${b.n ?? 2},${layer}`;
 
 interface Node {
   state: State;
   depth: number;
   parent: string | null;
-  move: Dir | null;
+  /** The moves from the parent: a roll, or a swap and a roll. */
+  move: Move[] | null;
 }
 
 export interface Exploration {
@@ -35,8 +41,7 @@ export function explore(level: Level, limit = 300_000): Exploration {
   for (let head = 0; head < queue.length; head++) {
     const k = queue[head];
     const node = nodes.get(k)!;
-    for (const dir of DIRS) {
-      const r = step(level, node.state, dir);
+    for (const { steps, result: r } of successors(level, node.state)) {
       let layer = node.state.layer ?? 0;
       for (const m of r.motions) {
         if (m.kind === 'fly') launched.add(blockKey(m.from, layer));
@@ -55,7 +60,7 @@ export function explore(level: Level, limit = 300_000): Exploration {
         truncated = true;
         continue;
       }
-      nodes.set(nk, { state: r.state, depth: node.depth + 1, parent: k, move: dir });
+      nodes.set(nk, { state: r.state, depth: node.depth + 1, parent: k, move: steps });
       queue.push(nk);
     }
   }
@@ -66,14 +71,14 @@ export function explore(level: Level, limit = 300_000): Exploration {
 }
 
 /** Moves from the start to an explored state. */
-export function pathTo(ex: Exploration, key: string): Dir[] {
-  const moves: Dir[] = [];
-  for (let n = ex.nodes.get(key); n?.move; n = ex.nodes.get(n.parent!)) moves.push(n.move);
-  return moves.reverse();
+export function pathTo(ex: Exploration, key: string): Move[] {
+  const chunks: Move[][] = [];
+  for (let n = ex.nodes.get(key); n?.move; n = ex.nodes.get(n.parent!)) chunks.push(n.move);
+  return chunks.reverse().flat();
 }
 
-const DIR_LETTER: Record<Dir, string> = { up: 'U', down: 'D', left: 'L', right: 'R' };
-export const movesText = (moves: Dir[]) => moves.map((d) => DIR_LETTER[d]).join('');
+const DIR_LETTER: Record<Move, string> = { up: 'U', down: 'D', left: 'L', right: 'R', swap: 'T' };
+export const movesText = (moves: Move[]) => moves.map((d) => DIR_LETTER[d]).join('');
 
 const POSE: Record<Block['o'], string> = { S: 'standing', X: 'lying along x', Y: 'lying along y' };
 const SHAPE: Record<number, string> = { 1: 'cube ', 2: '', 3: 'tall block ' };

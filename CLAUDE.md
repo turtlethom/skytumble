@@ -51,7 +51,7 @@ npm run -s analyze -- <file|id>...        # templates read as all-open; par, sta
                                           #   and special pieces the solution never touches (UNUSED);
                                           #   unsolvable → diagnosis. TRACE=1 moves · DIAG=1 diagnosis
                                           #   always · BLOCK=1 print as a design block (copy to a draft)
-npm run -s sim -- <file|id> RRDL [name]   # replay moves; board at the end (SHOW=1: after every move)
+npm run -s sim -- <file|id> RRDL [name]   # replay moves (T = Tab, swap cubes); board at the end (SHOW=1: after every move)
 npm run -s search -- <template> <palette> <parLo> <parHi> 1-4 2 "chain,belt→pad" > out.txt
                                           # seeds 1-4 in parallel, best first; stops at once with a
                                           #   diagnosis if the template can't be solved even all-floor
@@ -88,7 +88,7 @@ FILL=K npm run -s ease -- <file|id>      # make a level easier, same idea: fill 
                                           #   (PAR=lo-hi), keeps every moving color, and drops presses
                                           #   undone within two moves. TARGET=<states> stops early
 npm run -s directions -- <id|prefix>      # the solution as arrow keys at the starting view, in groups of five
-                                          #   (✈ flight, ● press, ⇄ flip, ✔ win; ↑/↓ swap on a ceiling).
+                                          #   (✈ flight, ● press, ⇄ flip, ✂ split, ✔ win; ↹ Tab first; ↑/↓ swap on a ceiling).
                                           #   --write rewrites SOLUTIONS.md; verify checks the arrows match the keys
 npm run verify -- wind-                   # build, serve, play every solution in headless Chrome
 ```
@@ -124,7 +124,7 @@ Walls and hedges: `H I J K` a wall starting up in group 0-3, `h i j k` starting 
 reversed bridge, `&` a toppling hedge (at most 9; pad the grid around them, or validation fails).
 A wall whose color has no switch in the level never moves: it's drawn low, with no colored line, and all
 of them merge into one mesh. Use `K` for these, so a maze can have dozens.
-Glass tubes: `=` east-west, `|` north-south, ice for the cube (it rolls in an open end and slides out onto the first tile past the other) and for a lying block fed in along it by belts (it shoots out wholly past the far end); any other entry bumps; a raised wall in the line brakes it; a row of tubes joins into one and needs no ground, so it can bridge islands); they mix with the basics, shapes, walls and belts. Walls mix with everything (a standing tall block is stopped by a wall three tiles off, a cube only by one beside it, and a raised wall under a lying tall block's middle blocks the roll), hedges with the basics only (validation fails otherwise). A ring can take a switch color (`M P Q W` starting locked, `m p q w` open, groups 0-3): a press opens or locks it, and a locked ring doesn't fire (traces print `LOCKED`). A wall never stands over or under a ring on the other floor (validation fails). A diagnosis lists where each hedge
+Glass tubes: `=` east-west, `|` north-south, ice for the cube (it rolls in an open end and slides out onto the first tile past the other) and for a lying block fed in along it by belts (it shoots out wholly past the far end); any other entry bumps; a raised wall in the line brakes it; a row of tubes joins into one and needs no ground, so it can bridge islands); they mix with the basics, shapes, walls and belts. Walls mix with everything (a standing tall block is stopped by a wall three tiles off, a cube only by one beside it, and a raised wall under a lying tall block's middle blocks the roll), hedges with the basics only (validation fails otherwise). A ring can take a switch color (`M P Q W` starting locked, `m p q w` open, groups 0-3): a press opens or locks it, and a locked ring doesn't fire (traces print `LOCKED`). Splitters (Split Lab, rules pending sign-off): `[ ] A V` split a standing normal block into two cubes, the second to the west / east / north / south (not toward a gap or a raised wall). The moving cube is always `state.block` and the idle one `state.other`; Tab swaps them for free, so `Solution.moves` (par) holds only rolls and `Solution.steps` the swaps too (replay with `play`, list moves with `successors`). Rolling one cube into the other joins them; the idle cube brakes slides and holds belts like a wall. Traces print `SPLIT`, `JOIN` and `T: swap`; analyze reports the share of swaps. Splitters stay on one floor with no hedges, shape switches or marked goals (validation). A wall never stands over or under a ring on the other floor (validation fails). A diagnosis lists where each hedge
 lands each way; traces print `TOPPLE` with what it bridged, or `wasted`. In `analyze`, a raised wall the solution never bumps still shows `*`: it can be doing its
 job, so don't strip it the way you would an unused tile. `sim` prints bumps and knocks, and doesn't
 stop at them. Chapters are registered in play order in

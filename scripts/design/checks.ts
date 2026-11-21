@@ -3,7 +3,7 @@
 // raised wall hides from the opening camera, and lint a draft for the mistakes that cost the most rounds.
 import { formatLevel, parseLevel } from '../../src/game/ascii';
 import { DIR_DELTA, DIRS, Dir, Level, Tile } from '../../src/game/types';
-import { blockCells, findGoal, flight, initialState, isSolid, landing, layerView, step, wallUp } from '../../src/game/rules';
+import { blockCells, findGoal, flight, initialState, isSolid, landing, layerView, step, successors, wallUp } from '../../src/game/rules';
 import { solve } from '../../src/game/solver';
 import { flipUses, iceUses, padUses, shapeUses } from '../../src/levels/validate';
 import { closest, explore, padArrow } from './explore';
@@ -343,6 +343,17 @@ export function lint(d: Draft): string[] {
   const moved = new Set(allTiles.flatMap((t, i) => (colored(t, allGroups[i]) ? [allGroups[i]] : [])));
   for (const g of moved) if (!pressed.has(g) && allTiles.some((t, i) => (t === Tile.Bridge || t === Tile.BridgeReversed) && allGroups[i] === g)) out.push(`WARN: ${COLOR[g] ?? g} bridges have no switch: they never move`);
   for (const g of moved) if (!pressed.has(g) && allTiles.some((t, i) => isWall(t) && allGroups[i] === g)) out.push(`note: ${COLOR[g] ?? g} walls have no switch: they're low stone that never moves`);
+  // Splitters: the second cube needs a floor on the marked side, and appears there without pressing anything.
+  l.tiles.forEach((t, i) => {
+    if (t !== Tile.Splitter) return;
+    const [x, y] = [i % l.width, Math.floor(i / l.width)];
+    const { dx, dy } = DIR_DELTA[DIRS[l.groups[i]]];
+    const [sx, sy] = [x + dx, y + dy];
+    const side = sx >= 0 && sy >= 0 && sx < l.width && sy < l.height ? l.tiles[sy * l.width + sx] : Tile.Empty;
+    if (side === Tile.Empty) out.push(`WARN: the splitter at ${x},${y} splits ${DIRS[l.groups[i]]} onto nothing: it can never split`);
+    else if (side === Tile.SoftSwitch || side === Tile.HeavySwitch) out.push(`WARN: the splitter at ${x},${y} puts its second cube on a switch at ${sx},${sy}, which a split never presses: it reads as if it should`);
+    else if (isWall(side)) out.push(`NOTE: the splitter at ${x},${y} splits onto a wall at ${sx},${sy}: it splits only while that wall is down`);
+  });
   // Rings in a switch color, which a press opens or locks, and walls over rings, which validation refuses.
   if (l.ceiling) {
     for (const layer of [0, 1]) {
@@ -427,16 +438,18 @@ export function idleSpecials(l: Level): string[] {
   if (ex.truncated) return [];
   const acted = new Set<string>();
   for (const { state } of ex.nodes.values()) {
-    for (const dir of DIRS) {
-      for (const m of step(l, state, dir).motions) {
+    for (const { result } of successors(l, state)) {
+      for (const m of result.motions) {
         if (m.kind === 'push' || m.kind === 'fly') blockCells(m.from).forEach(([x, y]) => acted.add(`${x},${y}`));
       }
+      if (result.split) acted.add(`${result.state.block.x},${result.state.block.y}`);
     }
   }
   const out: string[] = [];
   l.tiles.forEach((t, i) => {
-    if (t !== Tile.Conveyor && t !== Tile.Pad) return;
     const [x, y] = [i % l.width, Math.floor(i / l.width)];
+    if (t === Tile.Splitter && !acted.has(`${x},${y}`)) out.push(`WARN: the splitter at ${x},${y} never splits from any position the block can reach`);
+    if (t !== Tile.Conveyor && t !== Tile.Pad) return;
     if (!acted.has(`${x},${y}`)) out.push(`WARN: the ${t === Tile.Conveyor ? 'belt' : 'pad'} at ${x},${y} never ${t === Tile.Conveyor ? 'pushes' : 'fires'} from any position the block can reach: it's decoration that visibly does nothing`);
   });
   return out;
@@ -491,14 +504,14 @@ export function report(d: Draft): Report | null {
   const sol = level && solve(level);
   if (!level || !sol) return null;
   const ex = explore(level);
-  const ice = iceUses(level, sol.moves);
+  const ice = iceUses(level, sol.steps);
   const floorRows = d.rows.map((r) => (/^-{3,}/.test(r) ? r : r.replace(/[~^v<>UDLR+]/g, '#')));
   return {
     par: sol.moves.length,
     states: sol.explored,
     deadEnds: ex.nodes.size - ex.canWin.size,
     reachable: ex.nodes.size,
-    uses: [...ice.uses, ...padUses(level, sol.moves), ...flipUses(level, sol.moves), ...shapeUses(level, sol.moves)],
+    uses: [...ice.uses, ...padUses(level, sol.steps), ...flipUses(level, sol.steps), ...shapeUses(level, sol.steps)],
     pushes: ice.pushes,
     floorPar: parOf(tryLevel({ ...d, rows: floorRows })),
     moves: sol.moves.map((m) => LETTER[m]).join(''),

@@ -1,6 +1,6 @@
-import { blockCells, blockLength, findGoal, initialState, isRing, isSolid, isWall, layerView, ringLocked, step, tileAt } from '../game/rules';
+import { blockCells, blockLength, findGoal, initialState, isRing, isSolid, isWall, layerView, play, ringLocked, tileAt } from '../game/rules';
 import { solve } from '../game/solver';
-import { Dir, Level, State, Tile } from '../game/types';
+import { Level, Move, State, Tile } from '../game/types';
 import { Chapter, HandmadeLevel } from './format';
 
 /**
@@ -41,7 +41,7 @@ export type FlipUse =
   | 'locked' // came to rest fully on flip rings that were locked, so they didn't fire
   | 'unlocked'; // flipped through a ring that was locked at the start, after a press opened it
 
-export function flipUses(level: Level, moves: Dir[], from?: State): FlipUse[] {
+export function flipUses(level: Level, moves: Move[], from?: State): FlipUse[] {
   const uses = new Set<FlipUse>();
   if (!level.ceiling) return [];
   // Which floors each bridge group has tiles on.
@@ -57,7 +57,7 @@ export function flipUses(level: Level, moves: Dir[], from?: State): FlipUse[] {
   let state = from ?? initialState(level);
   const start = state;
   for (const dir of moves) {
-    const r = step(level, state, dir);
+    const r = play(level, state, dir);
     let layer = state.layer ?? 0;
     if (r.locked) uses.add('locked');
     r.motions.forEach((m, i) => {
@@ -93,11 +93,11 @@ export type ShapeUse =
   | 'tube slide' // a block slid through a glass tube (the cube rolling in, or a lying block fed in by belts)
   | 'long tube slide'; // a lying normal or tall block, fed in by belts, slid through a glass tube
 
-export function shapeUses(level: Level, moves: Dir[]): ShapeUse[] {
+export function shapeUses(level: Level, moves: Move[]): ShapeUse[] {
   const uses = new Set<ShapeUse>();
   let state = initialState(level);
   for (const dir of moves) {
-    const r = step(level, state, dir);
+    const r = play(level, state, dir);
     const b = r.state.block;
     const view = layerView(level, r.state.layer ?? 0);
     if (r.reshaped) uses.add(r.reshaped.to === 1 ? 'become cube' : r.reshaped.to === 3 ? 'become tall' : 'back to normal');
@@ -133,12 +133,12 @@ function tubeSlide(level: Level, m: { kind: string; from: Parameters<typeof bloc
   return m.kind === 'slide' && blockCells(m.from).some(([x, y]) => tileAt(level, x, y) === Tile.Door);
 }
 
-export function iceUses(level: Level, moves: Dir[]): { uses: IceUse[]; pushes: number } {
+export function iceUses(level: Level, moves: Move[]): { uses: IceUse[]; pushes: number } {
   const uses = new Set<IceUse>();
   let pushes = 0;
   let state = initialState(level);
   for (const dir of moves) {
-    const r = step(level, state, dir);
+    const r = play(level, state, dir);
     // Slides through glass tubes are tube uses, not ice uses.
     const kinds = r.motions.map((m) => (tubeSlide(level, m) ? 'tube' : m.kind));
     pushes += kinds.filter((k) => k === 'push').length;
@@ -159,11 +159,11 @@ export function iceUses(level: Level, moves: Dir[]): { uses: IceUse[]; pushes: n
   return { uses: [...uses], pushes };
 }
 
-export function padUses(level: Level, moves: Dir[]): PadUse[] {
+export function padUses(level: Level, moves: Move[]): PadUse[] {
   const uses = new Set<PadUse>();
   let state = initialState(level);
   for (const dir of moves) {
-    const r = step(level, state, dir);
+    const r = play(level, state, dir);
     const flights = r.motions.filter((m) => m.kind === 'fly');
     for (const f of flights) uses.add(f.from.o === 'S' ? 'fling' : 'hop');
     if (flights.length > 1) uses.add('chain');
@@ -212,6 +212,12 @@ function mixesGates(level: Level): boolean {
   return tiles.includes(Tile.Door) && (!!level.ceiling || tiles.some((t) => NOT_WITH_GATES.includes(t)));
 }
 
+/** Splitting is new (Splatter Studio's split lab): one floor, no hedges, shape switches or marked goals while its rules settle. */
+function mixesSplits(level: Level): boolean {
+  const tiles = [...level.tiles, ...(level.ceiling?.tiles ?? [])];
+  return tiles.includes(Tile.Splitter) && (!!level.ceiling || !!level.startShape || tiles.some((t) => t === Tile.Hedge || t === Tile.ShapeSwitch || t === Tile.ExtraHeavy) || level.tiles.some((t, i) => t === Tile.Goal && level.groups[i] > 0));
+}
+
 function mixesWalls(level: Level): boolean {
   const tiles = [...level.tiles, ...(level.ceiling?.tiles ?? [])];
   return tiles.includes(Tile.Hedge) && (!!level.ceiling || !!level.startShape || tiles.some((t) => NOT_WITH_HEDGES.includes(t)));
@@ -222,6 +228,14 @@ export function validateLevel(h: HandmadeLevel, chapter: Chapter): LevelReport {
   for (const c of wallsOverRings(h.level)) errors.push(`a wall on the other floor over the ring at ${c.x},${c.y}: walls and rings stay out of each other's way, so a ring always has somewhere to land`);
   if (mixesGates(h.level)) errors.push('glass tubes only mix with the basics, shapes, walls and belts, on one floor, until their other interactions are settled');
   if (mixesWalls(h.level)) errors.push('hedges only mix with the basics, on one floor, until their other interactions are settled');
+  if (mixesSplits(h.level)) errors.push('splitters stay on one floor, with no hedges, shape switches, extra-heavy switches or marked goals, until their other interactions are settled');
+  h.level.tiles.forEach((t, i) => {
+    if (t !== Tile.Splitter) return;
+    const [x, y] = [i % h.level.width, Math.floor(i / h.level.width)];
+    const side = [[0, -1], [0, 1], [-1, 0], [1, 0]][h.level.groups[i]];
+    const [sx, sy] = [x + side[0], y + side[1]];
+    if (sx < 0 || sy < 0 || sx >= h.level.width || sy >= h.level.height) errors.push(`the splitter at ${x},${y} splits off the grid`);
+  });
   // A hedge falling off the grid would just vanish, while one falling onto an empty tile bridges it,
   // and both look like open sky.
   for (const c of h.level.hedgeCells ?? []) {
@@ -234,24 +248,24 @@ export function validateLevel(h: HandmadeLevel, chapter: Chapter): LevelReport {
 
   const solution = solve(h.level);
   const par = solution ? solution.moves.length : null;
-  const { uses, pushes } = solution ? iceUses(h.level, solution.moves) : { uses: [], pushes: 0 };
+  const { uses, pushes } = solution ? iceUses(h.level, solution.steps) : { uses: [], pushes: 0 };
 
   if (!solution) errors.push('unsolvable');
   else if (h.par === null) errors.push(`par missing (solver says ${par})`);
   else if (h.par !== par) errors.push(`par is ${h.par} in the file but the solver finds ${par}: did a rule change?`);
 
-  const pads = solution ? padUses(h.level, solution.moves) : [];
+  const pads = solution ? padUses(h.level, solution.steps) : [];
   if (solution && h.guard && chapter.signature === 'ice' && uses.length < 2) {
     errors.push(`one-trick: the solution uses ice only as [${uses.join(', ') || 'nothing'}]; needs 2 distinct ways`);
   }
   if (solution && h.guard && chapter.signature === 'pads' && pads.length < 2) {
     errors.push(`one-trick: the solution uses pads only as [${pads.join(', ') || 'nothing'}]; needs 2 distinct ways`);
   }
-  const flips = solution ? flipUses(h.level, solution.moves) : [];
+  const flips = solution ? flipUses(h.level, solution.steps) : [];
   if (solution && h.guard && chapter.signature === 'gravity' && flips.length < 2) {
     errors.push(`one-trick: the solution uses flips only as [${flips.join(', ') || 'nothing'}]; needs 2 distinct ways`);
   }
-  const shapes = solution ? shapeUses(h.level, solution.moves) : [];
+  const shapes = solution ? shapeUses(h.level, solution.steps) : [];
   if (solution && h.guard && chapter.signature === 'shapes' && shapes.length < 2) {
     errors.push(`one-trick: the solution uses shapes only as [${shapes.join(', ') || 'nothing'}]; needs 2 distinct ways`);
   }

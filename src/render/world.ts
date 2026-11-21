@@ -45,6 +45,10 @@ const COLORS = {
   lockStone: 0x8a8a9a,
   /** The landing preview: the block's footprint where a flip would leave it. */
   preview: 0xcbb2ff,
+  /** The splitter's stand-in marks (dashed cut line and wedge), and the marker over the active cube. */
+  splitMat: 0x2b3038,
+  splitMark: 0xffffff,
+  activeMarker: 0xffffff,
   /** The slide preview (a setting): where a slide would leave the block. A deep blue that reads on ice, snow and grass. */
   slidePreview: 0x1f7ae0,
   /** Shape switches: a stone disc like the other switches, with a bar in the block's own color. */
@@ -254,6 +258,16 @@ export class World {
   private sheen = new THREE.DirectionalLight(0xfff0e2, 0.34);
   private blockMat = new THREE.MeshStandardMaterial({ color: NEUTRAL.block.color, roughness: 0.55 });
   private blockEdgeMat = new THREE.LineBasicMaterial({ color: NEUTRAL.block.edge });
+  /** After a split: the idle cube, in a dimmed copy of the block's material. */
+  private twinMat = new THREE.MeshStandardMaterial({ color: NEUTRAL.block.color, roughness: 0.55 });
+  private twin!: THREE.Mesh;
+  /** A small arrow bobbing over the cube the arrows move, while the block is split. */
+  private activeMarker!: THREE.Mesh;
+  /** A bright square on the floor around the cube the arrows move. */
+  private activeRing!: THREE.Group;
+  private split = false;
+  /** While the marker hops to the other cube after a swap: where from, and when it started. */
+  private markerHop: { from: THREE.Vector3; start: number } | null = null;
   /**
    * One group per layer. The ceiling's is mirrored (scale y −1) at CEIL_H, so every tile, mark and
    * animation is built and played exactly as on the ground and comes out upside down.
@@ -403,6 +417,27 @@ export class World {
     this.block.castShadow = true;
     this.block.add(new THREE.LineSegments(new THREE.EdgesGeometry(geom), this.blockEdgeMat));
     this.frames[0].add(this.block);
+    this.twin = new THREE.Mesh(geom, this.twinMat);
+    this.twin.castShadow = true;
+    this.twin.add(new THREE.LineSegments(new THREE.EdgesGeometry(geom), this.blockEdgeMat));
+    this.twin.scale.set(1, 0.5, 1);
+    this.twin.visible = false;
+    this.frames[0].add(this.twin);
+    const arrowGeom = new THREE.ConeGeometry(0.36, 0.7, 4).rotateX(Math.PI);
+    this.activeMarker = new THREE.Mesh(
+      arrowGeom,
+      new THREE.MeshStandardMaterial({ color: COLORS.activeMarker, emissive: COLORS.activeMarker, emissiveIntensity: 0.6, roughness: 0.4 }),
+    );
+    this.activeMarker.add(new THREE.LineSegments(new THREE.EdgesGeometry(arrowGeom), new THREE.LineBasicMaterial({ color: 0x1d2330 })));
+    this.activeMarker.visible = false;
+    this.frames[0].add(this.activeMarker);
+    this.activeRing = makeFootprint(
+      new THREE.MeshBasicMaterial({ color: COLORS.activeMarker, transparent: true, opacity: 0.25, depthWrite: false, side: THREE.DoubleSide }),
+      new THREE.MeshBasicMaterial({ color: COLORS.activeMarker, transparent: true, opacity: 1, depthWrite: false }),
+    );
+    setFootprint(this.activeRing, 1.4, 1.4);
+    this.activeRing.visible = false;
+    this.frames[0].add(this.activeRing);
 
     this.peekOutline = makeFootprint(
       new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, side: THREE.DoubleSide }),
@@ -1055,6 +1090,34 @@ export class World {
       return g;
     }
 
+    if (tile === Tile.Splitter) {
+      // A stand-in until Splatter Studio's look (a cutting mat): a dashed cut line across the tile and
+      // a wedge pointing to the side the second cube appears on.
+      // A dark mat over the whole tile, so it never reads as floor, with bold white marks.
+      g.add(floorTile(jitter, this.theme, layer), earth(jitter, this.theme));
+      const { dx, dy } = DIR_DELTA[DIRS[group]];
+      const mat = box(0.92, 0.04, 0.92, COLORS.splitMat, { roughness: 0.8 });
+      mat.position.y = 0.02;
+      mat.receiveShadow = true;
+      g.add(mat);
+      // The cut line runs across the split, a little toward the far side from the arrow.
+      for (let k = 0; k < 3; k++) {
+        const along = -0.3 + k * 0.3;
+        const dash = box(dx ? 0.08 : 0.18, 0.02, dx ? 0.18 : 0.08, COLORS.splitMark, { roughness: 0.5 });
+        dash.position.set(dx ? -dx * 0.12 : along, 0.05, dx ? along : -dy * 0.12);
+        g.add(dash);
+      }
+      // A flat arrow toward the side the second cube appears on.
+      const arrow = new THREE.Mesh(
+        new THREE.ConeGeometry(0.2, 0.3, 3).rotateX(Math.PI / 2).scale(1, 0.12, 1),
+        new THREE.MeshStandardMaterial({ color: COLORS.splitMark, roughness: 0.5 }),
+      );
+      arrow.rotation.y = Math.atan2(dx, dy);
+      arrow.position.set(dx * 0.22, 0.06, dy * 0.22);
+      g.add(arrow);
+      return g;
+    }
+
     g.add(floorTile(jitter, this.theme, layer), earth(jitter, this.theme));
 
     const isSwitch = tile === Tile.ExtraHeavy || tile === Tile.SoftSwitch || tile === Tile.HeavySwitch;
@@ -1183,6 +1246,7 @@ export class World {
     this.frames[this.layer].add(this.block);
     this.placeBlock(state.block);
     this.block.visible = true;
+    this.showPair(state);
     this.goalMarker?.scale.setScalar(1);
     for (const view of this.tiles.values()) {
       view.obj.position.y = view.baseY;
@@ -1253,8 +1317,10 @@ export class World {
   /** A wall due up stays down while the block is on its tile, and comes up when the block moves off. */
   private wallShows(w: WallView, state: State): boolean {
     if (!this.level || !wallUp(w.tile, w.group, state.bridges, this.level.bridgesOn)) return false;
+    // A wall that comes up under the block, or under the idle cube after a split, waits until it moves off.
     const on = (state.layer ?? 0) === w.layer && blockCells(state.block).some(([x, y]) => x === w.x && y === w.y);
-    return !on;
+    const idle = state.other?.x === w.x && state.other?.y === w.y;
+    return !on && !idle;
   }
 
   /** Raise and lower walls to match this state. Call it after every move: one may have been waiting for the block to leave. */
@@ -1480,6 +1546,71 @@ export class World {
       const s = BUMP_SHAKE * Math.sin(t * Math.PI);
       obj.position.set(dx * s, 0, dy * s);
     });
+  }
+
+  /** The idle cube and the marker after a split; the moving cube glows a little, the idle one is dimmed. */
+  private showPair(state: State): void {
+    this.split = !!state.other;
+    this.twin.visible = this.split;
+    if (state.other) {
+      this.twin.rotation.set(0, 0, 0);
+      this.twin.scale.set(1, 0.5, 1);
+      this.twin.position.copy(blockPosition({ x: state.other.x, y: state.other.y, o: 'S', n: 1 }));
+    }
+    this.activeMarker.visible = this.split;
+    this.activeRing.visible = this.split;
+    this.blockMat.emissive.set(this.split ? this.blockMat.color : 0x000000);
+    this.blockMat.emissiveIntensity = this.split ? 0.18 : 0;
+  }
+
+  /** A swap: the marker hops to the other cube, and the glow and dimming change places. */
+  swapCubes(state: State): void {
+    this.markerHop = { from: this.activeMarker.position.clone(), start: performance.now() };
+    this.placeBlock(state.block);
+    this.showPair(state);
+  }
+
+  /** A split: the block shrinks to a cube while the second cube slides out to the marked side. */
+  async splitApart(before: Block, state: State): Promise<void> {
+    const other = state.other!;
+    const from = blockPosition({ x: before.x, y: before.y, o: 'S', n: 1 });
+    const to = blockPosition({ x: other.x, y: other.y, o: 'S', n: 1 });
+    this.twin.visible = true;
+    this.twin.rotation.set(0, 0, 0);
+    await this.tween(380, (t) => {
+      const e = easeOutBack(t);
+      this.block.scale.set(1, 1 - 0.5 * Math.min(1, e), 1);
+      this.block.position.y = 0.98 * (1 - 0.5 * Math.min(1, e));
+      this.twin.scale.set(1, 0.5 * Math.min(1, t * 2), 1);
+      this.twin.position.set(from.x + (to.x - from.x) * e, to.y, from.z + (to.z - from.z) * e);
+    });
+    this.placeBlock(state.block);
+    this.showPair(state);
+  }
+
+  /** A join: the two cubes press together, then stand as one lying block over their tiles. */
+  async joinCubes(state: State): Promise<void> {
+    const a = this.block.position.clone();
+    const b = this.twin.position.clone();
+    await this.tween(200, (t) => {
+      const squeeze = 0.06 * Math.sin(t * Math.PI);
+      this.block.position.lerpVectors(a, b, squeeze);
+      this.twin.position.lerpVectors(b, a, squeeze);
+    });
+    this.placeBlock(state.block);
+    this.showPair(state);
+  }
+
+  /** A press took the floor from under the idle cube: it falls. */
+  async dropTwin(): Promise<void> {
+    const start = this.twin.position.clone();
+    await this.tween(900, (t) => {
+      this.twin.position.set(start.x, start.y - 14 * t * t, start.z);
+      this.twin.rotation.set(t * 1.5, 0, t * 1.1);
+    });
+    this.twin.visible = false;
+    this.activeMarker.visible = false;
+    this.activeRing.visible = false;
   }
 
   private placeBlock(b: Block): void {
@@ -1987,6 +2118,22 @@ export class World {
     });
     this.tweens.unshift(...unfinished);
 
+    if (this.activeMarker.visible) {
+      // Bob over the moving cube; after a swap, hop there in an arc first.
+      // The block is reparented to a pivot mid-roll, so follow its world position.
+      const p = this.frames[0].worldToLocal(this.block.getWorldPosition(new THREE.Vector3()));
+      const target = new THREE.Vector3(p.x, 0.98 + 0.85 + 0.1 * Math.sin(now / 260), p.z);
+      const hop = this.markerHop;
+      const t = hop ? Math.min((now - hop.start) / 220, 1) : 1;
+      if (hop && t < 1) this.activeMarker.position.lerpVectors(hop.from, target, easeOut(t)).add(new THREE.Vector3(0, 0.5 * Math.sin(t * Math.PI), 0));
+      else {
+        this.markerHop = null;
+        this.activeMarker.position.copy(target);
+      }
+      this.activeMarker.rotation.y = now / 700;
+      this.activeRing.position.set(p.x, FOOTPRINT_LIFT, p.z);
+    }
+
     for (const c of this.clouds) {
       c.position.x += c.userData.speed * dt;
       if (c.position.x > this.center.x + 30) c.position.x = this.center.x - 30;
@@ -2291,6 +2438,8 @@ export class World {
     this.theme = theme;
     document.body.dataset.theme = theme.id;
     this.blockMat.color.set(theme.block.color);
+    this.twinMat.color.set(theme.block.color).multiplyScalar(0.42);
+    this.twinMat.roughness = theme.block.roughness ?? 0.55;
     this.blockEdgeMat.color.set(theme.block.edge);
     this.blockMat.roughness = theme.block.roughness ?? 0.55;
     // White shows on space; a pale sky needs a dark outline.

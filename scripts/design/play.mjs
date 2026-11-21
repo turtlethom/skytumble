@@ -241,6 +241,12 @@ for (const [id, moves] of Object.entries(solutions)) {
   };
   for (const [i, m] of moves.entries()) {
     await idle();
+    // A swap is Tab, and never counts as a move.
+    if (m === 'swap') {
+      await key('Tab');
+      await sleep(250);
+      continue;
+    }
     const k = await keyFor(m);
     // SOLUTIONS.md writes each move as its key at the starting view (↑/↓ swapped on the ceiling):
     // say so if the game disagrees.
@@ -274,7 +280,8 @@ for (const [id, moves] of Object.entries(solutions)) {
   await shot(`${id}-end`);
   const won = !(await evalJs("document.getElementById('win').classList.contains('hidden')"));
   const count = await evalJs("document.getElementById('moves').textContent");
-  console.log(`${id.padEnd(12)} ${won ? 'WON' : 'NOT WON'}  ${count} moves / par ${moves.length}`);
+  const par = moves.filter((m) => m !== 'swap').length;
+  console.log(`${id.padEnd(12)} ${won ? 'WON' : 'NOT WON'}  ${count} moves / par ${par}`);
   if (!won) failed++;
 }
 // Wait for Chrome to exit before deleting its profile: it keeps writing there while shutting down.

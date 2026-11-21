@@ -14,6 +14,7 @@ import frostlab from './frostlab.txt?raw';
 import peakslab from './peakslab.txt?raw';
 import starlab from './starlab.txt?raw';
 import toylab from './toylab.txt?raw';
+import splitlab from './splitlab.txt?raw';
 
 /** Every chapter: the Tutorial, then the campaign in play order, then the labs. Add a chapter by adding its .txt file here. */
 export const CHAPTERS: Chapter[] = [
@@ -41,9 +42,11 @@ export const CHAPTERS: Chapter[] = [
   parseChapter('starlab', starlab),
   // Walls with shapes, for the Toybox wall lab playtest.
   parseChapter('toylab', toylab),
+  // Splitting into two cubes, for Splatter Studio's split lab playtest.
+  parseChapter('splitlab', splitlab),
 ];
 
-const LAB_IDS = new Set(['lab', 'windlab', 'gravlab', 'shapelab', 'gladelab', 'frostlab', 'peakslab', 'starlab', 'toylab']);
+const LAB_IDS = new Set(['lab', 'windlab', 'gravlab', 'shapelab', 'gladelab', 'frostlab', 'peakslab', 'starlab', 'toylab', 'splitlab']);
 
 /** Outside the story and off the sky map, opened from the main menu. */
 export const TUTORIAL: Chapter = CHAPTERS.find((c) => c.id === 'tutorial')!;
