@@ -161,7 +161,7 @@ Shipped releases and finished build notes are in `DESIGN-archive.md`, word for w
 **Pick up here** (paused 2026-11-20, the user went to sleep). Everything is committed and live through `9aa9b49`: **all five worlds are at 20** (First Glade, Frost Isle, Windy Peaks, Starfall, Toybox), Toybox finished and pushed 2026-11-20 along with idle rendering and the stuck-in-tube look. The next stretch was planned in a grilling session the same day: see *After Toybox: the paint workshop* below. Hand every level over with its directions.
 
 - **Next, in order:**
-  1. **Tighten `glade-13`, `glade-15` and `glade-18`**: each has one wall color that never has to move (`walls` says NEED NOT MOVE). Rework each so every color matters, keeping its idea; record the new par, rewrite SOLUTIONS.md, and hand them over with directions.
+  1. ~~Tighten `glade-13`, `15` and `18`~~ **Done 2026-11-20, waiting on the user's play:** `walls` showed `glade-18` already passes and `glade-14` was the third idle color (orange bridges), so the three reworked are `glade-13`, `14` and `15`; see the *Playtest log*. Every Glade color now moves.
   2. **Ice slide-end preview as a setting**, off by default (in Settings): marks where each possible slide would stop.
   3. **The user plays `glade-16`…`20` and the Glade maze** (never playtested); log their notes.
   4. **Then the paint workshop world** (split + paint): a look session (grill it) → tile sheet (paint colors chosen there) → lab → sign-off and frozen rules → 20 levels in batches of 5.
@@ -678,6 +678,8 @@ works and what doesn't. Claude writes the code and designs handmade levels from 
 feedback; batches of 5 levels per round.
 
 ## Playtest log
+
+**2026-11-20 — Tightening `glade-13`, `14` and `15`** (no playtest yet). Each had one color whose press happened on the way anyway, so fixing it down for good didn't change par. A throwaway brute force tried moving that color's switch and adding one wall of its color, kept layouts where `walls` says every color moves, and dropped any whose solution undoes a press within two moves (the first picks for 14 and 15 were taps twice in place). `glade-13` Not All at Once (22 → 26 moves, 447 → 560 states): only the orange switch moved, off the route to the left lane at (4,3). All three switches are now needed (the decoy is gone): purple lowers the walls in the way and raises those by the goal, so it's pressed twice. Its idea text was rewritten. `glade-14` Three Colors (28 → 32, 222 → 244): the orange switch moved from beside the goal to the junction where the second hedge topples, and an orange wall now blocks the lane past that hedge's bridge. `glade-15` Last Clearing (29 → 31, 562 → 534): the unused purple switch in the top lane became a purple switch at the (4,4) junction, crossed three times, and a second purple wall sits beside the bottom switch, so the purple count matters; the heavy switch under the middle hedge gets tapped again after the topple. `glade-18` was left as is.
 
 **2026-11-20 — What comes after Toybox (grilling session).** Five rounds: a whole new world next, split + paint in a paint workshop, standalone; friends ranked Toybox, Windy Peaks, Frost Isle; the user plays for fun when there's an unsolved world. Recorded as *After Toybox: the paint workshop*. The parked items go first.
 
