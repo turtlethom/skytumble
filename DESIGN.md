@@ -160,9 +160,13 @@ Wanted, not yet scheduled. Each becomes a biome's signature mechanic or a crossi
 
 Shipped releases and finished build notes are in `DESIGN-archive.md`, word for word.
 
-**Pick up here** (updated 2026-11-21). **All five worlds are at 20** (First Glade, Frost Isle, Windy Peaks, Starfall, Toybox). The sixth, **Splatter Studio** (split + paint), has both its labs built and its rules frozen; nothing of its look or levels is built yet. Committed locally through the paint freeze; the live site has the Split Lab's first four levels (pushed `2062566`), and the rest waits for the user's word to push. Hand every level over with its directions.
+**Pick up here** (paused 2026-11-21, the user went to sleep). **All five worlds are at 20**; the sixth, **Splatter Studio** (split + paint), is underway. Done and committed: both labs and their frozen rules (splitting 2026-11-20, paint with mixing 2026-11-21), the tile sheet, the room (furniture at the windows' scale, cat approved for size, 60 fps on the user's laptop), and its sky-map island (`8cf9782`). Pushed through `41b756d`; everything after waits for the user's word. Hand every level over with its directions.
 
-- **Next: Splatter Studio's look** (the paint workshop world; see *Splatter Studio: the look*). **Status:** tile sheet committed; the room, light, furniture and cat built (with the user; the cat's size approved, try 2 of 4); the map island built; next the first batch of levels. Both labs are done and their rules **frozen**: splitting (2026-11-20, Split Lab) and paint with mixing (2026-11-21, Paint Lab). The look plan stands, revisited only where the labs changed what a piece shows: gates are now stencil sheets that sink (a sheet on every open side at junctions), paint is a splatter in six colors plus mud, a wash tile was added, and the palette overlaps switch and belt colors (settle on the tile sheet). Order: the tile sheet (canvas floor, grey plaster block, trays, gates, splitter mat, wash, active-cube marker) for approval, then the room, light and cat, then 20 levels in batches of 5.
+- **Batch 1, `paint-01`…`05`, played 2026-11-22: no complaints.** Committed.
+- **Staging changed** (the user's call, 2026-11-22): `paint-06`…`10` introduce paint; `paint-11`…`20` are a lot harder and bring in the mix-ins (*Staging* row below).
+- **Next:** batch 2 (`paint-06`…`10`, the paint introduction), pitched and approved 2026-11-22: building all five. Then a short pad lab (cubes in flight, landing on trays, gates in a flight's path) before `11`…`20`.
+- **Launch pads join Splatter Studio** (the user's yes, 2026-11-22) for `11`…`20`, after a 2–3 level lab settles how they meet splitting and paint.
+- **Open from the look:** the cat is at try 2 of 4 (size approved, look not yet signed off); the arrival title and menus have no Splatter Studio styling yet beyond the page background.
 - **Lessons that carry over:** every level its own idea, never a liked level's frame reused; mechanics mix in as ingredients; par and states climb, and the finale clearly tops the rest. No special piece that never acts or matters (`lint`; `analyze`'s UNUSED line), above all anything a script placed at random. Hand-draw a level's chain of reasons, and let generators fill in only colorings, placements and island shapes; random networks almost never need every piece. A tall block tips four tiles at a time, so its switches sit on its step. Time-box each level at three rebuilds and check in with the user. Hand levels over one or two at a time.
 - **Animation lesson:** each kind of blocked jump has its own animation (fling, hop, crash); a fix for one must leave the others as the user liked them, checked frame by frame on a slowed build (a throwaway probe level in a lab chapter, constants slowed ~10×, `FRAMES`).
 - **Pushing** goes through the `gh` login (`git -c credential.helper= -c credential.helper='!gh auth git-credential' push origin main`); always ask first.
@@ -382,7 +386,7 @@ levels, sparkles over the block, the satellite, frame rate) stay open if they co
 | Area | Decision |
 |---|---|
 | World | **Splatter Studio**, a painter's studio. Standalone: its own difficulty curve, playable in any order. Look and name settled in the look session (below) |
-| Staging | Split and merge in levels 1–8; paint from level 9, as walls and tubes arrived in the walls worlds |
+| Staging | Split and merge in levels 1–5; paint introduced in 6–10; 11–20 a lot harder, mixing in the features of the other worlds (changed 2026-11-22 at the user's call, from split through 8 and paint from 9) |
 | Splitting | Standing on a splitter tile splits a normal block into two cubes. The lab starts with them side by side (the splitter shows which side) and tries a paired tile elsewhere as a variant. Only a normal block splits |
 | Merging | Rolling one cube beside the other joins them into a lying normal block. The block must be whole for the goal |
 | Control | Tab swaps which cube the arrows move; the active cube glows, the other dims. Space stays peek, Q/E the camera. Kept although swap tedium is the likeliest failure (the user's pre-mortem pick); fallback if the lab drags: try both cubes moving at once |
@@ -391,7 +395,7 @@ levels, sparkles over the block, the satellite, frame rate) stay open if they co
 | Paint | Paint tiles color whatever part of the block rests on them: a cube, or the half of a lying block over the tile. Levels choose the starting color (red, blue or unpainted). Merging keeps each cube's color on its half |
 | Two-tone | Colors stay with their halves as the block rolls, so orientation matters. Two-tone gates come in both kinds: two tiles wide, passed lying with each color on its side, and one tile, passed standing with the right color on top |
 | Color's job | Gates only: a gate of the wrong color is a wall (no move counted). Colored switches were dropped to keep the new pieces in check |
-| Mix-ins | Walls, belts and tubes. Launch pads come in later batches, once split and paint are frozen. No ice |
+| Mix-ins | Walls, belts, tubes and planks. Launch pads in `11`…`20` (confirmed 2026-11-22), after a short lab on cubes, trays and gates in flight. No ice |
 | Two-cube rule | The validator's guard against swap tedium: every level's solution must have both cubes do something the other couldn't (pass its own gate, press a soft switch, hold a wall down, cross where only a cube fits), and the tools report the share of moves spent swapping |
 | Solver | Measure the solver and searches on lab levels before freezing anything; boards may have to stay compact |
 | Process | Changed in the look session: **lab first, then the look**, since the mechanic, not the look, is the likeliest failure. Split lab (splitting, merging, swapping, the marker, weights, solver speed) → freeze → paint lab (trays, two-tone, gates) → freeze, both with plain stand-in pieces on the neutral lab tiles → the studio look → 20 levels in batches of 5, handed over one or two at a time |
@@ -448,6 +452,18 @@ Pitched and approved 2026-11-20, built 2026-11-21, all five. Stand-ins on the ne
 | `paintlab-05` Repaint | 10 | 13 | A demonstration: pink for the pink gate, then a belt pushes the cube onto the green tray, which paints over the pink, for the green gate |
 
 - **Build notes:** colors per half in `State.paint` (lying: cell order; standing: bottom, top; a cube [c, c]) and `State.otherPaint`; `rollPaint` moves them with each roll. The renderer puts a paint shell over each half and switches the shells over as a roll lands, checked frame by frame on a slowed build: the colors turn with the block and never jump. Stand-ins: trays a dark rim round wet paint, gates four corner posts and a floor border in the color, kept low so they hide nothing. Paint is a splatter in shades of its color (stripes and dots at first, changed after the user's look), deep green against light pink so they differ in black and white.
+
+**Splatter Studio's levels.** Batch 1 (built 2026-11-21, picked by Claude while the user slept): splitting only, one idea each, every switch color moving, par and states climbing.
+
+| Level | Par | States | The idea |
+|---|---|---|---|
+| `paint-01` Stepping Stones | 12 | 60 | The first split: a staircase of single tiles only cubes can cross; walk both over and join in line with the goal |
+| `paint-02` Mail Slot | 14 | 162 | Glass tubes take only cubes: post both through; one presses the switch that lays the bridge, the other rolls into it from above so the block stands in line |
+| `paint-03` Doorstop | 16 | 211 | One press lowers the far wall and raises the near one: park a cube on the near wall (it can't rise under a cube), press with the other, join on the wall, go through whole |
+| `paint-04` Light Feet | 18 | 247 | Planks hold cubes, not a standing block; the heavy switch laying the bridge needs the whole block, so take the side path and press it before splitting |
+| `paint-05` Rendezvous | 22 | 612 | The batch peak: the wall's switch is on an island only cubes reach, the first tube is one way (a belt at its mouth), so come back down the second; the cubes meet past the wall, and the heavy switch at the end needs the block whole. Planks give the second cube another way down |
+
+- **Build notes:** `paint-05` took seven drafts: an early join on the planks skipped everything; a switch on a tube's exit was pressed by every ride; a north-south tube with no tile above it; the wall had to sit past where the second tube lets out. Pars 12, 14, 16, 18, 22; states 60 → 612.
 
 **Splatter Studio: the look** (look session 2026-11-20; a plan, revisited only where the labs change what a piece must show). Nothing is built.
 
@@ -768,6 +784,12 @@ works and what doesn't. Claude writes the code and designs handmade levels from 
 feedback; batches of 5 levels per round.
 
 ## Playtest log
+
+**2026-11-22 — Splatter Studio batch 1 played.** "i played all the 5 levels and have no complaints. I do think the next 5 levels should be an introduction to paint though, then the last 10 levels should be a lot harder with the built in features from other levels that we discussed incorporated into the biome" → Staging changed: paint from level 6 (was 9), 6–10 an introduction, 11–20 hard levels with the mix-ins. Batch 2 pitched.
+
+**2026-11-22 — Batch 1 committed; batch 2 approved.** "commit it, yes to launch pads, build all five" → Batch 1 committed. Launch pads join for `11`…`20`, after a pad lab. Building `paint-06`…`10` as pitched (Day Pass, Left & Right, Head to Toe, Green Room, Rinse Cycle).
+
+**2026-11-21 — Splatter Studio, batch 1 built.** "let's do the first 5 levels, then record where we stop because I want to go to sleep" → The island committed; `paint-01`…`05` built on splitting alone (ideas picked by Claude, pitch skipped at the user's request), all won at par in headless Chrome, recorded in *Splatter Studio's levels* and *Pick up here*. Not committed: waiting for the user's play.
 
 **2026-11-21 — Splatter Studio on the sky map.** The world is a chapter now (`paint`, `src/levels/paint.txt`, no levels yet): its island sits at the lower right of the zigzag, canvas top, paint-red rim, wooden frame below, labeled *Split & paint* and *Coming soon* until levels exist. The six islands are respaced 26 apart (the look plan's (170, 70) was outside the 160-wide box), so neighbors in a row now touch at their edges. Hopping between islands skips empty ones, and the end-of-campaign test looks at the last chapter with levels.
 
