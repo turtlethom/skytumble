@@ -167,7 +167,7 @@ Shipped releases and finished build notes are in `DESIGN-archive.md`, word for w
 - **Staging changed** (the user's call, 2026-11-22): `paint-06`…`10` introduce paint; `paint-11`…`20` are a lot harder and bring in the mix-ins (*Staging* row below).
 - **Batch 2, `paint-06`…`10`, played 2026-11-22: the user really likes them**; tubes recolored for the studio. Committed (`f0c50d6`).
 - **Pad Lab, `paintlab-08`…`10`: committed (`daf38ce`), rules frozen 2026-11-22.**
-- **Built, not yet played or committed: batch 3, `paint-11`…`15`** (see *Splatter Studio's levels*). The user plays it after the two UI changes below.
+- **Batch 3, `paint-11`…`15`, played 2026-11-22: "very enjoyable! lots of logical thinking is needed"**; committed and pushed. Next: pitch batch 4 (`paint-16`…`20`, the finale).
 - **How To Play** gained Splatter Studio's four entries and Toybox's missing tubes (2026-11-22, not yet committed).
 - **Committed (`76e9cd2`): a Previous button (P), and two UI changes** (decided 2026-11-22, before batch 3's playtest): (1) **level text**: the HUD shows only `id · name`; the full idea text opens with a Hint key (H) or button, hidden by default, and closes on the next move; the Tutorial's lesson prompts stay. (2) **Two-step map**: the sky map shows one island per world (overview); opening a world shows only that world, as a grid of level cards in its colors (mini-map, number, name, par, best, solved tick), with a way back to the worlds. The Labs screen gets the same two steps.
 - **Launch pads join Splatter Studio** (the user's yes, 2026-11-22) for `11`…`20`, after a 2–3 level lab settles how they meet splitting and paint.
@@ -821,6 +821,8 @@ works and what doesn't. Claude writes the code and designs handmade levels from 
 feedback; batches of 5 levels per round.
 
 ## Playtest log
+
+**2026-11-22 — Splatter Studio batch 3 played.** "i completed the levels and found them very enjoyable! lots of logical thinking is needed for sure!" → No changes; committed with the push. The shorter pars (19-25) were fine: density of reasoning carried the difficulty. Next: batch 4, the finale.
 
 **2026-11-22 — Splatter Studio batch 1 played.** "i played all the 5 levels and have no complaints. I do think the next 5 levels should be an introduction to paint though, then the last 10 levels should be a lot harder with the built in features from other levels that we discussed incorporated into the biome" → Staging changed: paint from level 6 (was 9), 6–10 an introduction, 11–20 hard levels with the mix-ins. Batch 2 pitched.
 
