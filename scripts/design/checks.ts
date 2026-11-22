@@ -304,6 +304,8 @@ export function hidden(level: Level): string[] {
   const name: Partial<Record<Tile, string>> = {
     [Tile.SoftSwitch]: 'switch', [Tile.HeavySwitch]: 'heavy switch', [Tile.ExtraHeavy]: 'star switch', [Tile.Conveyor]: 'belt',
     [Tile.Pad]: 'pad', [Tile.Flip]: 'ring', [Tile.FlipLocked]: 'locked ring', [Tile.Door]: 'tube', [Tile.ShapeSwitch]: 'shape switch', [Tile.Goal]: 'goal',
+    // Splatter Studio: a hidden tray, water, gate or splitter hides a color or a split from the player.
+    [Tile.Tray]: 'tray', [Tile.Wash]: 'water', [Tile.Gate]: 'gate', [Tile.Splitter]: 'splitter',
   };
   const out: string[] = [];
   level.tiles.forEach((t, i) => {

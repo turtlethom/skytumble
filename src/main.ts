@@ -3,7 +3,7 @@ import { randomSeed } from './game/rng';
 import { initialState, rollPaint, step, swap } from './game/rules';
 import { solve } from './game/solver';
 import { Block, DIRS, Dir, Level, State, TIERS, Tier, Tile } from './game/types';
-import { CAMPAIGN, LABS, TUTORIAL, chapterOf, findLevel, lessonUnlocked, nextOnTrack, trackOf } from './levels';
+import { CAMPAIGN, LABS, TUTORIAL, chapterOf, findLevel, lessonUnlocked, nextOnTrack, prevOnTrack, trackOf } from './levels';
 import { isLesson, lessonDone, lessonPrompt } from './levels/lessons';
 import { HandmadeLevel } from './levels/format';
 import { MECHANICS, Mechanic, mechanicsIn } from './levels/mechanics';
@@ -43,6 +43,8 @@ interface Panel {
   show(): void;
   hide(): void;
   key(e: KeyboardEvent): boolean;
+  /** Esc inside the screen (a map's world back to its overview); true if it used it, else the screen closes. */
+  escape?(): boolean;
 }
 
 /** Screen directions: 0 up, 1 right, 2 down, 3 left; the world maps them to grid directions. */
@@ -57,17 +59,19 @@ class Game {
   private world = new World($('stage'));
   private worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
   private progress = loadProgress();
-  private map = new SkyMap($('map'), CAMPAIGN, signatureBadge, true, (id) => this.load({ kind: 'hand', id }), () => this.back());
-  private labs = new SkyMap($('labs'), LABS, () => null, false, (id) => this.load({ kind: 'hand', id }), () => this.back());
+  private map = new SkyMap($('map'), CAMPAIGN, signatureBadge, true, (id) => this.load({ kind: 'hand', id }), () => this.back(), 'Sky map');
+  private labs = new SkyMap($('labs'), LABS, () => null, false, (id) => this.load({ kind: 'hand', id }), () => this.back(), 'Labs');
   private mapPanel: Panel = {
     show: () => this.map.show(this.progress, this.playingId(), this.backLabel()),
     hide: () => this.map.hide(),
     key: (e) => this.map.key(e),
+    escape: () => this.map.escape(),
   };
   private labsPanel: Panel = {
     show: () => this.labs.show(this.progress, this.playingId(), this.backLabel()),
     hide: () => this.labs.hide(),
     key: (e) => this.labs.key(e),
+    escape: () => this.labs.escape(),
   };
   private mainMenu = new Menu(
     $('main-menu'),
@@ -209,6 +213,7 @@ class Game {
   // Loading levels.
 
   private load(mode: Mode): void {
+    this.showHint(false);
     this.scene++;
     this.world.finishAnimations();
     const id = ++this.requestId;
@@ -337,11 +342,20 @@ class Game {
     }
   }
 
+  /** Back to the level before this one on its track (the user's call, 2026-11-22: going back was a chore). */
+  private previousLevel(): void {
+    if (this.mode.kind !== 'hand') return;
+    const prev = prevOnTrack(this.mode.id);
+    if (prev) this.load({ kind: 'hand', id: prev.id });
+  }
+
   // -------------------------------------------------------------------------
   // Playing.
 
   private move(dir: Dir): void {
     if (!this.level) return;
+    // The hint gets out of the way as soon as you play on.
+    this.showHint(false);
     if (this.status === 'busy') {
       this.queued = dir;
       return;
@@ -606,6 +620,7 @@ class Game {
     document.body.classList.toggle('in-lesson', !!lesson);
     document.querySelectorAll('.next-label').forEach((el) => (el.textContent = this.nextLabel()));
     $('btn-new').hidden = $('fell-next').hidden = this.lessonLocksNext();
+    $('btn-prev').hidden = this.mode.kind !== 'hand' || !prevOnTrack(this.mode.id);
     $('btn-map').textContent = lesson ? 'Levels' : 'Map';
     $('moves').textContent = String(this.moves);
     document.body.classList.toggle('has-splits', !!this.level?.tiles.includes(Tile.Splitter));
@@ -615,10 +630,23 @@ class Game {
     if (this.mode.kind === 'hand') {
       // The id leads so playtest notes can quote it.
       const h = findLevel(this.mode.id)!;
-      $('level-info').textContent = lesson ? `${h.id} · ${h.name}` : `${h.id} · ${h.name}: ${h.idea}`;
+      $('level-info').textContent = `${h.id} · ${h.name}`;
+      // The idea text waits behind the Hint key (the user's call, 2026-11-22); the Tutorial teaches with its prompts instead.
+      $('btn-hint').classList.toggle('hidden', !!lesson || !h.idea);
+      $('hint').textContent = h.idea;
     } else {
       $('level-info').textContent = `${capitalize(this.mode.tier)} · seed ${this.mode.seed}`;
+      $('btn-hint').classList.add('hidden');
+      this.showHint(false);
     }
+  }
+
+  /** Show or hide the level's idea text; with no argument, toggle it. */
+  private showHint(on?: boolean): void {
+    const hint = $('hint');
+    const show = on ?? (hint.classList.contains('hidden') && !$('btn-hint').classList.contains('hidden'));
+    hint.classList.toggle('hidden', !show);
+    $('btn-hint').classList.toggle('active', show);
   }
 
   private toast(message: string, ms = 1800): void {
@@ -682,6 +710,7 @@ class Game {
     this.lastEscape = now;
     if (this.arrival.active) this.arrival.dismiss();
     else if (!this.topPanel) this.openPause();
+    else if (this.topPanel.escape?.()) return;
     else if (this.topPanel !== this.mainMenu) this.back();
   }
 
@@ -815,9 +844,11 @@ class Game {
 
     click('btn-menu', () => this.openPause());
     click('btn-new', () => this.nextLevel());
+    click('btn-prev', () => this.previousLevel());
     click('btn-restart', () => this.restart());
     click('btn-undo', () => this.undo());
     click('btn-link', () => void this.copyLink());
+    click('btn-hint', () => this.showHint());
     click('win-next', () => this.nextLevel());
     click('win-retry', () => this.restart());
     click('fell-undo', () => this.undo());
@@ -881,6 +912,12 @@ class Game {
           break;
         case 'KeyN':
           this.nextLevel();
+          break;
+        case 'KeyH':
+          this.showHint();
+          break;
+        case 'KeyP':
+          this.previousLevel();
           break;
         case 'Enter':
           if (this.status === 'won') this.nextLevel();

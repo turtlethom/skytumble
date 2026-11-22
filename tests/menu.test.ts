@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { initialState, step } from '../src/game/rules';
 import { solve } from '../src/game/solver';
-import { CAMPAIGN, CHAPTERS, LABS, TUTORIAL, nextOnTrack, trackOf } from '../src/levels';
+import { CAMPAIGN, CHAPTERS, LABS, TUTORIAL, nextOnTrack, prevOnTrack, trackOf } from '../src/levels';
 import { MENU_LEVEL } from '../src/levels/menuScene';
 import { loadProgress, resetProgress, saveProgress } from '../src/ui/progress';
 
@@ -43,6 +43,15 @@ describe('level tracks', () => {
     expect(nextOnTrack(lastCampaign[lastCampaign.length - 1].id)).toBeNull();
     const lastLab = LABS[LABS.length - 1].levels;
     expect(nextOnTrack(lastLab[lastLab.length - 1].id)).toBeNull();
+  });
+
+  it('walk back across chapters too, and stop at the start of the track', () => {
+    const frost = CAMPAIGN.find((c) => c.id === 'frost')!.levels;
+    expect(prevOnTrack('wind-01')?.id).toBe(frost[frost.length - 1].id);
+    expect(prevOnTrack('tutorial-02')?.id).toBe('tutorial-01');
+    expect(prevOnTrack(CAMPAIGN[0].levels[0].id)).toBeNull();
+    expect(prevOnTrack(TUTORIAL.levels[0].id)).toBeNull();
+    expect(prevOnTrack(LABS[0].levels[0].id)).toBeNull();
   });
 });
 

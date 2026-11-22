@@ -92,6 +92,9 @@
       <div class="brand">
         <h1>SkyTumble</h1>
         <p id="level-info"></p>
+        <button id="btn-hint" class="hint-button hidden">Hint <kbd>H</kbd></button>
+        <!-- The level's idea text, hidden until asked for: most of it spells out the solution. -->
+        <div id="hint" class="hint card hidden"></div>
       </div>
       <div class="score card">
         <div><span class="label">Moves</span><span id="moves">0</span></div>
@@ -104,6 +107,7 @@
       <div class="actions">
         <button id="btn-menu">Menu <kbd>Esc</kbd></button>
         <button id="btn-map">Map</button>
+        <button id="btn-prev">Previous <kbd>P</kbd></button>
         <button id="btn-new"><span class="next-label">Next level</span> <kbd>N</kbd></button>
         <button id="btn-restart">Restart <kbd>R</kbd></button>
         <button id="btn-undo">Undo <kbd>Z</kbd></button>
@@ -142,17 +146,20 @@
       </div>
     </div>
 
-    <!-- Campaign sky map; filled in by ui/map.ts. -->
+    <!-- Campaign sky map, in two steps: the worlds, then one world's levels; filled in by ui/map.ts. -->
     <div id="map" class="sky-map hidden">
       <header class="sm-head">
         <h2>Sky map</h2>
-        <button data-close><span data-back-label>Back</span> <kbd>Esc</kbd></button>
+        <div class="sm-buttons">
+          <button data-worlds class="hidden">← All worlds <kbd>Esc</kbd></button>
+          <button data-close><span data-back-label>Back</span> <kbd data-close-kbd>Esc</kbd></button>
+        </div>
       </header>
-      <div class="sm-stage"><div class="sm-canvas"></div></div>
+      <div class="sm-stage"><div class="sm-canvas"></div><div class="sm-grid"></div></div>
       <div class="sm-caption card"></div>
       <p class="sm-foot">
-        <span><kbd>←</kbd><kbd>→</kbd> level · <kbd>↑</kbd><kbd>↓</kbd> island · <kbd>Enter</kbd> play</span>
-        <span>Every island is open; the dashed path is just a suggestion.</span>
+        <span data-keys></span>
+        <span>Every world is open; the dashed path is just a suggestion.</span>
         <a href="./levels.html">Level index</a>
       </p>
     </div>
@@ -161,12 +168,15 @@
     <div id="labs" class="sky-map hidden">
       <header class="sm-head">
         <h2>Labs</h2>
-        <button data-close><span data-back-label>Back</span> <kbd>Esc</kbd></button>
+        <div class="sm-buttons">
+          <button data-worlds class="hidden">← All labs <kbd>Esc</kbd></button>
+          <button data-close><span data-back-label>Back</span> <kbd data-close-kbd>Esc</kbd></button>
+        </div>
       </header>
-      <div class="sm-stage"><div class="sm-canvas"></div></div>
+      <div class="sm-stage"><div class="sm-canvas"></div><div class="sm-grid"></div></div>
       <div class="sm-caption card"></div>
       <p class="sm-foot">
-        <span><kbd>←</kbd><kbd>→</kbd> level · <kbd>↑</kbd><kbd>↓</kbd> lab · <kbd>Enter</kbd> play</span>
+        <span data-keys></span>
         <span>The rough prototypes each world's mechanic started from.</span>
       </p>
     </div>

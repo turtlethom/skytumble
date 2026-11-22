@@ -421,6 +421,35 @@ kbd {
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
+/* The level's idea text waits behind a Hint button (H): most of it spells out the solution, and a
+   long story covered the board (the user's call, 2026-11-22). It closes on the next move. */
+.hint-button {
+  margin-top: 6px;
+  padding: 3px 10px;
+  font-size: 13px;
+  border-radius: 999px;
+}
+
+.hint-button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.hint {
+  margin-top: 8px;
+  max-width: 360px;
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.hint.hidden,
+.hint-button.hidden {
+  display: none;
+}
+
 .score {
   display: flex;
   gap: 18px;
@@ -450,14 +479,25 @@ kbd {
 
 .actions {
   display: flex;
-  flex-wrap: wrap;
+  flex: none;
   gap: 8px;
 }
 
+/* The key help gives way to the buttons: it wraps onto more lines before they do. */
 .help {
+  flex: 0 1 auto;
+  min-width: 0;
   margin: 0;
   padding: 8px 12px;
+  text-align: right;
   color: var(--ink-soft);
+}
+
+@media (max-width: 900px) {
+  .actions {
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+  }
 }
 
 /* ---- Overlays --------------------------------------------------------- */
@@ -1021,20 +1061,74 @@ body.at-menu .bottom {
   }
 }
 
-/* Islands: a grassy (or snowy) top with a rocky underside, bobbing gently in the sky. */
+/* Islands: a grassy (or snowy) top with a rocky underside, bobbing gently in the sky. On the
+   overview each is one world: click (or Enter) to open its levels. */
 .sm-island {
   --top: linear-gradient(#a6e090, #7cc56b);
   --edge: #5fa552;
   --cliff: #b98352;
   --cliff-dark: #6f4a2d;
   position: absolute;
-  /* Wide enough for its name, and for its row of stones with the island's padding. */
-  width: max(250px, calc(var(--cols, 4) * 42px + 40px));
+  /* Wide enough for its name and badge on one line. */
+  width: max-content;
+  min-width: 250px;
+  cursor: pointer;
   transform: translate(-50%, -50%) scale(var(--s, 1));
   animation: bob 7s ease-in-out var(--delay, 0s) infinite;
 }
 
-.sm-island.glade {
+.sm-island.empty {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.sm-island.selected .sm-top {
+  outline: 4px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* You are here: the block itself, standing on the island. */
+.sm-island.here .sm-top::before {
+  content: '';
+  position: absolute;
+  top: -14px;
+  left: calc(50% - 6px);
+  width: 12px;
+  height: 20px;
+  border-radius: 2px;
+  background: #f0c987;
+  border: 2px solid #8a6436;
+}
+
+/* A dot per level: gold once solved, ringed if it's up next. */
+.sm-dots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  max-width: 180px;
+  margin: 0 auto;
+}
+
+.sm-dots i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(35, 48, 74, 0.25);
+}
+
+.sm-dots i.solved {
+  background: #f2c35a;
+  border-color: #c9962e;
+}
+
+.sm-dots i.next {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.sm-island.glade,
+.sm-grid.glade {
   --top: linear-gradient(#86c06c, #5fa04a);
   --edge: #9ec7a2;
   --cliff: #6d4c33;
@@ -1044,28 +1138,32 @@ body.at-menu .bottom {
   color: #f6fbe9;
   text-shadow: 0 1px 2px rgba(25, 50, 20, 0.6);
 }
-.sm-island.frost {
+.sm-island.frost,
+.sm-grid.frost {
   --top: linear-gradient(#fbfbff, #d9e6fb);
   --edge: #dbb3c6;
   --cliff: #a39bc2;
   --cliff-dark: #6c6490;
 }
 
-.sm-island.lab {
+.sm-island.lab,
+.sm-grid.lab {
   --top: linear-gradient(#ece4fa, #cfc0f0);
   --edge: #a690d6;
   --cliff: #9b88ba;
   --cliff-dark: #5f4f80;
 }
 
-.sm-island.peaks {
+.sm-island.peaks,
+.sm-grid.peaks {
   --top: linear-gradient(#f0f2f4, #b4bdcb);
   --edge: #d3a850;
   --cliff: #85888e;
   --cliff-dark: #4b4e55;
 }
 
-.sm-island.night {
+.sm-island.night,
+.sm-grid.night {
   --top: linear-gradient(#5a4f9a, #3a3270);
   --edge: #8f7ce0;
   --cliff: #3d3a66;
@@ -1079,7 +1177,8 @@ body.at-menu .bottom {
 }
 
 /* Toybox: a playroom of primary colors. */
-.sm-island.toy {
+.sm-island.toy,
+.sm-grid.toy {
   --top: linear-gradient(#fbf2e0, #ead9bb);
   --edge: #a8483f;
   --cliff: #a04a46;
@@ -1087,7 +1186,8 @@ body.at-menu .bottom {
 }
 
 /* Splatter Studio: a canvas top on a wooden stretcher frame, with a paint-red rim. */
-.sm-island.splatter {
+.sm-island.splatter,
+.sm-grid.splatter {
   --top: linear-gradient(#f6efdf, #e4d6ba);
   --edge: #b23a2e;
   --cliff: #8f6c47;
@@ -1159,95 +1259,6 @@ body.at-menu .bottom {
   color: var(--ink-soft);
 }
 
-/* Level stones, staggered like stepping stones. */
-.sm-nodes {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 10px 8px;
-  /* --cols stones per row. */
-  max-width: calc(var(--cols, 4) * 42px);
-  margin: 0 auto;
-}
-
-.sm-node {
-  position: relative;
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 15px;
-  font-weight: 900;
-  background: #fff;
-  border: 2px solid rgba(35, 48, 74, 0.14);
-  box-shadow: 0 3px 0 rgba(35, 48, 74, 0.18);
-  transition: transform 0.12s, border-color 0.12s, background 0.12s;
-}
-
-.sm-node:nth-child(even) {
-  margin-top: 8px;
-}
-
-.sm-node.solved {
-  background: #fff1c4;
-  border-color: #f2c35a;
-}
-
-.sm-node.selected {
-  border-color: var(--ink);
-  transform: scale(1.14);
-}
-
-.sm-node:hover {
-  background: #fff;
-}
-
-.sm-node.solved:hover {
-  background: #fff7dc;
-}
-
-/* Up next: a pulsing ring around the suggested level. */
-.sm-node.next::before {
-  content: '';
-  position: absolute;
-  inset: -7px;
-  border-radius: 50%;
-  border: 3px solid var(--accent);
-  animation: next-pulse 1.4s ease-in-out infinite;
-}
-
-@keyframes next-pulse {
-  50% {
-    opacity: 0.35;
-    transform: scale(1.12);
-  }
-}
-
-/* You are here: the block itself, standing on the stone. */
-.sm-node.current::after {
-  content: '';
-  position: absolute;
-  top: -16px;
-  left: calc(50% - 5px);
-  width: 10px;
-  height: 18px;
-  border-radius: 2px;
-  background: #f0c987;
-  border: 2px solid #8a6436;
-}
-
-.sm-pips {
-  position: absolute;
-  bottom: -13px;
-  font-size: 10px;
-  letter-spacing: -1px;
-  color: var(--star);
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
-}
-
 /* The selected level: preview, story, and a play button. */
 .sm-caption {
   flex: none;
@@ -1295,15 +1306,6 @@ body.at-menu .bottom {
   color: #c27a12;
 }
 
-.sm-idea {
-  margin: 4px 0;
-  line-height: 1.35;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
 .sm-meta {
   margin: 0;
   font-size: 14px;
@@ -1327,10 +1329,176 @@ body.at-menu .bottom {
   color: var(--ink-soft);
 }
 
+/* One world's levels: a grid of cards in the world's colors (the user's call, 2026-11-22). */
+.sky-map.in-world .sm-canvas,
+.sky-map:not(.in-world) .sm-grid {
+  display: none;
+}
+
+.sm-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.sm-buttons .hidden,
+.sm-buttons kbd.hidden {
+  display: none;
+}
+
+.sm-head h2 small {
+  margin-left: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-shadow: none;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.sm-grid {
+  --top: linear-gradient(#a6e090, #7cc56b);
+  --edge: #5fa552;
+  width: min(100%, 1180px);
+  /* Every level in view: the rows share the height, up to a comfortable card size. */
+  height: min(100cqh, calc(var(--rows, 4) * 190px));
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  gap: 12px;
+  padding: 6px;
+  align-content: start;
+}
+
+.sm-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 8px 10px 8px;
+  text-align: left;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.92);
+  border: 3px solid transparent;
+  border-top: 8px solid var(--edge);
+  border-radius: 14px;
+}
+
+.sm-card:hover {
+  background: #fff;
+}
+
+.sm-card.selected {
+  border-color: var(--ink);
+  border-top-color: var(--ink);
+  transform: translateY(-2px);
+}
+
+.sm-card.solved {
+  background: #fff8e1;
+}
+
+.sm-card {
+  min-height: 0;
+}
+
+.sm-card-map {
+  display: grid;
+  place-items: center;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--top);
+}
+
+.sm-card-map svg {
+  width: 92%;
+  height: 92%;
+  max-height: 100%;
+}
+
+.sm-card-name,
+.sm-card-meta {
+  flex: none;
+}
+
+.sm-card-name {
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sm-card-name b {
+  display: inline-block;
+  min-width: 20px;
+  color: var(--ink-soft);
+}
+
+.sm-card-meta {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+/* Up next: a pulsing ring. You are here: a small block in the corner. */
+.sm-card.next {
+  box-shadow: 0 0 0 3px var(--accent), var(--shadow);
+  animation: next-pulse-card 1.4s ease-in-out infinite;
+}
+
+@keyframes next-pulse-card {
+  50% {
+    box-shadow: 0 0 0 6px rgba(0, 0, 0, 0), var(--shadow);
+  }
+}
+
+.sm-card.current {
+  position: relative;
+}
+
+.sm-card.current::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 9px;
+  height: 16px;
+  border-radius: 2px;
+  background: #f0c987;
+  border: 2px solid #8a6436;
+}
+
+/* In a world the cards show the maps, so the caption below is a slim bar. */
+.sky-map.in-world .sm-caption {
+  height: 64px;
+  grid-template-columns: 1fr auto;
+  padding: 8px 18px;
+}
+
+.sky-map.in-world .sm-preview {
+  display: none;
+}
+
+.sky-map.in-world .sm-text {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.sky-map.in-world .sm-kicker {
+  order: 1;
+}
+
+@media (max-width: 760px) {
+  .sm-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .sm-island,
   .sm-trail,
-  .sm-node.next::before,
+  .sm-card.next,
   .menu-list button.suggested::before {
     animation: none;
   }

@@ -227,7 +227,8 @@ src/render/    Three.js world (tiles, animations, push cue), palette.ts (belt co
                scenery.ts (what a world's surroundings provide), forest.ts, frost.ts and peaks.ts (each world's
                scenery; the big clouds behind the game are `#sky` in the page), toybox.ts (Toybox's scenery), splatter.ts (Splatter Studio's room: walls, windows, paintings, easels, furniture, lamps), cat.ts (its cat), toys.ts
                (its toys and plastic reflections), starfall.ts (Starfall's scenery), stardust.ts (flip sparkles), aerie.ts (Windy Peaks' arches, nests and birds), ridge.ts (Frost Isle's ridge, reindeer and cable towers), grove.ts (First Glade's hills, trees and butterflies), studio.ts (the Tutorial's dark studio)
-src/ui/        progress (localStorage), map (the sky map and Labs screen; island layout per chapter),
+src/ui/        progress (localStorage), map (the sky map and Labs screen in two steps: an overview of islands, one per
+               chapter, then a world's grid of level cards; island layout per chapter),
                menu (a keyboard-driven button list: main menu, Esc menu, Settings)
 src/main.ts    game controller: modes, the stack of open screens, HUD, splash, key focus sink (for Vimium)
 scripts/       check-levels.ts; design/ (lib, explore, checks, analyze, sim, search, strip, plankify, lattice, make, lint, walls, regrow, solutions, play, verify)

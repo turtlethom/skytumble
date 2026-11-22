@@ -82,6 +82,12 @@ export function nextOnTrack(id: string): HandmadeLevel | null {
   return levels[levels.findIndex((l) => l.id === id) + 1] ?? null;
 }
 
+/** The level before this one on its track; null at the start. */
+export function prevOnTrack(id: string): HandmadeLevel | null {
+  const levels = trackOf(id).flatMap((c) => c.levels);
+  return levels[levels.findIndex((l) => l.id === id) - 1] ?? null;
+}
+
 export function chapterOf(id: string): Chapter | undefined {
   return CHAPTERS.find((c) => c.levels.some((l) => l.id === id));
 }
