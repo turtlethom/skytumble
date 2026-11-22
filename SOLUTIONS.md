@@ -1749,3 +1749,24 @@ Before a move: ↹ press Tab first, to move the other cube (a swap is free; it n
 11-15  → → ↑ ↓ →
 16-16  →✔
 ```
+
+## `paintlab-08` Cannonball
+
+```
+ 1- 5  → →✂ →✈ → →
+ 6-10  ↹→ →✈ → → →✔
+```
+
+## `paintlab-09` Dip & Fly
+
+```
+ 1- 5  →✈ →✈ ↓ ↑ →
+ 6- 7  → →✔
+```
+
+## `paintlab-10` Turnover
+
+```
+ 1- 5  → ↓ →✈ ↓ ↓
+ 6- 6  →✔
+```

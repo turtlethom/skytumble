@@ -218,11 +218,11 @@ function mixesSplits(level: Level): boolean {
   return tiles.includes(Tile.Splitter) && (!!level.ceiling || !!level.startShape || tiles.some((t) => t === Tile.Hedge || t === Tile.ShapeSwitch || t === Tile.ExtraHeavy) || level.tiles.some((t, i) => t === Tile.Goal && level.groups[i] > 0));
 }
 
-/** Paint is new (Splatter Studio's paint lab): one floor, no hedges, shapes beyond a cube start, pads or tall goals while its rules settle. */
+/** Paint (Splatter Studio): one floor, no hedges, shapes beyond a cube start, flip rings or tall goals. Pads joined 2026-11-22 (Pad Lab). */
 function mixesPaint(level: Level): boolean {
   const tiles = [...level.tiles, ...(level.ceiling?.tiles ?? [])];
   const paints = tiles.includes(Tile.Tray) || tiles.includes(Tile.Gate) || tiles.includes(Tile.Wash) || !!level.startPaint;
-  const others = tiles.some((t) => t === Tile.Hedge || t === Tile.ShapeSwitch || t === Tile.ExtraHeavy || t === Tile.Pad || t === Tile.Flip || t === Tile.FlipLocked);
+  const others = tiles.some((t) => t === Tile.Hedge || t === Tile.ShapeSwitch || t === Tile.ExtraHeavy || t === Tile.Flip || t === Tile.FlipLocked);
   // A cube goal is fine: a cube start needs one (paintlab-01). Tall goals wait with tall blocks.
   return paints && (!!level.ceiling || level.startShape === 3 || others || level.tiles.some((t, i) => t === Tile.Goal && level.groups[i] === 3));
 }
@@ -237,7 +237,7 @@ export function validateLevel(h: HandmadeLevel, chapter: Chapter): LevelReport {
   for (const c of wallsOverRings(h.level)) errors.push(`a wall on the other floor over the ring at ${c.x},${c.y}: walls and rings stay out of each other's way, so a ring always has somewhere to land`);
   if (mixesGates(h.level)) errors.push('glass tubes only mix with the basics, shapes, walls and belts, on one floor, until their other interactions are settled');
   if (mixesWalls(h.level)) errors.push('hedges only mix with the basics, on one floor, until their other interactions are settled');
-  if (mixesPaint(h.level)) errors.push('paint stays on one floor, with no hedges, shape switches, tall blocks or goals, pads or flip rings, until its other interactions are settled');
+  if (mixesPaint(h.level)) errors.push('paint stays on one floor, with no hedges, shape switches, tall blocks or goals or flip rings, until its other interactions are settled');
   if (mixesSplits(h.level)) errors.push('splitters stay on one floor, with no hedges, shape switches, extra-heavy switches or marked goals, until their other interactions are settled');
   h.level.tiles.forEach((t, i) => {
     if (t !== Tile.Splitter) return;

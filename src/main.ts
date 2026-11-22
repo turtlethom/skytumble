@@ -424,7 +424,8 @@ class Game {
     // Stencil gates the block will rest on sink before it gets there.
     this.world.openGates([result.rolled, result.state.block]);
     // The roll carries each half's color to where it lands; the coats switch over as it lands.
-    this.world.carryPaint(rollPaint(from.block, from.paint, dir));
+    let carried = rollPaint(from.block, from.paint, dir);
+    this.world.carryPaint(carried);
     await this.world.roll(from.block, result.rolled, dir);
     // Belts a wall held flare right after the motion before them, without holding up the next move; a
     // slide a wall braked inside a glass tube knocks, and the next motion waits for that.
@@ -434,6 +435,11 @@ class Game {
     for (const [i, motion] of result.motions.entries()) {
       // A short beat between chained motions so slide → push → slide reads as three events.
       if (i > 0) await new Promise((r) => window.setTimeout(r, CHAIN_BEAT_MS));
+      // A flight's tip turns the colors like a roll; a standing fling stopped short lands upright, unturned.
+      if (motion.kind === 'fly' && !(motion.from.o === 'S' && motion.to.o === 'S')) {
+        carried = rollPaint(motion.from, carried, motion.dir);
+        this.world.carryPaint(carried);
+      }
       await this.world.move(motion);
       if (scene !== this.scene) return;
       await holds(i + 1, motion.to);

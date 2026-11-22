@@ -420,24 +420,38 @@ export function flight(b: Block, dir: Dir): Block {
  * the tile before the wall (`hit`); with nothing there, it falls like any landing. A raised wall where
  * a sideways hop would land, or a second raised wall just before it, makes the block fall (`crashed`):
  * it bounces back off the wall and falls there.
+ *
+ * With paint (Pad Lab, 2026-11-22): the idle cube and a gate that holds the landing part's color count
+ * as raised walls, and the colors turn with the flight's tip like one roll (a standing fling stopped
+ * short never tips, so it keeps its colors). `paint` is the block's paint as it takes off.
  */
-export function landing(level: Level, state: State, b: Block, dir: Dir): { to: Block; hit: { x: number; y: number } | null; crashed: boolean } {
+export function landing(
+  level: Level,
+  state: State,
+  b: Block,
+  dir: Dir,
+  paint: [Paint, Paint] | undefined = state.paint,
+): { to: Block; hit: { x: number; y: number } | null; crashed: boolean; paint: [Paint, Paint] | undefined } {
   const to = flight(b, dir);
+  const flown = rollPaint(b, paint, dir);
   const { dx, dy } = DIR_DELTA[dir];
+  const holds = (blk: Block, p: [Paint, Paint] | undefined, x: number, y: number) => standsUp(level, x, y, state) || gateHolds(level, blk, p, x, y);
   // Nearest first, along the flight.
   const cells = blockCells(to).sort(([ax, ay], [bx, by]) => (ax - bx) * dx + (ay - by) * dy);
-  const wall = cells.find(([x, y]) => standsUp(level, x, y, state));
-  if (!wall) return { to, hit: null, crashed: false };
+  const wall = cells.find(([x, y]) => holds(to, flown, x, y));
+  if (!wall) return { to, hit: null, crashed: false, paint: flown };
   const hit = { x: wall[0], y: wall[1] };
   const along = b.o === 'S' || (b.o === 'X') === (dy === 0);
+  const short: Block = { ...to, x: wall[0] - dx, y: wall[1] - dy, o: 'S' };
+  const shortPaint = b.o === 'S' ? paint : flown;
   // Standing short needs the tile before the wall clear: a block can't stand inside another wall.
-  if (!along || standsUp(level, wall[0] - dx, wall[1] - dy, state)) {
+  if (!along || holds(short, shortPaint, short.x, short.y)) {
     // It hits the wall and bounces back, in its landing pose, until it's clear of walls, and falls there.
     let back = to;
-    for (let i = 0; i < FLING && blockCells(back).some(([x, y]) => standsUp(level, x, y, state)); i++) back = { ...back, x: back.x - dx, y: back.y - dy };
-    return { to: back, hit, crashed: true };
+    for (let i = 0; i < FLING && blockCells(back).some(([x, y]) => holds(back, flown, x, y)); i++) back = { ...back, x: back.x - dx, y: back.y - dy };
+    return { to: back, hit, crashed: true, paint: flown };
   }
-  return { to: { ...to, x: wall[0] - dx, y: wall[1] - dy, o: 'S' }, hit, crashed: false };
+  return { to: short, hit, crashed: false, paint: shortPaint };
 }
 
 /**
@@ -576,8 +590,9 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
     if (cells.some((c) => fired.has(c) || (flips && landed.has(c)))) break;
     cells.forEach((c) => fired.add(c));
     if (launch) {
-      const { to, hit, crashed } = landing(view, state, block, launch);
+      const { to, hit, crashed, paint: turned } = landing(view, state, block, launch, paint);
       moveTo('fly', launch, to);
+      paint = turned;
       const flown = motions[motions.length - 1];
       if (hit && flown?.to === to) flown.wall = hit;
       if (hit) held.push({ ...hit, dir: launch, belt: false, after: motions.length });

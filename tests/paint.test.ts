@@ -128,3 +128,30 @@ describe('paint with two cubes', () => {
     expect(s.block.x).toBe(6);
   });
 });
+
+describe('paint and launch pads (Pad Lab, 2026-11-22)', () => {
+  it('a cube flies like a standing block, four tiles out, and a landing on a tray coats it', () => {
+    expect(step(parseLevel(['SR####']), cube(0, 0), 'right').state.block).toEqual({ x: 5, y: 0, o: 'S', n: 1 });
+    expect(step(parseLevel(['SR###r']), cube(0, 0), 'right').state.paint).toEqual([R, R]);
+  });
+
+  it('a gate of the wrong color where a flight lands stops it short, like a raised wall', () => {
+    const level = parseLevel(['SR###{'], [], 0, 2, [R]);
+    expect(step(level, cube(0, 0, B), 'right').state.block).toMatchObject({ x: 4, y: 0 });
+    expect(step(level, cube(0, 0, R), 'right').state.block).toMatchObject({ x: 5, y: 0 });
+  });
+
+  it('the idle cube where a flight lands stops it short: no joining in mid-air', () => {
+    const r = step(parseLevel(['SR####']), { ...cube(0, 0), other: { x: 5, y: 0 } }, 'right');
+    expect(r.state.block).toMatchObject({ x: 4, y: 0 });
+    expect(r.state.other).toEqual({ x: 5, y: 0 });
+  });
+
+  it("the colors turn with a flight's tip, like one roll", () => {
+    // Lying [red, blue] rolls west onto the pad standing, red at the bottom; the fling west tips it
+    // down lying again, now blue on the west, red on the east.
+    const r = step(parseLevel(['S##...L##']), lying(7, 0, [R, B]), 'left');
+    expect(r.state.block).toEqual({ x: 1, y: 0, o: 'X' });
+    expect(r.state.paint).toEqual([B, R]);
+  });
+});
