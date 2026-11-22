@@ -20,9 +20,10 @@ export interface Theme {
    * stone bases, belt rails and plank seams, never on a switch's or bridge's own color. `plastic` makes
    * the board a shiny building set: reflections, rounded edges, snap-on plates and tread belts. `rail`
    * colors belt rails and bridge corners. `bridgeGhost` is how solid a retracted bridge's fill looks, if
-   * this world's background needs it fainter than usual.
+   * this world's background needs it fainter than usual. `tube` colors a glass tube's frame (Toybox's
+   * toy blue by default).
    */
-  finish: { switchBase?: number; wood?: boolean; snow?: number; iceSheen?: boolean; brass?: number; padVents?: boolean; plastic?: boolean; rail?: number; bridgeGhost?: number };
+  finish: { tube?: number; switchBase?: number; wood?: boolean; snow?: number; iceSheen?: boolean; brass?: number; padVents?: boolean; plastic?: boolean; rail?: number; bridgeGhost?: number };
   /**
    * Walls' stone, if not First Glade's dirt-grey brick. `ashlar` is big cut stones in uneven courses.
    * `snow` sits on the ledges, caps a raised wall's top and dusts low stone, but never the top of a
@@ -202,7 +203,8 @@ const SPLATTER: Theme = {
   floor: { color: 0xeee5d1, detail: [0xd6c9ae, 0xe6dcc6, 0xf3ecdc], style: 'canvas' },
   earth: { soil: 0x8f6c47, hanging: 0x7b6650, style: 'drips' },
   fragile: { light: 0xcfae80, dark: 0xa8865a },
-  finish: { switchBase: 0xd9d0c0 },
+  // Tubes framed in dark walnut, like the paintings' frames, not Toybox's toy blue (the user's call, 2026-11-22).
+  finish: { switchBase: 0xd9d0c0, tube: 0x5e3f26 },
 };
 
 /** Chapters with a world of their own; any other chapter uses NEUTRAL. */

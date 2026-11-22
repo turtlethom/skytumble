@@ -5,6 +5,7 @@ import { blockCells, initialState, play } from '../../src/game/rules';
 import { Block, DIR_DELTA, Dir, Level, Move, PAINT_NAMES, Paint, Tile } from '../../src/game/types';
 import { parseColors, parsePaint } from '../../src/levels/format';
 import { switchOrder } from './checks';
+export { paintOpts } from './checks';
 
 /**
  * A design block: grid rows plus optional option lines.

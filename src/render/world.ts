@@ -1045,7 +1045,7 @@ export class World {
       const joins = (dx: number, dy: number) =>
         !!view && levelTileAt(view, x + dx, y + dy) === Tile.Door && view.groups[(y + dy) * view.width + x + dx] === group;
       const [back, ahead] = group === 1 ? [joins(0, -1), joins(0, 1)] : [joins(-1, 0), joins(1, 0)];
-      const tube = makeTube(group, !!this.theme.finish.plastic, !back, !ahead);
+      const tube = makeTube(group, !!this.theme.finish.plastic, !back, !ahead, this.theme.finish.tube ?? TUBE_TRIM);
       g.add(tube);
       if (layer === 0) this.tubes.push({ x, y, mats: tube.userData.panels, fade: 1 });
       return g;
@@ -2746,16 +2746,16 @@ function box(
   return mesh;
 }
 
-/** A glass tube's trim: a deep toy blue, darker than the blue switch color so the two don't read alike. */
+/** A glass tube's trim by default: a deep toy blue, darker than the blue switch color so the two don't read alike. */
 const TUBE_TRIM = 0x2457c5;
 
 /**
- * One tile of glass tube, running east-west (axis 0) or north-south (1): blue plastic panels all
+ * One tile of glass tube, running east-west (axis 0) or north-south (1): panels in the `trim` color all
  * round (roof, floor, sides), each with a square glass window, a squared profile, thick blue edges along its length, and a blue frame round each
  * open end (`startEnd`, `endEnd`; none where the tube continues into the next tile). It needs no ground
  * under it, so a run of tubes can bridge a gap. It clears the cube (0.98 wide and tall) on every side.
  */
-function makeTube(axis: number, plastic: boolean, startEnd: boolean, endEnd: boolean): THREE.Object3D {
+function makeTube(axis: number, plastic: boolean, startEnd: boolean, endEnd: boolean, trim = TUBE_TRIM): THREE.Object3D {
   const g = new THREE.Group();
   const [half, height, edge, pane, panel] = [0.53, 1.18, 0.11, 0.025, 0.05];
   const glass = new THREE.MeshStandardMaterial({ color: 0xeaf6ff, transparent: true, opacity: 0.22, roughness: 0.05, metalness: 0.1, depthWrite: false, side: THREE.DoubleSide });
@@ -2774,7 +2774,7 @@ function makeTube(axis: number, plastic: boolean, startEnd: boolean, endEnd: boo
   const panels: THREE.MeshStandardMaterial[] = [];
   g.userData.panels = panels;
   const part = (w: number, h: number, d: number, x: number, y: number, z: number) => {
-    const m = plastic ? rounded(w, h, d, TUBE_TRIM, Math.min(w, h, d) * 0.3, { roughness: 0.3 }) : box(w, h, d, TUBE_TRIM, { roughness: 0.5 });
+    const m = plastic ? rounded(w, h, d, trim, Math.min(w, h, d) * 0.3, { roughness: 0.3 }) : box(w, h, d, trim, { roughness: 0.5 });
     m.position.set(x, y, z);
     panels.push(m.material as THREE.MeshStandardMaterial);
     pivot.add(m);

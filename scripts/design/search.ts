@@ -24,14 +24,14 @@ import { solve } from '../../src/game/solver';
 import { flipUses, iceUses, padUses, shapeUses } from '../../src/levels/validate';
 import { wallColors } from './checks';
 import { diagnose } from './explore';
-import { build, parseBlock, touched } from './lib';
+import { build, paintOpts, parseBlock, touched } from './lib';
 
 const [file, palette, lo, hi, seedArg = '1', restartsArg = '4', wantArg = ''] = process.argv.slice(2);
 const seeds = seedArg.includes('-')
   ? (([a, b]) => Array.from({ length: b - a + 1 }, (_, i) => a + i))(seedArg.split('-').map(Number))
   : seedArg.split(',').map(Number);
 const want = wantArg.split(',').filter(Boolean);
-const { rows: template, switches, on, shape } = parseBlock(readFileSync(file, 'utf8').trim().split('\n'));
+const { rows: template, switches, on, shape, paint, gates } = parseBlock(readFileSync(file, 'utf8').trim().split('\n'));
 const clutter = Number(process.env.CLUTTER ?? 0.5);
 const pressBonus = Number(process.env.PRESSES ?? 10);
 const wallPenalty = Number(process.env.WALLS ?? 40);
@@ -60,7 +60,7 @@ const render = (choice: string[]) => {
 function score(rows: string[], floor = -Infinity): number {
   let level;
   try {
-    level = build(rows, switches, on, shape);
+    level = build(rows, switches, on, shape, paint, gates);
   } catch {
     return -1e9;
   }
@@ -98,17 +98,17 @@ function neededPlanks(rows: string[], par: number): number {
   for (const [x, y] of slots) {
     if (rows[y][x] !== 'f') continue;
     const swapped = rows.map((r, j) => (j === y ? r.slice(0, x) + '#' + r.slice(x + 1) : r));
-    const sol = solve(build(swapped, switches, on, shape));
+    const sol = solve(build(swapped, switches, on, shape, paint, gates));
     if (sol && sol.moves.length < par) n++;
   }
   return n;
 }
 
 const skeleton = render(slots.map((_, i) => (slotPalette[i] === palette ? '#' : '~')));
-if (!solve(build(skeleton, switches, on, shape))) {
+if (!solve(build(skeleton, switches, on, shape, paint, gates))) {
   // On stderr, so a redirected results file stays empty rather than holding a non-design.
   console.error('The template is unsolvable even with every ? as floor, so no fill can work. Diagnosis:');
-  console.error(diagnose(skeleton, build(skeleton, switches, on, shape)).join('\n'));
+  console.error(diagnose(skeleton, build(skeleton, switches, on, shape, paint, gates)).join('\n'));
   process.exit(1);
 }
 
@@ -141,7 +141,7 @@ for (let r = 0; r < Number(restartsArg); r++) {
     cur = slots.map((_, i) => (slotPalette[i] === palette ? '#' : '~'));
     best = score(render(cur));
   }
-  for (let i = 0; i < 3000; i++) {
+  for (let i = 0; i < Number(process.env.ITERS ?? 3000); i++) {
     const next = [...cur];
     for (let k = 0, n = 1 + Math.floor(rand() * 2); k < n; k++) {
       const j = Math.floor(rand() * slots.length);
@@ -160,5 +160,6 @@ const opts = [
   switches.length ? `!switches ${switches.join(' ')}` : '',
   on.length ? `!on ${on.join(' ')}` : '',
   shape !== 2 ? `!shape ${shape === 1 ? 'cube' : 'tall'}` : '',
+  ...paintOpts(paint, gates),
 ];
 console.log([`@score ${results[0].s.toFixed(1)} seed ${seedArg}`, ...opts.filter(Boolean), ...results[0].rows].join('\n'));

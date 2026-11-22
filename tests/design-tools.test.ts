@@ -5,7 +5,7 @@ import solutions from '../SOLUTIONS.md?raw';
 import { directions, solutionsMarkdown } from '../scripts/design/arrows';
 import { explore, movesText, pathTo } from '../scripts/design/explore';
 import { levelColors } from '../scripts/design/checks';
-import { Draft, dropUnreachable, idleSpecials, quickRepresses, flipNS, hidden, lint, plainWalls, plankify, regrow, strip, switchOrder, toLevel, wallColors } from '../scripts/design/checks';
+import { block, Draft, dropUnreachable, idleSpecials, quickRepresses, flipNS, hidden, lint, plainWalls, plankify, regrow, strip, switchOrder, toLevel, wallColors } from '../scripts/design/checks';
 
 const draft = (rows: string[], switches: number[] = []): Draft => ({ rows, switches, on: [], shape: 2 });
 
@@ -56,6 +56,18 @@ describe('design tools', () => {
     const f = flipNS(d);
     expect(f.rows).toEqual(['##x#G', 'S#o#^']);
     expect(f.switches).toEqual([0, 1]);
+  });
+
+  it('flip and strip paint levels, keeping gate colors and splitter sides', () => {
+    // Gates list their colors in reading order (1 red, 2 blue), so a flip re-orders them; a south splitter faces north.
+    const d: Draft = { ...draft(['S#V#{', '##r#{', '....G']), gates: [1, 2] };
+    const f = flipNS(d);
+    expect(f.rows).toEqual(['....G', '##r#{', 'S#A#{']);
+    expect(f.gates).toEqual([2, 1]);
+    expect(block('t', f)).toContain('!gates blue red');
+    // strip never removes a gate: the colors line would no longer match the grid.
+    const gated: Draft = { ...draft(['Sr#{##G', '.......']), gates: [1] };
+    expect(strip(gated).rows[0]).toContain('{');
   });
 
   it('see what a raised wall hides from the opening camera', () => {

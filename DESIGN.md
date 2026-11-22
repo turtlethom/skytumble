@@ -164,7 +164,7 @@ Shipped releases and finished build notes are in `DESIGN-archive.md`, word for w
 
 - **Batch 1, `paint-01`…`05`, played 2026-11-22: no complaints.** Committed.
 - **Staging changed** (the user's call, 2026-11-22): `paint-06`…`10` introduce paint; `paint-11`…`20` are a lot harder and bring in the mix-ins (*Staging* row below).
-- **Next:** batch 2 (`paint-06`…`10`, the paint introduction), pitched and approved 2026-11-22: building all five. Then a short pad lab (cubes in flight, landing on trays, gates in a flight's path) before `11`…`20`.
+- **Batch 2, `paint-06`…`10`, played 2026-11-22: the user really likes them**; tubes recolored for the studio. Committed. Next: a short pad lab (cubes in flight, landing on trays, gates in a flight's path) before `11`…`20`.
 - **Launch pads join Splatter Studio** (the user's yes, 2026-11-22) for `11`…`20`, after a 2–3 level lab settles how they meet splitting and paint.
 - **Open from the look:** the cat is at try 2 of 4 (size approved, look not yet signed off); the arrival title and menus have no Splatter Studio styling yet beyond the page background.
 - **Lessons that carry over:** every level its own idea, never a liked level's frame reused; mechanics mix in as ingredients; par and states climb, and the finale clearly tops the rest. No special piece that never acts or matters (`lint`; `analyze`'s UNUSED line), above all anything a script placed at random. Hand-draw a level's chain of reasons, and let generators fill in only colorings, placements and island shapes; random networks almost never need every piece. A tall block tips four tiles at a time, so its switches sit on its step. Time-box each level at three rebuilds and check in with the user. Hand levels over one or two at a time.
@@ -464,6 +464,18 @@ Pitched and approved 2026-11-20, built 2026-11-21, all five. Stand-ins on the ne
 | `paint-05` Rendezvous | 22 | 612 | The batch peak: the wall's switch is on an island only cubes reach, the first tube is one way (a belt at its mouth), so come back down the second; the cubes meet past the wall, and the heavy switch at the end needs the block whole. Planks give the second cube another way down |
 
 - **Build notes:** `paint-05` took seven drafts: an early join on the planks skipped everything; a switch on a tube's exit was pressed by every ride; a north-south tube with no tile above it; the wall had to sit past where the second tube lets out. Pars 12, 14, 16, 18, 22; states 60 → 612.
+
+Batch 2 (pitched and approved 2026-11-22, the user's restaging: paint comes in at level 6): one paint rule per level, worked into splitting; colors rotate. Built in a different order from the pitch: Head to Toe before Left & Right, so states climb.
+
+| Level | Par | States | The idea |
+|---|---|---|---|
+| `paint-06` Day Pass | 20 | 515 | Trays and gates: the switch that lays the bridge home sits behind a yellow gate; one cube takes the tube to the yellow tray, passes the gate, presses; both join on the bridge |
+| `paint-07` Head to Toe | 18 | 1,018 | Standing in a gate needs both halves its color: standing on the blue tray coats only the bottom, which is on top by the splitter and pops out; the bare cube goes back to dip; join past the splitter in the lane's standing step, heavy switch, stand in the gate |
+| `paint-08` Left & Right | 16 | 1,321 | A join keeps each cube's color on its side: the red/yellow gate pair is the reverse of the trays' sides, so the cubes change places in the yard; joined the wrong way round, the yard is too small to turn |
+| `paint-09` Green Room | 25 | 2,692 | Mixing: both cubes dip in yellow, one rides the belt onto blue for green; the green/yellow pair wants the other kept off the blue |
+| `paint-10` Rinse Cycle | 28 | 9,210 | The batch peak, water: a yellow start, so each cube washes and then takes red and blue round a ring to pass the purple gate standing. The switch under the splitter lowers the exit wall and raises one on the ring: send one cube round, press, park it on the exit, press again to clear the ring (the parked cube holds the exit down), send the other round. Orange needed both ways; without the ring wall par drops to 26 |
+
+- **Build notes:** paint levels carry many dead ends (coats can't come off until water arrives in `paint-10`, and a wrong join in `08` is stuck); undo covers them. The cubes may pass a gate pair one by one and join beyond it, so `08` and `09` teach which cube goes on which side rather than the joined order. `paint-10` took six ring drafts: with water on one side only, both cubes walked the same loop (swap tedium); a switch on the loop never cost a move, so `walls` called orange unneeded until the switch moved into a pocket under the splitter. `search` and `make` now carry a template's `!gates` and `!paint` (`ITERS` shortens a search: paint and splitting together make each solve slow, and a full search of an 8×5 open paint field ran past an hour), `strip` leaves gates in place, and `flipNS` re-orders gate colors and turns north and south splitters round (all three had dropped them).
 
 **Splatter Studio: the look** (look session 2026-11-20; a plan, revisited only where the labs change what a piece must show). Nothing is built.
 
@@ -786,6 +798,8 @@ feedback; batches of 5 levels per round.
 ## Playtest log
 
 **2026-11-22 — Splatter Studio batch 1 played.** "i played all the 5 levels and have no complaints. I do think the next 5 levels should be an introduction to paint though, then the last 10 levels should be a lot harder with the built in features from other levels that we discussed incorporated into the biome" → Staging changed: paint from level 6 (was 9), 6–10 an introduction, 11–20 hard levels with the mix-ins. Batch 2 pitched.
+
+**2026-11-22 — Batch 2 played; studio tubes.** "overall i really like the levels, maybe not make the tubes a blue color, but more of something that matches the theme. blue tubes are just ideal for toybox" and "make the paint flecks round and smaller" → Studio tubes are framed in dark walnut like the paintings (a theme's `finish.tube`; Toybox keeps its toy blue). The "fleck" Claude had reported turned out to be the goal marker hovering over the goal (a magenta-fleck probe showed the flecks already tiny and round), so the flecks are unchanged. The marker stays as it is ("it doesn't bother me").
 
 **2026-11-22 — Batch 1 committed; batch 2 approved.** "commit it, yes to launch pads, build all five" → Batch 1 committed. Launch pads join for `11`…`20`, after a pad lab. Building `paint-06`…`10` as pitched (Day Pass, Left & Right, Head to Toe, Green Room, Rinse Cycle).
 

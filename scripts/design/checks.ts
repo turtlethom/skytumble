@@ -167,7 +167,7 @@ export function strip(d: Draft, keep = ''): Draft {
     for (let y = 0; y < rows.length; y++) {
       for (let x = 0; x < rows[y].length; x++) {
         const c = rows[y][x];
-        if (c === '.' || c === 'S' || c === 'G' || keep.includes(c) || /^-+$/.test(rows[y].join(''))) continue;
+        if (c === '.' || c === 'S' || c === 'G' || c === '{' || keep.includes(c) || /^-+$/.test(rows[y].join(''))) continue;
         const k = switchIndex(rows, x, y);
         const saved = [...switches];
         if (k >= 0) switches.splice(k, 1);
@@ -198,7 +198,7 @@ export function regrow(stripped: Draft, full: Draft): Draft {
   for (let y = 0; y < rows.length; y++) {
     for (let x = 0; x < rows[y].length; x++) {
       const want = full.rows[y]?.[x] ?? '.';
-      if (rows[y][x] !== '.' || want === '.' || 'HIJhij'.includes(want) || SWITCH_CHARS.includes(want)) continue;
+      if (rows[y][x] !== '.' || want === '.' || want === '{' || 'HIJhij'.includes(want) || SWITCH_CHARS.includes(want)) continue;
       rows[y][x] = want;
       const l = tryLevel(current());
       if (!l || parOf(l) !== base || moving(l) !== before) rows[y][x] = '.';
@@ -276,10 +276,17 @@ export function flipNS(d: Draft): Draft {
   let k = 0;
   d.rows.forEach((r, y) => [...r].forEach((c, x) => SWITCH_CHARS.includes(c) && groupAt.set(`${x},${y}`, d.switches[k++] ?? 0)));
   const h = d.rows.length;
-  const rows = [...d.rows].reverse().map((r) => r.replace(/[v^UD]/g, (c) => ({ v: '^', '^': 'v', U: 'D', D: 'U' })[c]!));
+  const gateAt = new Map<string, number>();
+  let g = 0;
+  d.rows.forEach((r, y) => [...r].forEach((c, x) => c === '{' && gateAt.set(`${x},${y}`, d.gates?.[g++] ?? 0)));
+  const rows = [...d.rows].reverse().map((r) => r.replace(/[v^UDAV]/g, (c) => ({ v: '^', '^': 'v', U: 'D', D: 'U', A: 'V', V: 'A' })[c]!));
   const switches: number[] = [];
-  rows.forEach((r, y) => [...r].forEach((c, x) => SWITCH_CHARS.includes(c) && switches.push(groupAt.get(`${x},${h - 1 - y}`)!)));
-  return { ...d, rows, switches };
+  const gates: number[] = [];
+  rows.forEach((r, y) => [...r].forEach((c, x) => {
+    if (SWITCH_CHARS.includes(c)) switches.push(groupAt.get(`${x},${h - 1 - y}`)!);
+    if (c === '{') gates.push(gateAt.get(`${x},${h - 1 - y}`)!);
+  }));
+  return { ...d, rows, switches, ...(d.gates ? { gates } : {}) };
 }
 
 /**
@@ -555,12 +562,21 @@ export function report(d: Draft): Report | null {
   };
 }
 
+/** The `!paint` and `!gates` option lines for a design block (empty strings when unused). */
+export function paintOpts(paint?: [Paint, Paint], gates: number[] = []): string[] {
+  return [
+    paint ? `!paint ${PAINT_NAMES[paint[0]]} ${PAINT_NAMES[paint[1]]}` : '',
+    gates.length ? `!gates ${gates.map((g) => PAINT_NAMES[g]).join(' ')}` : '',
+  ];
+}
+
 /** A design block for analyze, sim and search. */
 export function block(name: string, d: Draft): string {
   const opts = [
     d.switches.length ? `!switches ${d.switches.join(' ')}` : '',
     d.on.length ? `!on ${d.on.join(' ')}` : '',
     d.shape !== 2 ? `!shape ${d.shape === 1 ? 'cube' : 'tall'}` : '',
+    ...paintOpts(d.paint, d.gates),
   ];
   return [`@${name}`, ...opts.filter(Boolean), ...d.rows].join('\n');
 }

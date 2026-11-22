@@ -54,7 +54,8 @@ npm run -s analyze -- <file|id>...        # templates read as all-open; par, sta
 npm run -s sim -- <file|id> RRDL [name]   # replay moves (T = Tab, swap cubes); board at the end (SHOW=1: after every move)
 npm run -s search -- <template> <palette> <parLo> <parHi> 1-4 2 "chain,belt→pad" > out.txt
                                           # seeds 1-4 in parallel, best first; stops at once with a
-                                          #   diagnosis if the template can't be solved even all-floor
+                                          #   diagnosis if the template can't be solved even all-floor;
+                                          #   ITERS=<n> steps per restart (default 3000; paint fields need far fewer)
 npm run -s lattice -- 5 3 26 36 1 150 2 > out.txt
                                           # routing puzzles: columns rows parLo parHi seed seconds colors;
                                           #   MAZE=1 fills the rest with low stone, HEDGES=0 leaves hedges

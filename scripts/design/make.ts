@@ -24,7 +24,7 @@ const out = outArg ?? template.replace(/\.txt$/, '') + '.make.txt';
 
 // 1. Lint the template as its most open version, so mistakes show before minutes of searching.
 const t = parseBlock(readFileSync(template, 'utf8').trim().split('\n'));
-const open: Draft = { rows: t.rows.map((r) => r.replace(/\?/g, '#').replace(/%/g, '~')), switches: t.switches, on: t.on, shape: t.shape };
+const open: Draft = { rows: t.rows.map((r) => r.replace(/\?/g, '#').replace(/%/g, '~')), switches: t.switches, on: t.on, shape: t.shape, ...(t.paint ? { paint: t.paint } : {}), ...(t.gates ? { gates: t.gates } : {}) };
 // A switch with nothing to move is expected when the search is the one placing the walls.
 const placesWalls = /[HIJKhijk0-9]/.test(palette);
 const warnings = lint(open).filter((l) => !l.startsWith('WARN: unsolvable') && !(placesWalls && l.includes('moves nothing')));
@@ -57,8 +57,8 @@ const candidates: Candidate[] = [];
 for (const text of found.split(/\n\s*\n/).map((b) => b.trim()).filter((b) => b.startsWith('@'))) {
   const lines = text.split('\n');
   const seed = /seed (\S+)/.exec(lines[0])?.[1] ?? '?';
-  const { rows, switches, on, shape } = parseBlock(lines);
-  const searched = normalize({ rows, switches, on, shape });
+  const { rows, switches, on, shape, paint, gates } = parseBlock(lines);
+  const searched = normalize({ rows, switches, on, shape, ...(paint ? { paint } : {}), ...(gates ? { gates } : {}) });
   const full = process.env.PLANKS ? plankify(searched, (x, y) => t.rows[y]?.[x] === '?') : searched;
   const stripped = strip(full, process.env.KEEP ?? '');
   const sr = report(stripped);
