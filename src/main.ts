@@ -2,7 +2,7 @@ import './style.css';
 import { randomSeed } from './game/rng';
 import { initialState, rollPaint, step, swap } from './game/rules';
 import { solve } from './game/solver';
-import { Block, DIRS, Dir, Level, State, TIERS, Tier, Tile } from './game/types';
+import { Block, DIRS, Dir, Level, Move, State, TIERS, Tier, Tile } from './game/types';
 import { CAMPAIGN, LABS, TUTORIAL, chapterOf, findLevel, lessonUnlocked, nextOnTrack, prevOnTrack, trackOf } from './levels';
 import { isLesson, lessonDone, lessonPrompt } from './levels/lessons';
 import { HandmadeLevel } from './levels/format';
@@ -280,7 +280,7 @@ class Game {
   }
 
   /** Play these moves on the real rules, over and over, until another scene takes over the world. */
-  private async playScene(level: Level, moves: Dir[], theme: Theme, rollGap: number, rest: number): Promise<void> {
+  private async playScene(level: Level, moves: Move[], theme: Theme, rollGap: number, rest: number): Promise<void> {
     const scene = this.scene;
     await this.animating;
     await revealPage();
@@ -296,6 +296,12 @@ class Game {
       for (const dir of moves) {
         await pause(rollGap);
         if (scene !== this.scene) return;
+        // Tab between split cubes: the marker hops over, nothing rolls.
+        if (dir === 'swap') {
+          state = swap(state);
+          this.world.swapCubes(state);
+          continue;
+        }
         const result = step(level, state, dir);
         this.animating = this.animateStep(state, result, dir, scene);
         await this.animating;

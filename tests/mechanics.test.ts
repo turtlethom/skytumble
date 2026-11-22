@@ -1,16 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { StepResult, initialState, step, tileAt, wallUp } from '../src/game/rules';
+import { StepResult, initialState, step, swap, tileAt, wallUp } from '../src/game/rules';
 import { Tile } from '../src/game/types';
 import { CAMPAIGN, findLevel } from '../src/levels';
 import { MECHANICS, Mechanic, MechanicId, mechanicsIn } from '../src/levels/mechanics';
 
+/** A scene's rolls, in order (swaps between split cubes change the state but aren't steps). */
 function run(m: Mechanic): StepResult[] {
   let state = initialState(m.level);
-  return m.moves.map((dir) => {
-    const result = step(m.level, state, dir);
+  const results: StepResult[] = [];
+  for (const move of m.moves) {
+    if (move === 'swap') {
+      state = swap(state);
+      continue;
+    }
+    const result = step(m.level, state, move);
     state = result.state;
-    return result;
-  });
+    results.push(result);
+  }
+  return results;
 }
 
 const entry = (id: MechanicId) => MECHANICS.find((m) => m.id === id)!;
@@ -164,6 +171,33 @@ describe('How To Play unlocks', () => {
 
   it('count a level that starts in a shape', () => {
     expect(mechanicsIn(entry('extraHeavy').level)).toEqual(expect.arrayContaining(['tall', 'extraHeavy']));
+  });
+
+  it("open Splatter Studio's entries, and Toybox's tubes, where they first appear", () => {
+    expect(mechanicsIn(findLevel('toy-10')!.level)).toContain('tubes');
+    expect(mechanicsIn(findLevel('toy-09')!.level)).not.toContain('tubes');
+    expect(mechanicsIn(findLevel('paint-01')!.level)).toContain('split');
+    expect(mechanicsIn(findLevel('paint-01')!.level)).not.toContain('paint');
+    expect(mechanicsIn(findLevel('paint-06')!.level)).toContain('paint');
+    expect(mechanicsIn(findLevel('paint-06')!.level)).not.toContain('mixing');
+    expect(mechanicsIn(findLevel('paint-09')!.level)).toContain('mixing');
+    expect(mechanicsIn(findLevel('paint-10')!.level)).toContain('mixing');
+    expect(mechanicsIn(findLevel('paintlab-08')!.level)).toContain('padPaint');
+    expect(mechanicsIn(findLevel('wind-01')!.level)).not.toContain('padPaint');
+  });
+
+  it('show splitting, swapping and joining, and the paint rules', () => {
+    const split = run(entry('split'));
+    expect(split.some((r) => r.split)).toBe(true);
+    expect(split.some((r) => r.joined)).toBe(true);
+    const paint = run(entry('paint'));
+    // Lying through the pair of gates: red west, blue east.
+    expect(paint[1].state.paint).toEqual([1, 2]);
+    const mix = run(entry('mixing'));
+    expect(mix.some((r) => r.washed)).toBe(true);
+    expect(mix.some((r) => r.state.paint?.[0] === 5)).toBe(true); // orange
+    const fly = run(entry('padPaint')).flatMap((r) => r.motions).filter((m) => m.kind === 'fly');
+    expect(fly).toHaveLength(2);
   });
 
   it('find nothing to unlock in the Tutorial', () => {

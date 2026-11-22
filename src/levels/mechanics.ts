@@ -3,11 +3,12 @@
 // Moves are written out, not solved, so a scene can show every way a mechanic behaves in one loop, mistakes
 // included: standing and lying, pressed and pressed again. `[Z]` in a text is drawn as a key.
 import { parseLevel } from '../game/ascii';
-import { Dir, Level, Tile } from '../game/types';
+import { Level, Move, PAINT_NAMES, Tile } from '../game/types';
 
 export type MechanicId =
   | 'rolling' | 'lying' | 'planks' | 'soft' | 'heavy' | 'walls'
-  | 'ice' | 'belts' | 'iceWalls' | 'pads' | 'padWalls' | 'flips' | 'lockedRings' | 'shapeWalls' | 'cube' | 'tall' | 'extraHeavy' | 'hedges';
+  | 'ice' | 'belts' | 'iceWalls' | 'pads' | 'padWalls' | 'flips' | 'lockedRings' | 'shapeWalls' | 'cube' | 'tall' | 'extraHeavy' | 'hedges'
+  | 'tubes' | 'split' | 'paint' | 'mixing' | 'padPaint';
 
 export interface Mechanic {
   id: MechanicId;
@@ -16,11 +17,14 @@ export interface Mechanic {
   /** Always shown; the others open once a level using them has been reached. */
   basic: boolean;
   level: Level;
-  moves: Dir[];
+  /** Rolls, and `swap` (Tab) between split cubes. */
+  moves: Move[];
 }
 
-const DIR: Record<string, Dir> = { U: 'up', D: 'down', L: 'left', R: 'right' };
+const DIR: Record<string, Move> = { U: 'up', D: 'down', L: 'left', R: 'right', T: 'swap' };
+/** Moves as letters: `UDLR` roll, `T` swaps cubes (Tab). */
 const moves = (letters: string) => [...letters].map((c) => DIR[c]);
+const gates = (...names: string[]) => names.map((n) => PAINT_NAMES.indexOf(n as (typeof PAINT_NAMES)[number]));
 
 export const MECHANICS: Mechanic[] = [
   {
@@ -181,6 +185,51 @@ export const MECHANICS: Mechanic[] = [
     level: parseLevel(['##......', '##......', 'S##&.##G', '........']),
     moves: moves('RRLURDRRRRR'),
   },
+  {
+    id: 'tubes',
+    name: 'Glass tubes',
+    text: 'A cube that rolls into an open end of a glass tube slides straight through, like ice, and stops on the first tile past the far end (off the end into nothing, it falls). Anything bigger bumps the glass, except a lying block that belts feed in along the tube: it shoots out past the far end. A row of tubes needs no ground, so it can cross a gap.',
+    basic: false,
+    // The cube rolls in, slides through and stops just past the far end, beside its goal.
+    level: parseLevel(['S#===#C'], [], 0, 1),
+    moves: moves('RRR'),
+  },
+  {
+    id: 'split',
+    name: 'Splitting',
+    text: 'Stand on a splitter and the block splits in two cubes: one stays, the other pops out on the marked side and moves first. [Tab] swaps which cube you move, and never counts as a move. The cube you aren\'t moving stays put like a wall: it stops slides, flights and belt pushes, and holds a wall down under it. Roll one cube into the other to join them; only the whole block can stand on the goal, and only it presses heavy switches.',
+    basic: false,
+    // Split, move the new cube on, swap, and roll the other into it to join; then stand up on the goal.
+    level: parseLevel(['S##]##G']),
+    moves: moves('RRRTRRR'),
+  },
+  {
+    id: 'paint',
+    name: 'Paint and gates',
+    text: 'A tray coats whatever part of the block rests on it: a cube all over, the half of a lying block over it, a standing block\'s bottom half. Each half keeps its color as you roll. A gate lets through only a part of exactly its color, and a standing block needs both halves in it; otherwise it holds like a raised wall. The shapes cut in a gate name its color: circle red, square blue, triangle yellow.',
+    basic: false,
+    // Lying across both trays, the block comes up red on the west, blue on the east, and rolls through the pair of gates.
+    level: parseLevel(['Sru.', '.{{.', '.##G'], [], 0, 2, gates('red', 'blue')),
+    moves: moves('RDDR'),
+  },
+  {
+    id: 'mixing',
+    name: 'Mixing and water',
+    text: 'A second color mixes with the first: red and blue make purple, red and yellow orange, blue and yellow green. Any coat on a mix makes mud, which no gate takes. Water washes the part resting on it bare, so you can start again.',
+    basic: false,
+    // Red, then yellow: orange, through the orange gate. Washed bare, then blue, through the blue gate.
+    level: parseLevel(['Sry{su{C'], [], 0, 1, gates('orange', 'blue')),
+    moves: moves('RRRRRRR'),
+  },
+  {
+    id: 'padPaint',
+    name: 'Flights and paint',
+    text: 'A cube on a launch pad flies like a standing block, four tiles out. A landing coats or washes like any other stop. The idle cube, or a gate holding the landing part\'s color, stops a flight short like a raised wall. And a flight tips the block over at the end, so it turns the colors round like one roll.',
+    basic: false,
+    // Onto the red tray by air; the next flight stops short of the purple gate. Blue below makes purple, and through.
+    level: parseLevel(['SR...rR..#{#C', '.........u...'], [], 0, 1, gates('purple')),
+    moves: moves('RRDURRR'),
+  },
 ];
 
 /** The mechanics a player meets in this level, among those that have to be unlocked. */
@@ -208,5 +257,14 @@ export function mechanicsIn(level: Level): MechanicId[] {
     else if (t === Tile.ShapeSwitch && groups[i] === 1) found.add('cube');
     else if (t === Tile.ShapeSwitch && groups[i] === 3) found.add('tall');
   });
+  // Splatter Studio, and Toybox's tubes.
+  if (tiles.includes(Tile.Door)) found.add('tubes');
+  if (tiles.includes(Tile.Splitter)) found.add('split');
+  const trays = new Set(tiles.flatMap((t, i) => (t === Tile.Tray ? [groups[i]] : [])));
+  const paints = trays.size > 0 || tiles.includes(Tile.Gate) || tiles.includes(Tile.Wash) || !!level.startPaint;
+  if (paints) found.add('paint');
+  // Two colors of tray (or water, which only matters once coats can pile up) is where mixing starts.
+  if (trays.size > 1 || tiles.includes(Tile.Wash)) found.add('mixing');
+  if (tiles.includes(Tile.Pad) && (paints || tiles.includes(Tile.Splitter))) found.add('padPaint');
   return [...found];
 }

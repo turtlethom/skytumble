@@ -23,6 +23,8 @@ playtest notes) moves word for word to `DESIGN-archive.md`; search it when a pas
 - **Deploys:** every push to `main` runs the tests, then publishes the game to
   <https://turtlethom.github.io/skytumble/> (`.github/workflows/deploy.yml`). The repo is public.
   A commit stays private until pushed, so "commit it" does not mean "push it": ask before pushing.
+- **How To Play grows too:** every new mechanic gets its entry in `src/levels/mechanics.ts` (text, a scene on
+  the real rules, an unlock in `mechanicsIn`, a test) when its lab is built. Splatter Studio's were missed until the user asked.
 - **Tools grow with the game:** when a new mechanic or feature lands, extend the design tools to
   cover it (its checks in `lint`, its role in `make`'s report, a test in `tests/design-tools.test.ts`),
   so level-making stays cheap as the game grows. The puzzle ideas still come from the user and Claude.
