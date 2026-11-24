@@ -12,6 +12,20 @@ S#*,,,,,,.
 ......,,,G
 
 === hollow-02
+par: 18
+name: Second Wind
+idea: A round light counts down: it lights the path for the number of moves on it, then fades. Fetch the purple switch up the side path, which lays the bridge, and the light runs out on the way back. Stand on it again and the count starts over: enough to see you nearly home.
+switches: 1
+lamps: 6
+...,,,o......
+...,.........
+...,.........
+S##*,,,1,,...
+.........,...
+.........,...
+.........,,,G
+
+=== hollow-03
 par: 20
 name: Bridge Keeper
 idea: Split, and the new cube lands on a purple light that shows the dark path past the far side. The bridge stays out only while a cube holds a square switch, one on each side: hold it for each other, join on the far side, and cross the path you saw at the start.
@@ -21,3 +35,25 @@ S##A00#O;;;;
 ...#...;...;
 ...O...;...;
 .......;;;.G
+
+=== hollow-04
+par: 13
+name: Two Lanterns
+idea: Two square lights, orange and purple, each show their own tiles of one path, and its colors alternate: you see it whole only with a cube on each light. Join the cubes over both lights and they stay lit while you look; roll off, and cross in the dark.
+lamps: held held/1
+...........
+S##]*,;,;;,
+....*;,..,;
+......,;,;G
+
+=== hollow-05
+par: 32
+name: Keeper's Gate
+idea: The purple gate stays open only while a cube holds a purple switch, one on each side of the chasm, and each side has a square light for the dark path beyond it. On the way to the near switch the orange light shows the first stretch; cross it in the dark while the other cube holds the gate. Then trade: hold the gate from the far side for the other cube, join there, and cross the red stretch you saw on the way.
+switches: 1 1
+lamps: held/3 held
+......,.........
+.....,,,....""""
+S##]#,.,I*#"".."
+....*.....O"".."
+....O..........G

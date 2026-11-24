@@ -1356,13 +1356,42 @@ Before a move: ↹ press Tab first, to move the other cube (a swap is free; it n
  6- 8  ↓ → →✔
 ```
 
-## `hollow-02` Bridge Keeper
+## `hollow-02` Second Wind
+
+```
+ 1- 5  → → ↑ ↑ →
+ 6-10  →● ← ← ↓ ↓
+11-15  → → → → ↓
+16-18  ↓ → →✔
+```
+
+## `hollow-03` Bridge Keeper
 
 ```
  1- 5  → →✂ ↹↓ ↓● ↹↓
  6-10  → → → → ↹↑
 11-15  ↑ → → → →
 16-20  →● → → ↓ ↓✔
+```
+
+## `hollow-04` Two Lanterns
+
+```
+ 1- 5  → →✂ ↓ ↹→ ↓
+ 6-10  → → ↓ → →
+11-13  ↑ → ↓✔
+```
+
+## `hollow-05` Keeper's Gate
+
+```
+ 1- 5  → →✂ ↓ ↓● ↹→
+ 6-10  → ↑ → → ↓
+11-15  → → → ↓ ↹↑
+16-20  ↑ → ↑ → →
+21-25  ↓ → → → ↓
+26-30  →● → ↑ → →
+31-32  ↓ ↓✔
 ```
 
 ## `lab-01` Glide
