@@ -1349,6 +1349,22 @@ Before a move: ↹ press Tab first, to move the other cube (a swap is free; it n
 26-26  ↑✔
 ```
 
+## `hollow-01` Lantern Rest
+
+```
+ 1- 5  → → → → ↓
+ 6- 8  ↓ → →✔
+```
+
+## `hollow-02` Bridge Keeper
+
+```
+ 1- 5  → →✂ ↹↓ ↓● ↹↓
+ 6-10  → → → → ↹↑
+11-15  ↑ → → → →
+16-20  →● → → ↓ ↓✔
+```
+
 ## `lab-01` Glide
 
 ```

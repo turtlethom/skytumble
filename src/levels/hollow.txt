@@ -1,1 +1,23 @@
 title: The Hollow Deep
+
+=== hollow-01
+par: 8
+name: Lantern Rest
+idea: Lie half on the light and the hidden path shows: a square light stays lit only while something rests on it. Look as long as you like, then roll off and cross in the dark. Fall in the dark and you're back where you left the light.
+lamps: held
+###.......
+S#*,,,,,,.
+###...,...
+......,...
+......,,,G
+
+=== hollow-02
+par: 20
+name: Bridge Keeper
+idea: Split, and the new cube lands on a purple light that shows the dark path past the far side. The bridge stays out only while a cube holds a square switch, one on each side: hold it for each other, join on the far side, and cross the path you saw at the start.
+lamps: held/1
+...*........
+S##A00#O;;;;
+...#...;...;
+...O...;...;
+.......;;;.G

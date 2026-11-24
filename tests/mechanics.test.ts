@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { StepResult, initialState, step, swap, tileAt, wallUp } from '../src/game/rules';
 import { Tile } from '../src/game/types';
-import { CAMPAIGN, LABS, findLevel } from '../src/levels';
+import { CAMPAIGN, findLevel } from '../src/levels';
 import { MECHANICS, Mechanic, MechanicId, mechanicsIn } from '../src/levels/mechanics';
 
 /** A scene's rolls, in order (swaps between split cubes change the state but aren't steps). */
@@ -207,10 +207,7 @@ describe('How To Play unlocks', () => {
 
   it('can open every entry from the campaign', () => {
     const reachable = new Set(CAMPAIGN.flatMap((c) => c.levels.flatMap((l) => mechanicsIn(l.level))));
-    // The Chasm's entries open from its lab until its world has levels.
-    const awaitingWorld: MechanicId[] = ['hold', 'lights'];
-    for (const m of MECHANICS.filter((e) => !e.basic && !awaitingWorld.includes(e.id))) expect(reachable).toContain(m.id);
-    for (const id of awaitingWorld) expect(LABS.some((c) => c.levels.some((l) => mechanicsIn(l.level).includes(id)))).toBe(true);
+    for (const m of MECHANICS.filter((e) => !e.basic)) expect(reachable).toContain(m.id);
   });
 
   it("show a held switch keeping its wall down, and the lights going out mid-crossing", () => {
