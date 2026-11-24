@@ -1,4 +1,4 @@
-import { parseLevel } from '../game/ascii';
+import { parseLamps, parseLevel } from '../game/ascii';
 import { Level, PAINT_NAMES, Paint } from '../game/types';
 
 /**
@@ -17,6 +17,8 @@ import { Level, PAINT_NAMES, Paint } from '../game/types';
  *   shape: cube                   optional: start as a cube or a tall block (default: the normal block)
  *   paint: red blue               optional: the block's paint at the start, bottom then top (one word: all over)
  *   gates: red purple             optional: gate colors in reading order (default red)
+ *   lamps: 6 held/1               optional: light switches in reading order, a timer or `held`, then
+ *                                 `/color` (0-3, default 0); the default lamp is `6`
  *   S~~~~#G                       grid rows, in the format of game/ascii.ts
  *
  * Grid rows never contain ':', so any "key: value" line is a field.
@@ -113,7 +115,7 @@ export function parseChapter(id: string, text: string): Chapter {
 
   const levels = drafts.map((d): HandmadeLevel => {
     for (const key of d.fields.keys()) {
-      if (!['name', 'idea', 'par', 'switches', 'bridges-on', 'guard', 'shape', 'paint', 'gates'].includes(key)) fail(d.line, `unknown field '${key}'`);
+      if (!['name', 'idea', 'par', 'switches', 'bridges-on', 'guard', 'shape', 'paint', 'gates', 'lamps'].includes(key)) fail(d.line, `unknown field '${key}'`);
     }
     if (d.rows.length === 0) fail(d.line, `${d.id} has no grid`);
     const numbers = (key: string) =>
@@ -128,7 +130,7 @@ export function parseChapter(id: string, text: string): Chapter {
     try {
       const shape = d.fields.get('shape') ?? 'normal';
       if (!(shape in START_SHAPES)) fail(d.line, `shape: expected cube, normal or tall, got '${shape}'`);
-      level = parseLevel(d.rows, numbers('switches'), bridgesOn, START_SHAPES[shape], parseColors(d.fields.get('gates') ?? ''));
+      level = parseLevel(d.rows, numbers('switches'), bridgesOn, START_SHAPES[shape], parseColors(d.fields.get('gates') ?? ''), parseLamps(d.fields.get('lamps') ?? ''));
       const paint = parsePaint(d.fields.get('paint') ?? '');
       if (paint) level.startPaint = paint;
     } catch (err) {

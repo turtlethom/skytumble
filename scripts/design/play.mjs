@@ -10,6 +10,8 @@
 // world to settle and saves page-1.png, page-2.png... (for tile sheets and samples; solutions unused).
 // HOWTO=padWalls skips playing too: it opens How To Play on that entry (unlocking it first) and saves
 // howto-NN.png every HOWTO_MS (default 500) for HOWTO_SHOTS shots (default 16), one loop of its scene.
+// MOVES='RRRRUzh' plays these instead of the solution (U D L R roll, T Tab, z undo, h the Hint key),
+// for checking a mistake on screen (a fall in the dark and its rewind); with STEPS=1, a shot after each.
 // FRAMERATE=1 skips playing: on the first level it reports how often the scene draws after a key, idle,
 // and after a minute alone (it should draw nothing then), then once a key wakes it.
 // Uses CHROME (path to a Chrome/Chromium binary) or Playwright's cached Chromium. Talks to Chrome over
@@ -223,7 +225,9 @@ if (process.env.FRAMERATE === '1') {
   await evalJs("document.querySelector('[data-action=tutorial-01]').click()");
   check('leaving it for a level: title', await untilTitle());
 } else
-for (const [id, moves] of Object.entries(solutions)) {
+for (const [id, solved] of Object.entries(solutions)) {
+  const letters = { U: 'up', D: 'down', L: 'left', R: 'right', T: 'swap', z: 'KeyZ', h: 'KeyH' };
+  const moves = process.env.MOVES ? [...process.env.MOVES].map((c) => letters[c]) : solved;
   await send('Page.navigate', { url: `${base}/?level=${id}${process.env.QUERY ? `&${process.env.QUERY}` : ''}` });
   // A fresh load shows the chapter title, then the island rises. On a slow load the title comes late,
   // so wait for it to appear before waiting for it to go: any key sent during it would only skip it.
@@ -241,6 +245,13 @@ for (const [id, moves] of Object.entries(solutions)) {
   };
   for (const [i, m] of moves.entries()) {
     await idle();
+    // Undo and the Hint key, from MOVES.
+    if (m.startsWith('Key')) {
+      await key(m);
+      await sleep(700);
+      if (process.env.STEPS === '1') await shot(`${id}-${String(i + 1).padStart(2, '0')}`);
+      continue;
+    }
     // A swap is Tab, and never counts as a move.
     if (m === 'swap') {
       await key('Tab');
@@ -252,7 +263,7 @@ for (const [id, moves] of Object.entries(solutions)) {
     // say so if the game disagrees.
     const onCeiling = arrows[id]?.[i]?.ceiling;
     const expected = onCeiling ? { ...codes, up: 'ArrowDown', down: 'ArrowUp' }[m] : codes[m];
-    if (!process.env.ROTATE && arrows[id] && k !== expected) {
+    if (!process.env.ROTATE && !process.env.MOVES && arrows[id] && k !== expected) {
       keyMismatches++;
       console.log(`${id} move ${i + 1}: the game rolls ${m} with ${k}, SOLUTIONS.md says ${expected}`);
     }

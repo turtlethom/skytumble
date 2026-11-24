@@ -2,6 +2,7 @@ import './style.css';
 import { randomSeed } from './game/rng';
 import { initialState, rollPaint, step, swap } from './game/rules';
 import { solve } from './game/solver';
+import { Played, darkRewind, lightingAt } from './game/lights';
 import { Block, DIRS, Dir, Level, Move, State, TIERS, Tier, Tile } from './game/types';
 import { CAMPAIGN, LABS, TUTORIAL, chapterOf, findLevel, lessonUnlocked, nextOnTrack, prevOnTrack, trackOf } from './levels';
 import { isLesson, lessonDone, lessonPrompt } from './levels/lessons';
@@ -37,6 +38,8 @@ const HOWTO_REST_MS = 800;
 /** An extension's Esc can arrive as both a key and a lost focus: count them once. */
 const ESC_REPEAT_MS = 200;
 const FELL_DETAIL = 'Take back the last move, or try the island again.';
+/** A fall in the dark (the Chasm): undo goes back to when the light went out, not one move. */
+const DARK_FELL_DETAIL = 'Lost in the dark. Undo takes you back to when the light went out, or try the island again.';
 
 /** A screen over the game. The top one takes the keys, and Esc returns to the one below. */
 interface Panel {
@@ -134,6 +137,8 @@ class Game {
   /** States before each roll or swap, for undo; a swap isn't a move, so it doesn't count. */
   private history: { state: State; counted: boolean }[] = [];
   private moves = 0;
+  /** After a fall in the dark: how many history steps undo keeps (back to when the light went out). */
+  private rewindTo: number | null = null;
   private status: Status = 'loading';
   private queued: Dir | 'swap' | null = null;
   private requestId = 0;
@@ -256,6 +261,7 @@ class Game {
     this.state = initialState(level);
     this.history = [];
     this.moves = 0;
+    this.rewindTo = null;
     this.status = 'busy';
     this.renderChrome();
     const arrival = this.playArrival();
@@ -264,6 +270,7 @@ class Game {
     this.world.setViewShift(0);
     await this.world.setLevel(level, this.state, this.currentTheme(), arrival?.lifted);
     if (scene !== this.scene) return;
+    this.refreshLights(false);
     this.status = 'playing';
     this.updatePreviews();
     this.updatePrompt();
@@ -290,9 +297,16 @@ class Game {
     this.lastChapter = null;
     this.world.setViewShift(MENU_VIEW_SHIFT);
     await this.world.setLevel(level, start, theme);
+    // The Chasm's lights follow the scene's play, as in a level.
+    const light = (played: Played[], state: State, animate = true) => {
+      const { lit, left } = lightingAt(level, start, played);
+      this.world.setLights(lit, left, state, false, animate);
+    };
+    light([], start, false);
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     for (;;) {
       let state = start;
+      const played: Played[] = [];
       for (const dir of moves) {
         await pause(rollGap);
         if (scene !== this.scene) return;
@@ -300,6 +314,8 @@ class Game {
         if (dir === 'swap') {
           state = swap(state);
           this.world.swapCubes(state);
+          played.push({ state, roll: false });
+          light(played, state);
           continue;
         }
         const result = step(level, state, dir);
@@ -307,6 +323,8 @@ class Game {
         await this.animating;
         if (scene !== this.scene) return;
         state = result.state;
+        played.push({ state, roll: true });
+        light(played, state);
       }
       this.animating = this.world.win();
       await this.animating;
@@ -316,6 +334,7 @@ class Game {
       await this.animating;
       if (scene !== this.scene) return;
       this.world.syncState(start);
+      light([], start, false);
       this.animating = this.world.dropBlock();
       await this.animating;
       if (scene !== this.scene) return;
@@ -382,6 +401,7 @@ class Game {
     this.state = swap(this.state);
     this.world.swapCubes(this.state);
     this.updatePreviews();
+    this.refreshLights();
   }
 
   private async playMove(level: Level, dir: Dir): Promise<void> {
@@ -408,16 +428,20 @@ class Game {
     await this.animateStep(from, result, dir, scene);
     if (scene !== this.scene) return;
     this.state = result.state;
+    if (result.outcome !== 'fall') this.refreshLights();
 
     if (result.outcome === 'fall') {
       this.queued = null;
+      // A fall beside a dark tile while its light is out rewinds to when the light went out.
+      const keep = darkRewind(level, this.history[0]?.state ?? from, this.played());
+      this.rewindTo = keep;
       if (result.dropped) await this.world.dropTwin();
       else await this.world.fall(level, result.state.block, result.broke);
       if (scene !== this.scene) return;
       this.status = 'fallen';
       // In the Tutorial the panel says what went wrong, in place of the prompt.
       const id = this.lessonId();
-      $('fell-detail').innerHTML = id ? keysIn(lessonPrompt(id, { level, state: result.state, before: from, last: result, moves: this.moves })) : FELL_DETAIL;
+      $('fell-detail').innerHTML = id ? keysIn(lessonPrompt(id, { level, state: result.state, before: from, last: result, moves: this.moves })) : keep !== null ? DARK_FELL_DETAIL : FELL_DETAIL;
       this.showPrompt('');
       $('fell').classList.remove('hidden');
       return;
@@ -435,6 +459,22 @@ class Game {
     this.updatePreviews();
     this.updatePrompt(from, result);
     this.drainQueue();
+  }
+
+  /** Every step so far, for the lights: the state each led to, and whether it was a roll. */
+  private played(): Played[] {
+    const seq = [...this.history.map((h) => h.state), this.state];
+    return this.history.map((h, k) => ({ state: seq[k + 1], roll: h.counted }));
+  }
+
+  /** Light what's lit after the play so far (the Chasm); the Hint key shows every dark tile faintly. */
+  private refreshLights(animate = true): void {
+    const level = this.level;
+    if (!level) return;
+    const played = this.played();
+    const start = this.history[0]?.state ?? this.state;
+    const { lit, left } = lightingAt(level, start, played);
+    this.world.setLights(lit, left, this.state, !$('hint').classList.contains('hidden'), animate);
   }
 
   /** Show one move: the roll, whatever carries the block after it, and the switches it presses. */
@@ -479,6 +519,7 @@ class Game {
       await this.world.splitApart(before, result.state);
     }
     this.world.setGates(result.state);
+    this.world.setHolds(result.state);
     await Promise.all([result.toggled ? this.world.setBridges(result.state.bridges) : null, this.world.setWalls(result.state)]);
   }
 
@@ -510,13 +551,24 @@ class Game {
 
   private undo(): void {
     if (!this.level || (this.status !== 'playing' && this.status !== 'fallen')) return;
-    const entry = this.history.pop();
-    if (!entry) return;
-    const prev = entry.state;
+    let prev: State;
+    if (this.status === 'fallen' && this.rewindTo !== null) {
+      // Lost in the dark: back to when the light went out.
+      const seq = [...this.history.map((h) => h.state), this.state];
+      prev = seq[this.rewindTo];
+      this.history = this.history.slice(0, this.rewindTo);
+      this.moves = this.history.filter((h) => h.counted).length;
+    } else {
+      const entry = this.history.pop();
+      if (!entry) return;
+      prev = entry.state;
+      if (entry.counted) this.moves--;
+    }
+    this.rewindTo = null;
     this.state = prev;
-    if (entry.counted) this.moves--;
     this.status = 'playing';
     this.world.syncState(prev);
+    this.refreshLights(false);
     this.updatePreviews();
     this.hideModals();
     this.updatePrompt();
@@ -528,8 +580,10 @@ class Game {
     this.state = initialState(this.level);
     this.history = [];
     this.moves = 0;
+    this.rewindTo = null;
     this.status = 'playing';
     this.world.syncState(this.state);
+    this.refreshLights(false);
     this.updatePreviews();
     this.hideModals();
     this.updatePrompt();
@@ -653,6 +707,8 @@ class Game {
     const show = on ?? (hint.classList.contains('hidden') && !$('btn-hint').classList.contains('hidden'));
     hint.classList.toggle('hidden', !show);
     $('btn-hint').classList.toggle('active', show);
+    // The Hint key also shows the dark tiles: the player chooses to look.
+    if (this.status === 'playing' || this.status === 'fallen') this.refreshLights();
   }
 
   private toast(message: string, ms = 1800): void {

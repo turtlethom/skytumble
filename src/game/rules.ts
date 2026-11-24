@@ -477,6 +477,42 @@ export function flightLandings(level: Level, state?: State): { x: number; y: num
   return [...cells.values()];
 }
 
+/** Bridge groups driven by held switches, on either floor, cached per level. */
+const holdMasks = new WeakMap<Tile[], number>();
+export function holdMask(level: Level): number {
+  const cached = holdMasks.get(level.tiles);
+  if (cached !== undefined) return cached;
+  let mask = 0;
+  for (const l of [level, ...(level.ceiling ? [level.ceiling] : [])]) l.tiles.forEach((t, i) => t === Tile.HoldSwitch && (mask |= 1 << l.groups[i]));
+  holdMasks.set(level.tiles, mask);
+  return mask;
+}
+
+/**
+ * Held switches (the Chasm, 2026-11-24): a group with a held switch is switched exactly while anything
+ * rests on one of its held switches: the block (any cell) or the idle cube. Returns `bridges` with
+ * those groups set from what rests where; other groups are left as they are.
+ */
+export function applyHolds(level: Level, layer: number, block: Block, other: { x: number; y: number } | undefined, bridges: number): number {
+  const mask = holdMask(level);
+  if (!mask) return bridges;
+  const view = layerView(level, layer);
+  let held = 0;
+  const rest = (x: number, y: number) => {
+    if (tileAt(view, x, y) === Tile.HoldSwitch) held |= 1 << groupAt(view, x, y);
+  };
+  for (const [x, y] of blockCells(block)) rest(x, y);
+  if (other) rest(other.x, other.y);
+  return (bridges & ~mask) | ((level.bridgesOn ^ held) & mask);
+}
+
+/** The held switches with something resting on them in this state, on its floor. */
+export function heldSwitches(level: Level, state: State): { x: number; y: number }[] {
+  const view = layerView(level, state.layer ?? 0);
+  const cells = [...blockCells(state.block), ...(state.other ? [[state.other.x, state.other.y] as [number, number]] : [])];
+  return cells.filter(([x, y]) => tileAt(view, x, y) === Tile.HoldSwitch).map(([x, y]) => ({ x, y }));
+}
+
 /**
  * One player move: roll → slide while fully on ice → then, wherever the block rests, belts and
  * pads act until neither does: one conveyor push per move (then slide again if that lands a
@@ -682,6 +718,15 @@ export function step(level: Level, state: State, dir: Dir): StepResult {
     }
   }
   const pair: { other?: { x: number; y: number }; otherPaint?: Paint } = waiting ? { other: waiting, ...(waitingPaint ? { otherPaint: waitingPaint } : {}) } : {};
+
+  // Held switches follow whatever rests on them now, after any split; leaving one can retract the
+  // bridge under the block or the idle cube.
+  const holding = applyHolds(level, layer, block, waiting, bridges);
+  if (holding !== bridges) {
+    bridges = holding;
+    if (!supported(view, block, bridges, state.hedges ?? 0)) return { ...fell(bridges), pressed };
+    if (waiting && !isSolid(view, waiting.x, waiting.y, bridges, state.hedges ?? 0)) return { ...fell(bridges), pressed, dropped: { ...waiting } };
+  }
 
   // The goal takes a standing block of its shape: normal unless the goal is marked (group = length).
   const goalShape = (x: number, y: number) => (groupAt(view, x, y) > 0 ? groupAt(view, x, y) : 2);

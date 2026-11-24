@@ -44,6 +44,18 @@ export enum Tile {
   Gate = 21,
   /** Water: it strips the paint from the part of the block resting on it. */
   Wash = 22,
+  /**
+   * A held switch (the Chasm): its group's walls, bridges and rings stay switched only while
+   * anything rests on it (a cube, either half of a lying block, a standing block, the idle cube).
+   */
+  HoldSwitch = 23,
+  /** Floor that can't be seen until its light color is lit (group = the light color, 0-3). The rules treat it as floor. */
+  Dark = 24,
+  /**
+   * A light switch (group = color + 4 × timer): a timed one lights its color's dark tiles for that
+   * many moves after a press, a held one (timer 0) while anything rests on it. Floor to the rules.
+   */
+  Lamp = 25,
 }
 
 /**

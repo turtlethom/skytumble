@@ -31,7 +31,7 @@ const seeds = seedArg.includes('-')
   ? (([a, b]) => Array.from({ length: b - a + 1 }, (_, i) => a + i))(seedArg.split('-').map(Number))
   : seedArg.split(',').map(Number);
 const want = wantArg.split(',').filter(Boolean);
-const { rows: template, switches, on, shape, paint, gates } = parseBlock(readFileSync(file, 'utf8').trim().split('\n'));
+const { rows: template, switches, on, shape, paint, gates, lamps } = parseBlock(readFileSync(file, 'utf8').trim().split('\n'));
 const clutter = Number(process.env.CLUTTER ?? 0.5);
 const pressBonus = Number(process.env.PRESSES ?? 10);
 const wallPenalty = Number(process.env.WALLS ?? 40);
@@ -60,7 +60,7 @@ const render = (choice: string[]) => {
 function score(rows: string[], floor = -Infinity): number {
   let level;
   try {
-    level = build(rows, switches, on, shape, paint, gates);
+    level = build(rows, switches, on, shape, paint, gates, lamps);
   } catch {
     return -1e9;
   }
@@ -98,17 +98,17 @@ function neededPlanks(rows: string[], par: number): number {
   for (const [x, y] of slots) {
     if (rows[y][x] !== 'f') continue;
     const swapped = rows.map((r, j) => (j === y ? r.slice(0, x) + '#' + r.slice(x + 1) : r));
-    const sol = solve(build(swapped, switches, on, shape, paint, gates));
+    const sol = solve(build(swapped, switches, on, shape, paint, gates, lamps));
     if (sol && sol.moves.length < par) n++;
   }
   return n;
 }
 
 const skeleton = render(slots.map((_, i) => (slotPalette[i] === palette ? '#' : '~')));
-if (!solve(build(skeleton, switches, on, shape, paint, gates))) {
+if (!solve(build(skeleton, switches, on, shape, paint, gates, lamps))) {
   // On stderr, so a redirected results file stays empty rather than holding a non-design.
   console.error('The template is unsolvable even with every ? as floor, so no fill can work. Diagnosis:');
-  console.error(diagnose(skeleton, build(skeleton, switches, on, shape, paint, gates)).join('\n'));
+  console.error(diagnose(skeleton, build(skeleton, switches, on, shape, paint, gates, lamps)).join('\n'));
   process.exit(1);
 }
 

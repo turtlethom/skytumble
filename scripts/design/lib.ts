@@ -1,6 +1,6 @@
 // Shared helpers for the level-design tools in this folder.
 import { existsSync, readFileSync } from 'node:fs';
-import { formatLevel, parseLevel } from '../../src/game/ascii';
+import { Lamp, formatLamps, formatLevel, parseLamps, parseLevel } from '../../src/game/ascii';
 import { blockCells, initialState, play } from '../../src/game/rules';
 import { Block, DIR_DELTA, Dir, Level, Move, PAINT_NAMES, Paint, Tile } from '../../src/game/types';
 import { parseColors, parsePaint } from '../../src/levels/format';
@@ -15,19 +15,21 @@ export { paintOpts } from './checks';
  *   !shape cube    the shape the block starts in (cube, normal, tall)
  *   !paint red     the block's paint at the start (a color, or two words: bottom then top)
  *   !gates red purple  gate colors in reading order
+ *   !lamps 6 held/1    light switches in reading order (a timer or `held`, then `/color`)
  */
-export function parseBlock(lines: string[]): { rows: string[]; switches: number[]; on: number[]; shape: number; paint?: [Paint, Paint]; gates?: number[] } {
+export function parseBlock(lines: string[]): { rows: string[]; switches: number[]; on: number[]; shape: number; paint?: [Paint, Paint]; gates?: number[]; lamps?: Lamp[] } {
   const opt = (k: string) =>
     (lines.find((l) => l.startsWith(`!${k} `)) ?? '').split(/\s+/).slice(1).filter(Boolean).map(Number);
   const shapeWord = (lines.find((l) => l.startsWith('!shape ')) ?? '!shape normal').split(/\s+/)[1];
   const shape = { cube: 1, normal: 2, tall: 3 }[shapeWord] ?? 2;
   const paint = parsePaint((lines.find((l) => l.startsWith('!paint ')) ?? '').slice(7)) ?? undefined;
   const gates = parseColors((lines.find((l) => l.startsWith('!gates ')) ?? '').slice(7));
-  return { rows: lines.filter((l) => !l.startsWith('!') && !l.startsWith('@')), switches: opt('switches'), on: opt('on'), shape, ...(paint ? { paint } : {}), ...(gates.length ? { gates } : {}) };
+  const lamps = parseLamps((lines.find((l) => l.startsWith('!lamps ')) ?? '').slice(7));
+  return { rows: lines.filter((l) => !l.startsWith('!') && !l.startsWith('@')), switches: opt('switches'), on: opt('on'), shape, ...(paint ? { paint } : {}), ...(gates.length ? { gates } : {}), ...(lamps.length ? { lamps } : {}) };
 }
 
-export function build(rows: string[], switches: number[], on: number[], shape = 2, paint?: [Paint, Paint], gates: number[] = []): Level {
-  const level = parseLevel(rows, switches, on.reduce((mask, g) => mask | (1 << g), 0), shape, gates);
+export function build(rows: string[], switches: number[], on: number[], shape = 2, paint?: [Paint, Paint], gates: number[] = [], lamps: Lamp[] = []): Level {
+  const level = parseLevel(rows, switches, on.reduce((mask, g) => mask | (1 << g), 0), shape, gates, lamps);
   if (paint) level.startPaint = paint;
   return level;
 }
@@ -94,12 +96,12 @@ export async function loadDesigns(arg: string): Promise<Design[]> {
       .map((block, i) => {
         const lines = block.split('\n');
         const parsed = parseBlock(lines);
-        const { switches, on, shape, paint, gates } = parsed;
+        const { switches, on, shape, paint, gates, lamps } = parsed;
         // A template reads as its most open version (`?` floor, `%` ice), as lint reads it, so the
         // diagnosis lint points to works on the same file.
         const rows = parsed.rows.map((r) => r.replace(/\?/g, '#').replace(/%/g, '~'));
         const name = lines.find((l) => l.startsWith('@'))?.slice(1) ?? `#${i + 1}`;
-        const level = build(rows, switches, on, shape, paint, gates);
+        const level = build(rows, switches, on, shape, paint, gates, lamps);
         // Re-print the rows from the parsed level so every layer is full height and width, and the
         // ceiling starts where textRow expects it.
         return { name, rows: formatLevel(level).split('\n'), switches, on, level };
@@ -126,7 +128,8 @@ export function designBlock(d: Design): string {
   const paint = d.level.startPaint ? `!paint ${PAINT_NAMES[d.level.startPaint[0]]} ${PAINT_NAMES[d.level.startPaint[1]]}` : '';
   const gateColors = d.level.tiles.flatMap((t, i) => (t === Tile.Gate ? [PAINT_NAMES[d.level.groups[i]]] : []));
   const gates = gateColors.length ? `!gates ${gateColors.join(' ')}` : '';
-  const opts = [d.switches.length ? `!switches ${d.switches.join(' ')}` : '', d.on.length ? `!on ${d.on.join(' ')}` : '', shape, paint, gates];
+  const lamps = formatLamps(d.level);
+  const opts = [d.switches.length ? `!switches ${d.switches.join(' ')}` : '', d.on.length ? `!on ${d.on.join(' ')}` : '', shape, paint, gates, lamps ? `!lamps ${lamps}` : ''];
   return [`@${d.name}`, ...opts.filter(Boolean), ...d.rows].join('\n');
 }
 

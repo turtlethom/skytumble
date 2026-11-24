@@ -4,7 +4,7 @@ import { findLevel } from '../src/levels';
 import solutions from '../SOLUTIONS.md?raw';
 import { directions, solutionsMarkdown } from '../scripts/design/arrows';
 import { explore, movesText, pathTo } from '../scripts/design/explore';
-import { levelColors } from '../scripts/design/checks';
+import { levelColors, lightReport } from '../scripts/design/checks';
 import { block, Draft, dropUnreachable, idleSpecials, quickRepresses, flipNS, hidden, lint, plainWalls, plankify, regrow, strip, switchOrder, toLevel, wallColors } from '../scripts/design/checks';
 
 const draft = (rows: string[], switches: number[] = []): Draft => ({ rows, switches, on: [], shape: 2 });
@@ -175,5 +175,22 @@ describe('design tools', () => {
   it('list a paint level\'s colors, for rotating them through a chapter', () => {
     expect(levelColors(findLevel('paintlab-04')!.level)).toEqual(['red', 'yellow', 'orange']);
     expect(levelColors(findLevel('glade-01')!.level)).toEqual([]);
+  });
+  it('report the Chasm: dark steps and turns, a route that guesses, lamps and held switches', () => {
+    const r = lightReport(findLevel('chasmlab-01')!.level, solve(findLevel('chasmlab-01')!.level)!.steps)!;
+    expect(r).toMatchObject({ dark: 10, unseen: 0, holds: 0 });
+    expect(r.turns).toBeGreaterThan(2);
+    const held = lightReport(findLevel('chasmlab-02')!.level, solve(findLevel('chasmlab-02')!.level)!.steps)!;
+    expect(held.holds).toBeGreaterThan(0);
+    expect(held.releases).toBe(1);
+    // The light is off the route: the best route walks the dark path blind.
+    const blind = lint({ ...draft(['S##,,,,,,G', '...*......']), lamps: [{ color: 0, timer: 2 }] }).join(' ');
+    expect(blind).toContain('par asks for a guess');
+    expect(blind).toContain('light switch at 3,1 is never rested on');
+    // Lamps and held switches show in the lint listing, with their kind; their order survives a flip.
+    expect(lint(draft(['...O.....', '...#.....', 'S##]##H#G'])).join(' ')).toContain('O@3,0→orange');
+    const two = { ...draft(['S*,,G', '.*;;.']), lamps: [{ color: 0, timer: 3 }, { color: 1, timer: 0 }] };
+    expect(flipNS(two).lamps).toEqual([{ color: 1, timer: 0 }, { color: 0, timer: 3 }]);
+    expect(block('x', two)).toContain('!lamps 3 held/1');
   });
 });

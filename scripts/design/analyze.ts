@@ -5,11 +5,13 @@
 // where every pad sends the block, the closest it gets to the goal, and a map of where it can reach.
 // Env: TRACE=1 move-by-move trace · DIAG=1 diagnosis for solvable levels too · BLOCK=1 print each as a
 // design block (to copy a chapter level into a draft file).
-import { initialState, play } from '../../src/game/rules';
+import { blockCells, heldSwitches, initialState, layerView, play, tileAt } from '../../src/game/rules';
+import { Played, lightingAt } from '../../src/game/lights';
+import { Tile } from '../../src/game/types';
 import { solve } from '../../src/game/solver';
 import { flipUses, iceUses, padUses, shapeUses } from '../../src/levels/validate';
 import { diagnose, explore } from './explore';
-import { levelColors } from './checks';
+import { levelColors, lightReport, lightText } from './checks';
 import { build, describeMotions, designBlock, loadDesigns, paintText, textRow, touched } from './lib';
 
 const env = (k: string) => process.env[k] === '1';
@@ -38,8 +40,11 @@ for (const arg of process.argv.slice(2)) {
     const trace: string[] = [];
     const pressed: string[] = [];
     const splitUses = new Set<string>();
+    const played: Played[] = [];
+    const start = st;
     for (const dir of sol.steps) {
       const r = play(level, st, dir);
+      played.push({ state: r.state, roll: dir !== 'swap' });
       if (dir === 'swap') {
         trace.push(`T: swap → cube (${r.state.block.x},${r.state.block.y}) moves`);
         st = r.state;
@@ -62,6 +67,12 @@ for (const arg of process.argv.slice(2)) {
       const up = level.ceiling && r.state.layer ? '↑' : '';
       const shape = b.n === 1 ? 'cube ' : b.n === 3 ? 'tall ' : '';
       trace.push(`${dir[0].toUpperCase()}:${shape}${b.o}(${b.x},${b.y})${up}${paintText(r.state)}${m ? ` [${m}]` : ''}${(r.held ?? []).map((h) => ` ${h.belt ? 'HELD' : r.motions[h.after - 1]?.kind === 'fly' ? (r.outcome === 'fall' ? 'CRASH' : 'SHORT') : 'BRAKE'}(${h.x},${h.y})`).join('')}${r.locked ? ` LOCKED(${r.locked.map((c) => `${c.x},${c.y}`).join(' ')})` : ''}${r.pressed.length ? ' PRESS' : ''}${r.painted ? ' PAINT' : ''}${r.washed ? ' WASH' : ''}${r.split ? ` SPLIT→(${r.split.x},${r.split.y})` : ''}${r.joined ? ` JOIN(${r.joined.x},${r.joined.y})` : ''}${r.knocked ? ` TOPPLE(${r.bumped!.x},${r.bumped!.y})${r.bridged ? ` bridges(${r.bridged.x},${r.bridged.y})` : ' wasted'}` : ''}`);
+      // The Chasm: a held switch held after the roll, and the block on a dark tile, lit or not.
+      const lit = lightingAt(level, start, played).lit;
+      const view = layerView(level, r.state.layer ?? 0);
+      const dark = blockCells(r.state.block).flatMap(([x, y]) => (tileAt(view, x, y) === Tile.Dark ? [view.groups[y * level.width + x]] : []));
+      const extra = `${heldSwitches(level, r.state).length ? ' HOLD' : ''}${dark.length ? (dark.some((c) => !((lit >> c) & 1)) ? ' DARK' : ' lit') : ''}`;
+      trace[trace.length - 1] += extra;
       st = r.state;
     }
     const plain = solve(build(rows.map((l) => (/^-{3,}/.test(l) ? l : l.replace(/[~^v<>UDLR+\[\]AVruys{]/g, '#'))), switches, on, level.startShape ?? 2));
@@ -80,7 +91,9 @@ for (const arg of process.argv.slice(2)) {
     console.log(rows.map((r, y) => [...r].map((c, x) => ('.-'.includes(c) || seen.has(`${x},${y}`) ? c : '*')).join('')).join('\n'));
     // Special pieces the solution never touches read as clutter (toy-17's stray cube switch). Raised walls
     // are left out: one the solution never bumps can still be doing its job.
-    const unused = rows.flatMap((r, y) => [...r].flatMap((c, x) => (/[oxXcnt=|<>^vUDLR+MPQWmpqw\[\]AVruys{]/.test(c) && !seen.has(`${x},${y}`) ? [`${c}@${x},${y}`] : [])));
+    const unused = rows.flatMap((r, y) => [...r].flatMap((c, x) => (/[oxXOcnt=|<>^vUDLR+MPQWmpqw\[\]AVruys{*]/.test(c) && !seen.has(`${x},${y}`) ? [`${c}@${x},${y}`] : [])));
+    const lights = lightReport(level, sol.steps);
+    if (lights) console.log(`lights: ${lightText(lights)}`);
     if (unused.length) console.log(`UNUSED specials (the solution never touches them; keep only deliberate decoys): ${unused.join(' ')}`);
     if (env('TRACE')) console.log(`  ${trace.join('\n  ')}`);
     if (env('DIAG')) console.log(diagnose(rows, level, ex).join('\n'));

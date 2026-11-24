@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Motion, blockCells, blockLength, bridgeOut, flightLandings, hedgeFell, isBridge, isWall, layerView, ringLocked, tileAt as levelTileAt, wallUp } from '../game/rules';
 import { Block, DIR_DELTA, DIRS, Dir, Level, Paint, State, Tile } from '../game/types';
+import { lampOf } from '../game/ascii';
 import { ForestScenery } from './forest';
 import { FrostScenery } from './frost';
 import { CONVEYOR_COLORS, cssColor } from './palette';
@@ -51,6 +52,8 @@ const COLORS = {
   splitMat: 0x2b3038,
   /** Water in a wash tile: pale, so it never reads as blue paint. */
   wash: 0xd8f1f6,
+  /** A light switch's stone (a stand-in until the Chasm's look). */
+  lampStone: 0x5a5866,
   splitMark: 0xffffff,
   activeMarker: 0xffffff,
   /** The slide preview (a setting): where a slide would leave the block. A deep blue that reads on ice, snow and grass. */
@@ -117,6 +120,10 @@ const BRIDGE_PULSE_MS = 1400;
 const GROUP_COLORS = [0xf4a940, 0xb57edc, 0x4fc3f7, 0xef6f6c];
 
 const ROLL_MS = 170;
+/** Dark tiles fading in as a light comes on, or out as it goes. */
+const LIGHT_FADE_MS = 320;
+/** How much a dark tile shows while the Hint key reveals them. */
+const DARK_REVEAL = 0.45;
 /** A wall rising or sinking: as quick as a roll, so it never holds up the next one for long. */
 const WALL_MS = 170;
 /** A raised wall's height: the normal block standing. */
@@ -334,6 +341,12 @@ export class World {
   private block: THREE.Mesh;
   private tiles = new Map<number, TileView>();
   private switches = new Map<number, THREE.Object3D>();
+  /** Held switches by the same key as `switches`: sunk while something rests on them. */
+  private holdSwitches = new Map<number, { obj: THREE.Object3D; down: boolean }>();
+  /** The Chasm's dark tiles: unseen until lit (or rested on); `fade` is how much shows, 0-1. */
+  private darkTiles: DarkTileView[] = [];
+  /** Light switches: a glowing wisp, and for a timed one a label counting its moves of light. */
+  private lampViews: { layer: number; x: number; y: number; color: number; timer: number; glow: THREE.MeshStandardMaterial; label: LampLabel | null; lit: boolean }[] = [];
   private bridges: BridgeView[] = [];
   private walls: WallView[] = [];
   /** Stencil gates: the sheet that sinks while a block of the gate's color stands in it. */
@@ -601,6 +614,9 @@ export class World {
     this.hasCeiling = !!level.ceiling;
     this.applyTheme(theme);
     this.switches.clear();
+    this.holdSwitches.clear();
+    this.darkTiles = [];
+    this.lampViews = [];
     this.bridges = [];
     this.walls = [];
     this.gates = [];
@@ -1245,6 +1261,87 @@ export class World {
       return g;
     }
 
+    if (tile === Tile.Dark) {
+      // A stand-in until the Chasm's look: a floor tile over nothing (no soil under it), with a thin line
+      // in its light's color, fading in only while lit or rested on (setLights). Its own materials, so
+      // it fades on its own; applyLayerAlpha multiplies the fade in through `tubeFade`.
+      const color = GROUP_COLORS[group % GROUP_COLORS.length];
+      g.add(floorTile(jitter, this.theme, layer));
+      for (const [dx, dz, w, d] of [[0, -0.45, 0.9, 0.05], [0, 0.45, 0.9, 0.05], [-0.45, 0, 0.05, 0.85], [0.45, 0, 0.05, 0.85]]) {
+        const edge = box(w, 0.012, d, color, { roughness: 0.6 });
+        edge.position.set(dx, 0.006, dz);
+        edge.castShadow = false;
+        g.add(edge);
+      }
+      const mats: THREE.Material[] = [];
+      g.traverse((o) => {
+        const mesh = o as THREE.Mesh;
+        if (!mesh.isMesh || Array.isArray(mesh.material)) return;
+        mesh.material = mesh.material.clone();
+        mesh.material.userData = { tubeFade: 0 };
+        mesh.castShadow = false;
+        mats.push(mesh.material);
+      });
+      g.visible = false;
+      this.darkTiles.push({ layer, x, y, color: group, obj: g, mats, fade: 0 });
+      return g;
+    }
+
+    if (tile === Tile.Lamp) {
+      // A stand-in: a low stone with a glowing wisp in its light's color. A timed light has a round stone
+      // and a label counting its moves of light; a held one a square stone, the held switch's shape.
+      const { color: c, timer } = lampOf(group);
+      const color = GROUP_COLORS[c % GROUP_COLORS.length];
+      g.add(floorTile(jitter, this.theme, layer), earth(jitter, this.theme));
+      const stoneMat = new THREE.MeshStandardMaterial({ color: COLORS.lampStone, roughness: 0.8 });
+      const stone = timer
+        ? new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.42, 0.08, 24), stoneMat)
+        : new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.08, 0.76), stoneMat);
+      stone.position.y = 0.04;
+      stone.receiveShadow = true;
+      const rim = timer
+        ? new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.035, 8, 28), new THREE.MeshStandardMaterial({ color, roughness: 0.5 }))
+        : new THREE.Mesh(squareRingGeometry(0.3, 0.05), new THREE.MeshStandardMaterial({ color, roughness: 0.5 }));
+      rim.rotation.x = Math.PI / 2;
+      rim.position.y = 0.09;
+      const glow = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.25, roughness: 0.4 });
+      const wisp = new THREE.Mesh(new THREE.SphereGeometry(0.13, 18, 12), glow);
+      wisp.position.y = 0.2;
+      g.add(stone, rim, wisp);
+      const label = timer ? new LampLabel(color) : null;
+      if (label) {
+        label.sprite.position.y = 0.62;
+        label.set(timer, false);
+        g.add(label.sprite);
+      }
+      this.lampViews.push({ layer, x, y, color: c, timer, glow, label, lit: false });
+      return g;
+    }
+
+    if (tile === Tile.HoldSwitch) {
+      // A square button in its group's color with corner brackets: "keep something on me". It sinks
+      // while held and rises when let go (setHolds); a press switch is round and springs back.
+      const color = GROUP_COLORS[group % GROUP_COLORS.length];
+      g.add(floorTile(jitter, this.theme, layer), earth(jitter, this.theme));
+      const sw = new THREE.Group();
+      const edge = box(0.7, 0.07, 0.7, rimColor(color), { roughness: 0.6 });
+      edge.position.y = -0.01;
+      const plate = box(0.6, 0.1, 0.6, color, { roughness: 0.4 });
+      sw.add(edge, plate);
+      for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+        for (const along of [0, 1]) {
+          const bar = box(along ? 0.2 : 0.05, 0.05, along ? 0.05 : 0.2, rimColor(color, 0.4), { roughness: 0.6 });
+          bar.position.set(sx * 0.42 - (along ? sx * 0.075 : 0), -0.02, sz * 0.42 - (along ? 0 : sz * 0.075));
+          g.add(bar);
+        }
+      }
+      sw.position.y = 0.05;
+      sw.traverse((o) => (o.castShadow = true));
+      g.add(sw);
+      this.holdSwitches.set(cell, { obj: sw, down: false });
+      return g;
+    }
+
     g.add(floorTile(jitter, this.theme, layer), earth(jitter, this.theme));
 
     const isSwitch = tile === Tile.ExtraHeavy || tile === Tile.SoftSwitch || tile === Tile.HeavySwitch;
@@ -1376,6 +1473,7 @@ export class World {
     this.block.visible = true;
     this.showPair(state);
     this.setGates(state, false);
+    this.setHolds(state, false);
     this.goalMarker?.scale.setScalar(1);
     for (const view of this.tiles.values()) {
       view.obj.position.y = view.baseY;
@@ -1439,7 +1537,7 @@ export class World {
   private hasSwitch(group: number): boolean {
     const level = this.level;
     if (!level) return false;
-    const presses = (t: Tile) => t === Tile.SoftSwitch || t === Tile.HeavySwitch || t === Tile.ExtraHeavy;
+    const presses = (t: Tile) => t === Tile.SoftSwitch || t === Tile.HeavySwitch || t === Tile.ExtraHeavy || t === Tile.HoldSwitch;
     return [level, ...(level.ceiling ? [level.ceiling] : [])].some((l) => l.tiles.some((t, i) => presses(t) && l.groups[i] === group));
   }
 
@@ -2232,6 +2330,52 @@ export class World {
       const sw = this.switches.get(this.layer * 1e8 + y * 10000 + x);
       if (sw) void this.tween(260, (t) => (sw.scale.y = 1 - Math.sin(t * Math.PI) * 0.7));
     }
+  }
+
+  /** Sink the held switches something rests on, and raise the ones let go. */
+  setHolds(state: State, animate = true): void {
+    const layer = state.layer ?? 0;
+    const resting = new Set([...blockCells(state.block), ...(state.other ? [[state.other.x, state.other.y]] : [])].map(([x, y]) => layer * 1e8 + y * 10000 + x));
+    for (const [key, h] of this.holdSwitches) {
+      const down = resting.has(key);
+      if (down === h.down) continue;
+      h.down = down;
+      const [from, to] = down ? [1, 0.35] : [0.35, 1];
+      if (!animate) h.obj.scale.y = to;
+      else void this.tween(160, (t) => (h.obj.scale.y = from + (to - from) * easeOut(t)));
+    }
+  }
+
+  /**
+   * Show what's lit: dark tiles of a lit color, and any a block rests on, fade in; the rest fade out.
+   * `left` is each timed light's moves of light (in `lampsOf` order: ground then ceiling, reading order),
+   * shown on its label; `reveal` (the Hint key) shows every dark tile faintly.
+   */
+  setLights(lit: number, left: number[], state: State, reveal = false, animate = true): void {
+    const layer = state.layer ?? 0;
+    const resting = new Set([...blockCells(state.block), ...(state.other ? [[state.other.x, state.other.y]] : [])].map(([x, y]) => `${layer},${x},${y}`));
+    const changes: { tile: DarkTileView; from: number; to: number }[] = [];
+    for (const d of this.darkTiles) {
+      const to = (lit >> d.color) & 1 || resting.has(`${d.layer},${d.x},${d.y}`) ? 1 : reveal ? DARK_REVEAL : 0;
+      if (to !== d.fade) changes.push({ tile: d, from: d.fade, to });
+    }
+    const show = (d: DarkTileView, f: number) => {
+      d.fade = f;
+      d.obj.visible = f > 0.01;
+      for (const m of d.mats) m.userData.tubeFade = f;
+    };
+    if (!animate) changes.forEach((c) => show(c.tile, c.to));
+    else if (changes.length) void this.tween(LIGHT_FADE_MS, (t) => changes.forEach((c) => show(c.tile, c.from + (c.to - c.from) * easeOut(t))));
+    // Timed lights count down in order; held ones glow while held.
+    const timed = this.lampViews.slice().sort((a, b) => a.layer - b.layer || a.y - b.y || a.x - b.x);
+    timed.forEach((v, i) => {
+      v.lit = !!((lit >> v.color) & 1) && (v.timer === 0 ? resting.has(`${v.layer},${v.x},${v.y}`) : left[i] > 0);
+      v.glow.emissiveIntensity = v.lit ? 1.6 : 0.25;
+      v.label?.set(v.lit ? left[i] : v.timer, v.lit);
+      // Over a block resting on the lamp, so the count never hides behind it.
+      const on = resting.has(`${v.layer},${v.x},${v.y}`);
+      if (v.label) v.label.sprite.position.y = on ? (state.other || state.block.n === 1 ? 1.45 : 2.45) : 0.62;
+    });
   }
 
   setBridges(mask: number): Promise<void> {
@@ -4058,4 +4202,58 @@ function setFootprint(g: THREE.Group, w: number, d: number): void {
     bar.scale.set(across ? fw : t, 1, across ? t : fd);
     bar.position.set(across ? 0 : side * (fw - t) / 2, 0, across ? side * (fd - t) / 2 : 0);
   });
+}
+
+interface DarkTileView {
+  layer: number;
+  x: number;
+  y: number;
+  color: number;
+  obj: THREE.Object3D;
+  mats: THREE.Material[];
+  fade: number;
+}
+
+/** A flat square ring (a held switch's shape), in the XY plane like a torus. */
+function squareRingGeometry(r: number, w: number): THREE.BufferGeometry {
+  const shape = new THREE.Shape([new THREE.Vector2(-r - w, -r - w), new THREE.Vector2(r + w, -r - w), new THREE.Vector2(r + w, r + w), new THREE.Vector2(-r - w, r + w)]);
+  shape.holes.push(new THREE.Path([new THREE.Vector2(-r, -r), new THREE.Vector2(-r, r), new THREE.Vector2(r, r), new THREE.Vector2(r, -r)]));
+  return new THREE.ExtrudeGeometry(shape, { depth: 0.03, bevelEnabled: false }).translate(0, 0, -0.015);
+}
+
+/** A timed light's count: a small round badge that always faces the camera. */
+class LampLabel {
+  readonly sprite: THREE.Sprite;
+  private canvas = document.createElement('canvas');
+  private texture: THREE.CanvasTexture;
+  private shown = '';
+
+  constructor(private color: number) {
+    this.canvas.width = this.canvas.height = 128;
+    this.texture = new THREE.CanvasTexture(this.canvas);
+    this.texture.colorSpace = THREE.SRGBColorSpace;
+    this.sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.texture, depthWrite: false }));
+    this.sprite.scale.setScalar(0.42);
+  }
+
+  set(n: number, lit: boolean): void {
+    const key = `${n},${lit}`;
+    if (key === this.shown) return;
+    this.shown = key;
+    const g = this.canvas.getContext('2d')!;
+    g.clearRect(0, 0, 128, 128);
+    g.beginPath();
+    g.arc(64, 64, 58, 0, Math.PI * 2);
+    g.fillStyle = lit ? `#${this.color.toString(16).padStart(6, '0')}` : 'rgba(40, 38, 50, 0.85)';
+    g.fill();
+    g.lineWidth = 8;
+    g.strokeStyle = lit ? '#ffffff' : `#${this.color.toString(16).padStart(6, '0')}`;
+    g.stroke();
+    g.fillStyle = lit ? '#1d1a2b' : '#ffffff';
+    g.font = 'bold 76px system-ui, sans-serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(String(n), 64, 68);
+    this.texture.needsUpdate = true;
+  }
 }

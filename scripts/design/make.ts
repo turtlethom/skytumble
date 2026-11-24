@@ -12,7 +12,7 @@
 // add KEEP=f to keep a plank field whole.
 import { spawn } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { Draft, block, dropUnreachable, flipNS, hidden, lint, normalize, plainWalls, plankify, regrow, report, strip, tryLevel, wallsText, COLOR } from './checks';
+import { Draft, block, dropUnreachable, flipNS, hidden, lint, normalize, plainWalls, plankify, regrow, report, strip, tryLevel, wallsText, COLOR, lightText } from './checks';
 import { parseBlock } from './lib';
 
 const [template, palette, lo, hi, seeds = '1-4', want = '', outArg] = process.argv.slice(2);
@@ -57,8 +57,8 @@ const candidates: Candidate[] = [];
 for (const text of found.split(/\n\s*\n/).map((b) => b.trim()).filter((b) => b.startsWith('@'))) {
   const lines = text.split('\n');
   const seed = /seed (\S+)/.exec(lines[0])?.[1] ?? '?';
-  const { rows, switches, on, shape, paint, gates } = parseBlock(lines);
-  const searched = normalize({ rows, switches, on, shape, ...(paint ? { paint } : {}), ...(gates ? { gates } : {}) });
+  const { rows, switches, on, shape, paint, gates, lamps } = parseBlock(lines);
+  const searched = normalize({ rows, switches, on, shape, ...(paint ? { paint } : {}), ...(gates ? { gates } : {}), ...(lamps ? { lamps } : {}) });
   const full = process.env.PLANKS ? plankify(searched, (x, y) => t.rows[y]?.[x] === '?') : searched;
   const stripped = strip(full, process.env.KEEP ?? '');
   const sr = report(stripped);
@@ -95,6 +95,7 @@ const summary = candidates.map((c, i) => {
     `#${i + 1} ${c.name}  par ${c.r.par}  states ${c.r.states} (stripped ${c.stripped.states})  dead ends ${c.r.deadEnds}/${c.r.reachable}` +
       `  floor par ${c.r.floorPar ?? 'X'}  ${walls}${c.flipped ? '  [flipped N-S]' : ''}`,
     `   uses: ${c.r.uses.join(' ') || 'none'}${c.r.pushes ? `  pushes ${c.r.pushes}` : ''}`,
+    ...(c.r.lights ? [`   lights: ${lightText(c.r.lights)}`] : []),
     ...c.r.hidden.map((h) => `   HIDDEN: ${h}`),
     ...(c.r.represses ? [`   QUICK RE-PRESS ×${c.r.represses}: a press undone within two moves, only to reposition (try ease)`] : []),
     `   moves: ${c.r.moves}`,

@@ -21,6 +21,8 @@ const FILL: Partial<Record<Tile, string>> = {
   [Tile.Door]: '#2457c5',
   [Tile.ShapeSwitch]: '#f6f1e6',
   [Tile.ExtraHeavy]: '#86d07a',
+  [Tile.HoldSwitch]: '#86d07a',
+  [Tile.Lamp]: '#86d07a',
 };
 export const PAD_ARROW = '#2fa8e8';
 /** Arrow glyph rotation per DIRS entry (up, down, left, right), for a "→" drawn pointing right. */
@@ -59,6 +61,11 @@ export function miniMap(level: Level): string {
         );
         continue;
       }
+      if (t === Tile.Dark) {
+        // Unseen in play: a dark tile drawn as an outline in its light's color.
+        parts.push(`<rect x="${px + 1}" y="${py + 1}" width="${CELL - 2}" height="${CELL - 2}" rx="2" fill="#2b2838" stroke="${GROUP_COLORS[g % 4]}" stroke-dasharray="2 1.5"/>`);
+        continue;
+      }
       parts.push(`<rect x="${px + 0.5}" y="${py + 0.5}" width="${CELL - 1}" height="${CELL - 1}" rx="2" fill="${FILL[t]}"/>`);
       const cx = px + CELL / 2;
       const cy = py + CELL / 2;
@@ -70,6 +77,10 @@ export function miniMap(level: Level): string {
         parts.push(
           `<path d="M${cx - 4} ${cy - 4}L${cx + 4} ${cy + 4}M${cx + 4} ${cy - 4}L${cx - 4} ${cy + 4}" stroke="${GROUP_COLORS[g % 4]}" stroke-width="2.5"/>`,
         );
+      } else if (t === Tile.HoldSwitch) {
+        parts.push(`<rect x="${cx - 4}" y="${cy - 4}" width="8" height="8" fill="${GROUP_COLORS[g % 4]}" stroke="#1d1a2b" stroke-width="1"/>`);
+      } else if (t === Tile.Lamp) {
+        parts.push(`<circle cx="${cx}" cy="${cy}" r="4.5" fill="#fff6c8" stroke="${GROUP_COLORS[g & 3]}" stroke-width="2"/>`);
       } else if (t === Tile.Fragile) {
         parts.push(`<path d="M${px + 5} ${py + 1}V${py + CELL - 1}M${px + 9} ${py + 1}V${py + CELL - 1}" stroke="#b98545" stroke-width="1"/>`);
       } else if (t === Tile.Pad) {

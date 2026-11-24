@@ -1,9 +1,11 @@
 // Checks and transforms shared by the design tools: does each switch-wall color have to move, strip what
 // a solution doesn't need, regrow decoys that keep the puzzle, flip a board north to south, find what a
 // raised wall hides from the opening camera, and lint a draft for the mistakes that cost the most rounds.
-import { formatLevel, parseLevel } from '../../src/game/ascii';
-import { DIR_DELTA, DIRS, Dir, Level, PAINT_NAMES, Paint, Tile } from '../../src/game/types';
-import { blockCells, findGoal, flight, initialState, isSolid, landing, layerView, step, successors, wallUp } from '../../src/game/rules';
+import { Lamp, formatLevel, parseLevel } from '../../src/game/ascii';
+import { Played, darkSteps, hasLights, lampsOf } from '../../src/game/lights';
+import { lightErrors } from '../../src/levels/validate';
+import { DIR_DELTA, DIRS, Dir, Level, Move, PAINT_NAMES, Paint, Tile } from '../../src/game/types';
+import { blockCells, findGoal, flight, heldSwitches, initialState, isSolid, landing, layerView, play, step, successors, wallUp } from '../../src/game/rules';
 import { solve } from '../../src/game/solver';
 import { flipUses, iceUses, padUses, shapeUses } from '../../src/levels/validate';
 import { closest, explore, padArrow } from './explore';
@@ -13,7 +15,7 @@ export function switchOrder(level: Level): number[] {
   const out: number[] = [];
   for (const floor of [level, ...(level.ceiling ? [level.ceiling] : [])]) {
     floor.tiles.forEach((t, i) => {
-      if (t === Tile.SoftSwitch || t === Tile.HeavySwitch || t === Tile.ExtraHeavy) out.push(floor.groups[i]);
+      if (t === Tile.SoftSwitch || t === Tile.HeavySwitch || t === Tile.ExtraHeavy || t === Tile.HoldSwitch) out.push(floor.groups[i]);
     });
   }
   return out;
@@ -47,15 +49,17 @@ export interface Draft {
   paint?: [Paint, Paint];
   /** Gate colors in reading order. */
   gates?: number[];
+  /** Light switches in reading order (the Chasm). */
+  lamps?: Lamp[];
 }
 
 export const COLOR = ['orange', 'purple', 'blue', 'red'];
-const SWITCH_CHARS = 'oxX';
+const SWITCH_CHARS = 'oxXO';
 const isWall = (t: Tile) => t === Tile.WallUp || t === Tile.WallDown;
-const isSwitch = (t: Tile) => t === Tile.SoftSwitch || t === Tile.HeavySwitch || t === Tile.ExtraHeavy;
+const isSwitch = (t: Tile) => t === Tile.SoftSwitch || t === Tile.HeavySwitch || t === Tile.ExtraHeavy || t === Tile.HoldSwitch;
 
 export function toLevel(d: Draft): Level {
-  const level = parseLevel(d.rows, d.switches, d.on.reduce((m, g) => m | (1 << g), 0), d.shape, d.gates ?? []);
+  const level = parseLevel(d.rows, d.switches, d.on.reduce((m, g) => m | (1 << g), 0), d.shape, d.gates ?? [], d.lamps ?? []);
   if (d.paint) level.startPaint = d.paint;
   return level;
 }
@@ -279,14 +283,19 @@ export function flipNS(d: Draft): Draft {
   const gateAt = new Map<string, number>();
   let g = 0;
   d.rows.forEach((r, y) => [...r].forEach((c, x) => c === '{' && gateAt.set(`${x},${y}`, d.gates?.[g++] ?? 0)));
+  const lampAt = new Map<string, Lamp>();
+  let m = 0;
+  d.rows.forEach((r, y) => [...r].forEach((c, x) => c === '*' && lampAt.set(`${x},${y}`, d.lamps?.[m++] ?? { color: 0, timer: 6 })));
   const rows = [...d.rows].reverse().map((r) => r.replace(/[v^UDAV]/g, (c) => ({ v: '^', '^': 'v', U: 'D', D: 'U', A: 'V', V: 'A' })[c]!));
   const switches: number[] = [];
   const gates: number[] = [];
+  const lamps: Lamp[] = [];
   rows.forEach((r, y) => [...r].forEach((c, x) => {
     if (SWITCH_CHARS.includes(c)) switches.push(groupAt.get(`${x},${h - 1 - y}`)!);
     if (c === '{') gates.push(gateAt.get(`${x},${h - 1 - y}`)!);
+    if (c === '*') lamps.push(lampAt.get(`${x},${h - 1 - y}`)!);
   }));
-  return { ...d, rows, switches, ...(d.gates ? { gates } : {}) };
+  return { ...d, rows, switches, ...(d.gates ? { gates } : {}), ...(d.lamps ? { lamps } : {}) };
 }
 
 /**
@@ -460,6 +469,7 @@ export function lint(d: Draft): string[] {
     else out.push(`WARN: unsolvable (closest: ${near ? `${near.dist} tiles from the goal` : 'nowhere'}): run analyze for the diagnosis`);
   }
   out.push(...idleSpecials(l));
+  out.push(...lightLint(l));
   return out;
 }
 
@@ -495,6 +505,82 @@ export function idleSpecials(l: Level): string[] {
     if (t !== Tile.Conveyor && t !== Tile.Pad) return;
     if (!acted.has(`${x},${y}`)) out.push(`WARN: the ${t === Tile.Conveyor ? 'belt' : 'pad'} at ${x},${y} never ${t === Tile.Conveyor ? 'pushes' : 'fires'} from any position the block can reach: it's decoration that visibly does nothing`);
   });
+  return out;
+}
+
+export interface LightReport {
+  /** Rolls that came to rest on a dark tile with its light out, and the turns among them. */
+  dark: number;
+  turns: number;
+  /** Rolls onto dark tiles while lit: a crossing that needs no memory. */
+  lit: number;
+  /** Dark steps onto tiles never lit before: the route asks for a guess. */
+  unseen: number;
+  /** Rolls that ended with a held switch held, and how many times one was let go. */
+  holds: number;
+  releases: number;
+}
+
+/**
+ * The Chasm's numbers for a solution (par can't measure memory): steps and turns in the dark, dark
+ * tiles crossed lit, steps onto tiles never shown, and how the held switches were used. Null for a
+ * level with no dark tiles or held switches.
+ */
+export function lightReport(level: Level, steps: Move[]): LightReport | null {
+  const holdsHere = level.tiles.includes(Tile.HoldSwitch) || !!level.ceiling?.tiles.includes(Tile.HoldSwitch);
+  if (!hasLights(level) && !holdsHere) return null;
+  const start = initialState(level);
+  let state = start;
+  const played: Played[] = [];
+  let holds = 0;
+  let releases = 0;
+  let wasHeld = 0;
+  for (const m of steps) {
+    state = play(level, state, m).state;
+    played.push({ state, roll: m !== 'swap' });
+    const held = heldSwitches(level, state).length;
+    if (m !== 'swap' && held) holds++;
+    if (held < wasHeld) releases++;
+    wasHeld = held;
+  }
+  const d = darkSteps(level, start, played, steps);
+  return { dark: d.steps, turns: d.turns, lit: d.litCrossings, unseen: d.unseen, holds, releases };
+}
+
+/** One line for analyze and make. */
+export function lightText(r: LightReport): string {
+  return `dark ${r.dark} steps, ${r.turns} turns  crossed lit ${r.lit}${r.unseen ? `  UNSEEN ${r.unseen}` : ''}  held ${r.holds} rolls, let go ${r.releases}×`;
+}
+
+/**
+ * Lint for the Chasm: the validator's color rules, light switches and held switches nothing can rest
+ * on, and on a solvable draft, a route that steps on dark tiles never shown (a guess) or crosses every
+ * dark tile lit (no memory at all).
+ */
+export function lightLint(l: Level): string[] {
+  const out = lightErrors(l).map((e) => `WARN: ${e}`);
+  const lamps = lampsOf(l);
+  const holds = l.tiles.flatMap((t, i) => (t === Tile.HoldSwitch ? [{ x: i % l.width, y: Math.floor(i / l.width) }] : []));
+  if (!lamps.length && !holds.length) return out;
+  lamps.forEach((m) => out.push(`light switch at ${m.x},${m.y}${m.layer ? '↑' : ''}: ${COLOR[m.color]}, ${m.timer ? `${m.timer} moves` : 'held'}`));
+  if (!l.ceiling) {
+    const ex = explore(l, 100_000);
+    if (!ex.truncated) {
+      const covered = new Set<string>();
+      for (const { state } of ex.nodes.values()) {
+        blockCells(state.block).forEach(([x, y]) => covered.add(`${x},${y}`));
+        if (state.other) covered.add(`${state.other.x},${state.other.y}`);
+      }
+      for (const m of lamps) if (!covered.has(`${m.x},${m.y}`)) out.push(`WARN: the light switch at ${m.x},${m.y} is never rested on from any position the block can reach`);
+      for (const h of holds) if (!covered.has(`${h.x},${h.y}`)) out.push(`WARN: the held switch at ${h.x},${h.y} is never rested on from any position the block can reach`);
+    }
+  }
+  const sol = solve(l);
+  const r = sol && lightReport(l, sol.steps);
+  if (r && hasLights(l)) {
+    if (r.unseen) out.push(`WARN: the best route steps on dark tiles ${r.unseen}× before they were ever lit: par asks for a guess, so put the light on the way`);
+    if (!r.dark && r.lit) out.push('WARN: the best route crosses every dark tile lit: nothing to remember');
+  }
   return out;
 }
 
@@ -537,6 +623,8 @@ export interface Report {
   hidden: string[];
   /** Presses undone within two moves (see quickRepresses). */
   represses: number;
+  /** The Chasm's numbers, for levels with dark tiles or held switches. */
+  lights: LightReport | null;
 }
 
 const LETTER = { up: 'U', down: 'D', left: 'L', right: 'R' } as const;
@@ -561,6 +649,7 @@ export function report(d: Draft): Report | null {
     walls: wallColors(level, sol.moves.length),
     hidden: hidden(level),
     represses: quickRepresses(level, sol.moves),
+    lights: lightReport(level, sol.steps),
   };
 }
 
@@ -579,6 +668,7 @@ export function block(name: string, d: Draft): string {
     d.on.length ? `!on ${d.on.join(' ')}` : '',
     d.shape !== 2 ? `!shape ${d.shape === 1 ? 'cube' : 'tall'}` : '',
     ...paintOpts(d.paint, d.gates),
+    d.lamps?.length ? `!lamps ${d.lamps.map((l) => `${l.timer || 'held'}${l.color ? `/${l.color}` : ''}`).join(' ')}` : '',
   ];
   return [`@${name}`, ...opts.filter(Boolean), ...d.rows].join('\n');
 }

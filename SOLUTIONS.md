@@ -1876,3 +1876,28 @@ Before a move: ↹ press Tab first, to move the other cube (a swap is free; it n
  1- 5  → ↓ →✈ ↓ ↓
  6- 6  →✔
 ```
+
+## `chasmlab-01` First Light
+
+```
+ 1- 5  → → → → ↓
+ 6-10  ↓ → → ↑ ↑
+11-15  → → ↓ ↓ →
+16-16  →✔
+```
+
+## `chasmlab-02` Doorstop
+
+```
+ 1- 5  → →✂ → ↹↑ ↑●
+ 6-10  ↹→ ↹↓● ↓ → →
+11-14  → → → →✔
+```
+
+## `chasmlab-03` Lantern Bearer
+
+```
+ 1- 5  → →✂ ↓ → →
+ 6-10  ↓ → → ↑ →
+11-11  ↓✔
+```

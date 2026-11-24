@@ -1,0 +1,31 @@
+title: Chasm Lab (prototypes)
+
+=== chasmlab-01
+par: 16
+name: First Light
+idea: Dark tiles are solid but unseen. Stand on the light switch and the path shows for 4 moves, counting down on the switch; then it's dark and you cross from memory. Look as long as you like: only moves count. Fall in the dark and you're back where the light went out.
+guard: off
+lamps: 4
+S##*,,,..,,,,...
+......,..,..,...
+......,..,..,...
+......,,,,..,,,G
+
+=== chasmlab-02
+par: 14
+name: Doorstop
+idea: A held switch keeps its wall down only while something rests on it. One cube holds it while the other stops on the wall's tile; step off, and the wall waits under that cube, so the holder can come round and join it there.
+guard: off
+...O.........
+...#.........
+S##]##H###G
+
+=== chasmlab-03
+par: 11
+name: Lantern Bearer
+idea: The cube that splits off lands on a held light, so the path shows while it waits there. Study it: only the whole block can take the goal, so rolling back to join puts the light out, and you cross as a block in the dark.
+guard: off
+lamps: held
+...*,,..,,
+S##A,,..,,
+.....,,,,G

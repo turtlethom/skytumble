@@ -2,13 +2,13 @@
 // through on the real rules, over and over. Not levels anyone plays, so they aren't in a chapter file.
 // Moves are written out, not solved, so a scene can show every way a mechanic behaves in one loop, mistakes
 // included: standing and lying, pressed and pressed again. `[Z]` in a text is drawn as a key.
-import { parseLevel } from '../game/ascii';
+import { parseLamps, parseLevel } from '../game/ascii';
 import { Level, Move, PAINT_NAMES, Tile } from '../game/types';
 
 export type MechanicId =
   | 'rolling' | 'lying' | 'planks' | 'soft' | 'heavy' | 'walls'
   | 'ice' | 'belts' | 'iceWalls' | 'pads' | 'padWalls' | 'flips' | 'lockedRings' | 'shapeWalls' | 'cube' | 'tall' | 'extraHeavy' | 'hedges'
-  | 'tubes' | 'split' | 'paint' | 'mixing' | 'padPaint';
+  | 'tubes' | 'split' | 'paint' | 'mixing' | 'padPaint' | 'hold' | 'lights';
 
 export interface Mechanic {
   id: MechanicId;
@@ -230,6 +230,25 @@ export const MECHANICS: Mechanic[] = [
     level: parseLevel(['SR...rR..#{#C', '.........u...'], [], 0, 1, gates('purple')),
     moves: moves('RRDURRR'),
   },
+  {
+    id: 'hold',
+    name: 'Held switches',
+    text: 'A square switch works only while something rests on it: a cube, half a lying block, or the cube you aren\'t moving. Its walls stay switched while it\'s held, and switch back the moment it\'s let go. A wall that comes up under a cube waits until the cube moves off, so park a cube on the wall before the holder leaves.',
+    basic: false,
+    // The new cube pops onto the held switch, which keeps the wall down; the other cube rolls onto the wall, and the holder joins it there. Letting go raises the wall behind.
+    // Laid out north to south, so the wall never hides the switch from the camera.
+    level: parseLevel(['....G', '...#H', 'S##]O']),
+    moves: moves('RRTURTUU'),
+  },
+  {
+    id: 'lights',
+    name: 'Dark tiles and lights',
+    text: 'Dark tiles are solid, but you can\'t see them, except the one you\'re standing on. A round light switch lights its color\'s dark tiles for the number of moves on it; a square one only while something rests on it. Look as long as you like: only moves count. Fall in the dark and you go back to when the light went out. [H] shows the dark tiles too.',
+    basic: false,
+    // The light comes on for two moves; the rest of the path is crossed from memory.
+    level: parseLevel(['S##*,,,,,G'], [], 0, 2, [], parseLamps('2')),
+    moves: moves('RRRRRR'),
+  },
 ];
 
 /** The mechanics a player meets in this level, among those that have to be unlocked. */
@@ -266,5 +285,8 @@ export function mechanicsIn(level: Level): MechanicId[] {
   // Two colors of tray (or water, which only matters once coats can pile up) is where mixing starts.
   if (trays.size > 1 || tiles.includes(Tile.Wash)) found.add('mixing');
   if (tiles.includes(Tile.Pad) && (paints || tiles.includes(Tile.Splitter))) found.add('padPaint');
+  // The Chasm.
+  if (tiles.includes(Tile.HoldSwitch)) found.add('hold');
+  if (tiles.includes(Tile.Dark) || tiles.includes(Tile.Lamp)) found.add('lights');
   return [...found];
 }

@@ -1,5 +1,6 @@
 import { blockCells, blockLength, findGoal, initialState, isRing, isSolid, isWall, layerView, play, ringLocked, tileAt } from '../game/rules';
 import { solve } from '../game/solver';
+import { lampOf } from '../game/ascii';
 import { Level, Move, State, Tile } from '../game/types';
 import { Chapter, HandmadeLevel } from './format';
 
@@ -232,8 +233,37 @@ function mixesWalls(level: Level): boolean {
   return tiles.includes(Tile.Hedge) && (!!level.ceiling || !!level.startShape || tiles.some((t) => NOT_WITH_HEDGES.includes(t)));
 }
 
-export function validateLevel(h: HandmadeLevel, chapter: Chapter): LevelReport {
+/**
+ * The Chasm's pieces (settled 2026-11-24): one kind per color, so a held switch's color has no press
+ * switches; a light color is never also a switch color; every dark color has a light switch and every
+ * light switch has dark tiles to light.
+ */
+export function lightErrors(level: Level): string[] {
   const errors: string[] = [];
+  const press = new Set<number>();
+  const hold = new Set<number>();
+  const switched = new Set<number>();
+  const dark = new Set<number>();
+  const lamps = new Set<number>();
+  for (const l of [level, ...(level.ceiling ? [level.ceiling] : [])]) {
+    l.tiles.forEach((t, i) => {
+      const g = l.groups[i];
+      if (t === Tile.SoftSwitch || t === Tile.HeavySwitch || t === Tile.ExtraHeavy) press.add(g);
+      if (t === Tile.HoldSwitch) hold.add(g);
+      if (t === Tile.SoftSwitch || t === Tile.HeavySwitch || t === Tile.ExtraHeavy || t === Tile.HoldSwitch || t === Tile.Bridge || t === Tile.BridgeReversed || isWall(t) || (isRing(t) && g >= 0)) switched.add(g);
+      if (t === Tile.Dark) dark.add(g);
+      if (t === Tile.Lamp) lamps.add(lampOf(g).color);
+    });
+  }
+  for (const g of hold) if (press.has(g)) errors.push(`color ${g} has both held and press switches: a color's switches are all one kind`);
+  for (const c of new Set([...dark, ...lamps])) if (switched.has(c)) errors.push(`light color ${c} is also a switch color: lights and walls keep their colors apart`);
+  for (const c of dark) if (!lamps.has(c)) errors.push(`dark tiles in light color ${c} have no light switch`);
+  for (const c of lamps) if (!dark.has(c)) errors.push(`a light switch in color ${c} has no dark tiles to light`);
+  return errors;
+}
+
+export function validateLevel(h: HandmadeLevel, chapter: Chapter): LevelReport {
+  const errors: string[] = [...lightErrors(h.level)];
   for (const c of wallsOverRings(h.level)) errors.push(`a wall on the other floor over the ring at ${c.x},${c.y}: walls and rings stay out of each other's way, so a ring always has somewhere to land`);
   if (mixesGates(h.level)) errors.push('glass tubes only mix with the basics, shapes, walls and belts, on one floor, until their other interactions are settled');
   if (mixesWalls(h.level)) errors.push('hedges only mix with the basics, on one floor, until their other interactions are settled');
