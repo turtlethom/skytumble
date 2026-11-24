@@ -13,6 +13,7 @@ import { ReindeerCloseUp } from './ridge';
 import { StarfallScenery } from './starfall';
 import { StudioScenery } from './studio';
 import { SplatterScenery } from './splatter';
+import { HollowScenery } from './hollow';
 import { StudioCat } from './cat';
 import { NEUTRAL, Theme, WallStone } from './themes';
 import { ToyboxScenery } from './toybox';
@@ -250,6 +251,7 @@ const SCENERY: Partial<Record<Theme['sky'], () => Scenery>> = {
   stars: () => new StarfallScenery(),
   studio: () => new StudioScenery(),
   splatter: () => new SplatterScenery(),
+  hollow: () => new HollowScenery(),
 };
 
 /** Three.js view of a level. Holds no game rules: the controller tells it what happened. */

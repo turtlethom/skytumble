@@ -89,6 +89,7 @@ body[data-theme='studio'] .menu-list button kbd {
 /* The Hollow Deep: a cold teal twilight over a black void. Dark glass panels with pale teal text, as in
    Starfall's dark world but cold green-blue. The crest motifs come later, with the menus. */
 body[data-theme='hollow'] {
+  --crest: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%239fe3d6' fill-opacity='0.25'/%3E%3Ccircle cx='12' cy='12' r='5.5' fill='%239fe3d6' fill-opacity='0.5'/%3E%3Ccircle cx='12' cy='12' r='3' fill='%23effffb'/%3E%3C/svg%3E");
   --ink: #e6f3f1;
   --ink-soft: #a9c6c2;
   --accent: #5fb8ad;
@@ -338,7 +339,8 @@ body[data-theme='night'] {
 }
 
 /* The map keeps its own light panels, whichever world it opens over. */
-body[data-theme='night'] .sky-map {
+body[data-theme='night'] .sky-map,
+body[data-theme='hollow'] .sky-map {
   color: #23304a;
   --ink: #23304a;
   --ink-soft: #5b6884;
@@ -958,6 +960,76 @@ body[data-theme='night'] .dialog h2::after {
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 24' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%23000000' stop-opacity='0'/%3E%3Cstop offset='1' stop-color='%23000000'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill='url(%23g)' d='M6 12.5 186 9.5v6z'/%3E%3Cellipse cx='188' cy='12.5' rx='5' ry='5' fill='%23000000'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 24' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%23000000' stop-opacity='0'/%3E%3Cstop offset='1' stop-color='%23000000'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill='url(%23g)' d='M6 12.5 186 9.5v6z'/%3E%3Cellipse cx='188' cy='12.5' rx='5' ry='5' fill='%23000000'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
 }
+/* The Hollow Deep (2026-11-24): a teal dusk falling into black; wisps and cracked stone at the panel
+   corners, a crack under each title. On the arrival, wisps drift up out of the dark and a cracked slab
+   settles behind the name. */
+.arrival[data-theme='hollow'] {
+  color: #dff5f0;
+  text-shadow: 0 2px 0 #0b2a28, 0 6px 22px rgba(95, 210, 196, 0.45);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 24' preserveAspectRatio='none'%3E%3Cpath d='M4 12 40 11 52 15 70 9 92 13 104 8 118 14 140 10 158 13 172 9 196 12' fill='none' stroke='%237fd3c6' stroke-width='2.5' stroke-linejoin='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") center 57% / min(52vw, 560px) clamp(14px, 2vw, 22px) no-repeat,
+    linear-gradient(180deg, #1c3b3a 0%, #0c1e1e 40%, #030909 75%, #000000 100%);
+}
+.arrival[data-theme='hollow']::before {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%239fe3d6' fill-opacity='0.25'/%3E%3Ccircle cx='12' cy='12' r='5.5' fill='%239fe3d6' fill-opacity='0.5'/%3E%3Ccircle cx='12' cy='12' r='3' fill='%23effffb'/%3E%3C/svg%3E") 18% 70% / 5vmin 5vmin no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%239fe3d6' fill-opacity='0.25'/%3E%3Ccircle cx='12' cy='12' r='5.5' fill='%239fe3d6' fill-opacity='0.5'/%3E%3Ccircle cx='12' cy='12' r='3' fill='%23effffb'/%3E%3C/svg%3E") 30% 28% / 3vmin 3vmin no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%239fe3d6' fill-opacity='0.25'/%3E%3Ccircle cx='12' cy='12' r='5.5' fill='%239fe3d6' fill-opacity='0.5'/%3E%3Ccircle cx='12' cy='12' r='3' fill='%23effffb'/%3E%3C/svg%3E") 72% 76% / 4vmin 4vmin no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%239fe3d6' fill-opacity='0.25'/%3E%3Ccircle cx='12' cy='12' r='5.5' fill='%239fe3d6' fill-opacity='0.5'/%3E%3Ccircle cx='12' cy='12' r='3' fill='%23effffb'/%3E%3C/svg%3E") 84% 34% / 3.5vmin 3.5vmin no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%239fe3d6' fill-opacity='0.25'/%3E%3Ccircle cx='12' cy='12' r='5.5' fill='%239fe3d6' fill-opacity='0.5'/%3E%3Ccircle cx='12' cy='12' r='3' fill='%23effffb'/%3E%3C/svg%3E") 60% 18% / 2.5vmin 2.5vmin no-repeat;
+}
+.arrival.drift[data-theme='hollow']::before {
+  animation: arrival-rise 3s ease-out both;
+}
+.arrival[data-theme='hollow']::after {
+  opacity: 0.35;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='2.5' y='2.5' width='19' height='19' rx='2' fill='none' stroke='%235d8a84' stroke-width='2'/%3E%3Cpath d='M8 2.5 10.5 9 7.5 13l4 4-1 4.5M10.5 9l5-2M11.5 17l5 1.5' fill='none' stroke='%235d8a84' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E") 12% 22% / 13vmin 13vmin no-repeat, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='2.5' y='2.5' width='19' height='19' rx='2' fill='none' stroke='%235d8a84' stroke-width='2'/%3E%3Cpath d='M8 2.5 10.5 9 7.5 13l4 4-1 4.5M10.5 9l5-2M11.5 17l5 1.5' fill='none' stroke='%235d8a84' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E") 88% 80% / 10vmin 10vmin no-repeat;
+}
+.arrival.drift[data-theme='hollow']::after {
+  animation: arrival-fall-slow 3s ease-out both;
+}
+body[data-theme='hollow'] .dialog {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%239fe3d6' fill-opacity='0.25'/%3E%3Ccircle cx='12' cy='12' r='5.5' fill='%239fe3d6' fill-opacity='0.5'/%3E%3Ccircle cx='12' cy='12' r='3' fill='%23effffb'/%3E%3C/svg%3E") left 9px top 9px / 20px 20px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%239fe3d6' fill-opacity='0.25'/%3E%3Ccircle cx='12' cy='12' r='5.5' fill='%239fe3d6' fill-opacity='0.5'/%3E%3Ccircle cx='12' cy='12' r='3' fill='%23effffb'/%3E%3C/svg%3E") left 31px top 8px / 11px 11px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='2.5' y='2.5' width='19' height='19' rx='2' fill='none' stroke='%237fb8b0' stroke-width='2'/%3E%3Cpath d='M8 2.5 10.5 9 7.5 13l4 4-1 4.5M10.5 9l5-2M11.5 17l5 1.5' fill='none' stroke='%237fb8b0' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E") right 9px bottom 8px / 20px 20px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='2.5' y='2.5' width='19' height='19' rx='2' fill='none' stroke='%237fb8b0' stroke-width='2'/%3E%3Cpath d='M8 2.5 10.5 9 7.5 13l4 4-1 4.5M10.5 9l5-2M11.5 17l5 1.5' fill='none' stroke='%237fb8b0' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E") right 33px bottom 7px / 12px 12px no-repeat,
+    var(--panel);
+}
+body[data-theme='hollow'] .dialog h2::after {
+  content: '';
+  display: block;
+  width: min(70%, 220px);
+  height: 10px;
+  margin: 2px auto 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 24' preserveAspectRatio='none'%3E%3Cpath d='M4 12 40 11 52 15 70 9 92 13 104 8 118 14 140 10 158 13 172 9 196 12' fill='none' stroke='%237fd3c6' stroke-width='2.5' stroke-linejoin='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  opacity: 0.85;
+}
+
+/* The Hollow Deep's island: dark stone with a teal rim, the rock beneath split by a glowing crack with a
+   tiny bridge across it. */
+.sm-island.hollow,
+.sm-grid.hollow {
+  --top: linear-gradient(#4a5654, #2c3534);
+  --edge: #4fae9f;
+  --cliff: #3b4544;
+  --cliff-dark: #121717;
+  color: #e6f3f1;
+}
+.sm-island.hollow .sm-progress {
+  color: #bfe2dc;
+}
+.sm-island.hollow .sm-badge {
+  background: rgba(8, 20, 20, 0.45);
+  color: #bfe2dc;
+}
+.sm-island.hollow::after {
+  background:
+    linear-gradient(90deg, transparent 44%, rgba(95, 210, 196, 0.6) 47%, #d8fff4 50%, rgba(95, 210, 196, 0.6) 53%, transparent 56%) 0 0 / 100% 80% no-repeat,
+    linear-gradient(transparent 7px, #6b5a48 7px, #6b5a48 10px, transparent 10px) 40% 0 / 20% 100% no-repeat,
+    linear-gradient(var(--cliff), var(--cliff-dark));
+  clip-path: polygon(0 0, 100% 0, 86% 44%, 72% 66%, 60% 100%, 54% 70%, 52% 30%, 48% 30%, 46% 60%, 40% 72%, 30% 58%, 14% 44%);
+}
 .arrival[data-theme='studio'] {
   color: #e6e9f2;
   text-shadow: 0 2px 0 #0d1019;
@@ -1170,6 +1242,7 @@ body.panel-open .modal.end {
 }
 
 body[data-theme='night'] .menu-list button.danger,
+body[data-theme='hollow'] .menu-list button.danger,
 body[data-theme='studio'] .menu-list button.danger {
   color: #ffa89c;
 }
@@ -1177,6 +1250,7 @@ body[data-theme='studio'] .menu-list button.danger {
 
 .menu-list button.danger.selected,
 body[data-theme='night'] .menu-list button.danger.selected,
+body[data-theme='hollow'] .menu-list button.danger.selected,
 body[data-theme='studio'] .menu-list button.danger.selected {
   background: #b5362a;
   border-color: #b5362a;

@@ -9,17 +9,20 @@ import { Progress } from './progress';
 
 /** The overview is laid out in a 160×90 box (16:9). Island centers by chapter id. */
 /** Map width at which islands draw at their natural size; they scale with the map around it. */
-const NATURAL_WIDTH = 1000;
+// 1150 since the seventh world (was 1000): seven islands in the zigzag need them a little smaller.
+const NATURAL_WIDTH = 1150;
 const W = 160;
 const H = 90;
-// Six worlds in a zigzag, 26 apart, so the sixth fits inside the 160-wide box (it would have gone at 170).
+// Seven worlds in a zigzag, about 21.7 apart so the seventh fits inside the 160-wide box (neighbors in a
+// row stay 43 apart, a little more than an island's width).
 const LAYOUT: Record<string, { x: number; y: number; theme: string }> = {
   glade: { x: 15, y: 30, theme: 'glade' },
-  frost: { x: 41, y: 66, theme: 'frost' },
-  wind: { x: 67, y: 30, theme: 'peaks' },
-  star: { x: 93, y: 66, theme: 'night' },
-  toy: { x: 119, y: 30, theme: 'toy' },
-  paint: { x: 145, y: 66, theme: 'splatter' },
+  frost: { x: 36.7, y: 66, theme: 'frost' },
+  wind: { x: 58.3, y: 30, theme: 'peaks' },
+  star: { x: 80, y: 66, theme: 'night' },
+  toy: { x: 101.7, y: 30, theme: 'toy' },
+  paint: { x: 123.3, y: 66, theme: 'splatter' },
+  hollow: { x: 145, y: 30, theme: 'hollow' },
   lab: { x: 20, y: 16, theme: 'lab' },
   windlab: { x: 60, y: 16, theme: 'lab' },
   gravlab: { x: 100, y: 16, theme: 'lab' },
@@ -332,7 +335,7 @@ export class SkyMap {
 
 /** What an island's badge says on the sky map. */
 /** Worlds whose mechanics have no one-trick guard (no signature), labeled by hand. */
-const WORLD_LABEL: Record<string, string> = { paint: 'Split & paint' };
+const WORLD_LABEL: Record<string, string> = { paint: 'Split & paint', hollow: 'Lights & holds' };
 
 export function signatureBadge(c: Chapter): string {
   return c.signature ? (SIGNATURE_LABEL[c.signature] ?? c.signature) : (WORLD_LABEL[c.id] ?? 'Basics');
