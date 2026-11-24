@@ -29,3 +29,33 @@ lamps: held
 ...*,,..,,
 S##A,,..,,
 .....,,,,G
+
+=== chasmlab-04
+par: 23
+name: Relay
+idea: Split: the new cube lands on the held light. The purple wall needs its held switch held as well, and you have two cubes, so the light goes out before both are across. Study the path while it's lit. One cube crosses and stops on the wall's tile while the other holds the purple switch; when the holder leaves, the wall waits under the parked cube. The holder follows in the dark and joins it there, and the block finds the goal from what you saw.
+guard: off
+switches: 1
+lamps: held
+...*.......
+S##A#,.....
+...#.,,,I,.
+...O..,..,,
+......,..,,
+..........G
+
+=== chasmlab-05
+par: 12
+name: Underside
+idea: The light switch is on the ceiling, but its dark tiles are on the ground. Flip up and stand on it: the ground path lights for 2 moves, just long enough to roll over to the ring and flip back down. Study it from above (hold Space to look at the other floor), then cross it in the dark.
+guard: off
+lamps: 2
+S##+.....#,,,
+............,
+............,
+.........G,,,
+---
+...###*##+...
+.............
+.............
+.............

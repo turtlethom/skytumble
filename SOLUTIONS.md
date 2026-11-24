@@ -1901,3 +1901,21 @@ Before a move: ↹ press Tab first, to move the other cube (a swap is free; it n
  6-10  ↓ → → ↑ →
 11-11  ↓✔
 ```
+
+## `chasmlab-04` Relay
+
+```
+ 1- 5  → →✂ ↹↓ ↓● ↹↓
+ 6-10  → → ↓ → →
+11-15  → ↹↑● ↑ → →
+16-20  ↓ → → → →
+21-23  ↓ → ↓✔
+```
+
+## `chasmlab-05` Underside
+
+```
+ 1- 5  → →⇄ → → →
+ 6-10  →⇄ → → ↓ ↓
+11-12  ← ←✔
+```

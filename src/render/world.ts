@@ -702,7 +702,9 @@ export class World {
     this.bounds = [];
     // Leave headroom for the tallest block the level can make (a tall block stands three high).
     const canBeTall = level.startShape === 3 || level.tiles.some((t, i) => t === Tile.ShapeSwitch && level.groups[i] === 3);
-    const ys = this.hasCeiling ? [-0.6, CEIL_H + 0.6] : [-0.6, canBeTall ? 3 : 2];
+    // Two floors show one at a time (a peek turns the camera to the other side), so each is framed like
+    // one floor: making room for both floors' full height framed short boards from far off (chasmlab-05).
+    const ys = this.hasCeiling ? [-0.6, 2.6] : [-0.6, canBeTall ? 3 : 2];
     for (const x of [minX, maxX]) for (const z of [minZ, maxZ]) for (const y of ys) this.bounds.push(new THREE.Vector3(x, y, z));
     this.fitCamera();
     this.camDist = this.fitDist[this.camIndex];
