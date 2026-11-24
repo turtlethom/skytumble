@@ -1,4 +1,4 @@
-import { parseLevel } from '../game/ascii';
+import { parseLamps, parseLevel } from '../game/ascii';
 import { Level } from '../game/types';
 
 /**
@@ -104,4 +104,32 @@ export function splatterSheet(painted: boolean): Level {
   );
   if (painted) level.startPaint = [5, 6];
   return level;
+}
+
+/**
+ * The Hollow Deep's tiles (`?sheet=hollow`): dark tiles in the three light colors (no blue: it would
+ * vanish in the teal haze) beside their light switches (a timed orange, a held purple, a timed red),
+ * held switches as iron plates, iron gates raised and sunk, low stone, the iron seam splitter, the
+ * iron-ringed goal, planks, belts and a press switch to compare. The lights show lit; `&dark` leaves them
+ * out, and a roll east puts the block on a dark tile in the dark (its footing glow). Not a puzzle.
+ */
+export function hollowSheet(): Level {
+  return parseLevel(
+    [
+      '#o#x##O#O#O##f#f#',
+      '#################',
+      '#H#I#J##h##K#KK##',
+      '#################',
+      '#*#*#*##,,,#;;;##',
+      '##########,#;#"##',
+      '#]##00##G#"""###',
+      '#################',
+      'S,,#^#v###########',
+    ],
+    [0, 1, 0, 1, 2],
+    1,
+    2,
+    [],
+    parseLamps('4 held/1 6/3'),
+  );
 }

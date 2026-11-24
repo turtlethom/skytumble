@@ -4,14 +4,14 @@
  */
 export interface Theme {
   /** Also set as `data-theme` on the page body, where the sky gradient and text colors are styled. */
-  id: 'neutral' | 'night' | 'forest' | 'frost' | 'peaks' | 'toybox' | 'studio' | 'splatter';
+  id: 'neutral' | 'night' | 'forest' | 'frost' | 'peaks' | 'toybox' | 'studio' | 'splatter' | 'hollow';
   /** What surrounds the level. */
-  sky: 'clouds' | 'stars' | 'forest' | 'frost' | 'peaks' | 'toybox' | 'studio' | 'splatter';
+  sky: 'clouds' | 'stars' | 'forest' | 'frost' | 'peaks' | 'toybox' | 'studio' | 'splatter' | 'hollow';
   hemi: { sky: number; ground: number; intensity: number };
   sun: { color: number; intensity: number };
   block: { color: number; edge: number; roughness?: number };
   /** Walkable ground. `detail` lists shades of one color, darkest first, painted over each tile: as soft blotches, as snow, as slate, or as holes in a pegboard, or as meadow grass. */
-  floor: { color: number; detail?: number[]; style?: 'snow' | 'slate' | 'pegboard' | 'meadow' | 'canvas' };
+  floor: { color: number; detail?: number[]; style?: 'snow' | 'slate' | 'pegboard' | 'meadow' | 'canvas' | 'flagstone' };
   /** Under the tiles: a block of soil, and rock spikes, a clump with dangling roots, icicles, jagged shards, dangling pegs, roots with glowing tips, or nothing more. */
   earth: { soil: number; hanging: number; style: 'rock' | 'roots' | 'icicles' | 'shards' | 'pegs' | 'glowroots' | 'plain' | 'drips' };
   fragile: { light: number; dark: number; weathered?: boolean };
@@ -21,9 +21,10 @@ export interface Theme {
    * the board a shiny building set: reflections, rounded edges, snap-on plates and tread belts. `rail`
    * colors belt rails and bridge corners. `bridgeGhost` is how solid a retracted bridge's fill looks, if
    * this world's background needs it fainter than usual. `tube` colors a glass tube's frame (Toybox's
-   * toy blue by default).
+   * toy blue by default). `iron` (The Hollow Deep) forges the goal's rim, held switches, splitters and
+   * light badges in that color, and turns raised walls into iron gates in stone frames.
    */
-  finish: { tube?: number; switchBase?: number; wood?: boolean; snow?: number; iceSheen?: boolean; brass?: number; padVents?: boolean; plastic?: boolean; rail?: number; bridgeGhost?: number };
+  finish: { iron?: number; tube?: number; switchBase?: number; wood?: boolean; snow?: number; iceSheen?: boolean; brass?: number; padVents?: boolean; plastic?: boolean; rail?: number; bridgeGhost?: number };
   /**
    * Walls' stone, if not First Glade's dirt-grey brick. `ashlar` is big cut stones in uneven courses.
    * `snow` sits on the ledges, caps a raised wall's top and dusts low stone, but never the top of a
@@ -207,6 +208,36 @@ const SPLATTER: Theme = {
   finish: { switchBase: 0xd9d0c0, tube: 0x5e3f26 },
 };
 
+/**
+ * The Hollow Deep (world 7, look session 2026-11-24): eerie ruins over a bottomless chasm at a cold teal
+ * twilight. Weathered grey stone over broken stone, a pale bone block, iron gates, plates and seams.
+ * The tile sheet stage: no cliffs, mist or wisps yet. The board stays lit well enough to read; the gloom
+ * is in the backdrop.
+ */
+const HOLLOW: Theme = {
+  id: 'hollow',
+  sky: 'hollow',
+  // Near-neutral on the board, only a breath of teal: the twilight lives in the backdrop, so the bone
+  // block and the light colors read true (a teal light turned the block mint).
+  hemi: { sky: 0xc8d8d5, ground: 0x141c1d, intensity: 1.0 },
+  sun: { color: 0xe8f0ec, intensity: 1.45 },
+  block: { color: 0xeedcbc, edge: 0x6b5a42, roughness: 0.85 },
+  // Dark stone (the user, 2026-11-24: "eerie wilderness rather than an abyss"): the bone block and the
+  // lights carry the brightness now.
+  floor: { color: 0x5f6462, detail: [0x464b4a, 0x575c5a, 0x666b69, 0x777c79], style: 'flagstone' },
+  earth: { soil: 0x2e3335, hanging: 0x3a3f42, style: 'shards' },
+  fragile: { light: 0x75665a, dark: 0x5a4e44, weathered: true },
+  finish: { switchBase: 0x44494c, iron: 0x3a4044 },
+  // Dark weathered ashlar for the gates' frames and for low stone that never moves: well below the floor.
+  wall: {
+    style: 'ashlar',
+    shades: ['#35393c', '#3b3f42', '#414548', '#313538', '#46494c', '#383c3f'],
+    mortar: '#16181a',
+    deck: 0x6c7174,
+    flecks: ['#1c1f21', '#80868a'],
+  },
+};
+
 /** Chapters with a world of their own; any other chapter uses NEUTRAL. */
 export const CHAPTER_THEMES: Record<string, Theme> = {
   tutorial: STUDIO,
@@ -229,10 +260,12 @@ export const CHAPTER_THEMES: Record<string, Theme> = {
   // Splatter Studio's labs, judged on its canvas.
   splitlab: SPLATTER,
   paintlab: SPLATTER,
+  // The Hollow Deep's lab: the readability test bed for its look.
+  chasmlab: HOLLOW,
 };
 
 /** Every theme by id, so `?theme=forest` can preview one on any level or on the tile sheet. */
-export const THEMES: Record<string, Theme> = { neutral: NEUTRAL, night: NIGHT, forest: FOREST, frost: FROST, peaks: PEAKS, toybox: TOYBOX, studio: STUDIO, splatter: SPLATTER };
+export const THEMES: Record<string, Theme> = { neutral: NEUTRAL, night: NIGHT, forest: FOREST, frost: FROST, peaks: PEAKS, toybox: TOYBOX, studio: STUDIO, splatter: SPLATTER, hollow: HOLLOW };
 
 /** The theme for a handmade level, from the chapter in its id (`star-03` is in `star`). */
 export function themeForLevel(id: string): Theme {

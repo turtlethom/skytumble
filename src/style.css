@@ -86,6 +86,35 @@ body[data-theme='studio'] .menu-list button kbd {
   background: rgba(255, 255, 255, 0.14);
 }
 
+/* The Hollow Deep: a cold teal twilight over a black void. Dark glass panels with pale teal text, as in
+   Starfall's dark world but cold green-blue. The crest motifs come later, with the menus. */
+body[data-theme='hollow'] {
+  --ink: #e6f3f1;
+  --ink-soft: #a9c6c2;
+  --accent: #5fb8ad;
+  --accent-ink: #0b1b1c;
+  --glass: rgba(14, 34, 36, 0.82);
+  --glass-border: rgba(120, 190, 182, 0.4);
+  --shadow: 0 6px 24px rgba(0, 8, 9, 0.55);
+  --hover: rgba(36, 78, 80, 0.95);
+  --panel: linear-gradient(180deg, #1d3f41, #0d2022);
+  --panel-edge: #5fb8ad;
+  --select: #3f8f86;
+  --title: #cdeee9;
+  --btn: #1a3a3c;
+  --btn-edge: #0a1a1b;
+  /* Darkened 2026-11-24 ("rather than an abyss"): a thin teal dusk high up, falling into black. */
+  background: linear-gradient(180deg, #1c3b3a 0%, #102423 26%, #071111 52%, #020505 78%, #000000 100%);
+}
+
+body[data-theme='hollow'] .brand h1 {
+  text-shadow: 0 2px 0 #2c6b65, 0 6px 18px rgba(80, 200, 186, 0.35);
+}
+
+body[data-theme='hollow'] .toast {
+  color: #0b1b1c;
+}
+
 /* The map keeps its own light panels, whichever world it opens over. */
 body[data-theme='studio'] .sky-map {
   color: #23304a;

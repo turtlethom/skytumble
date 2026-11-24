@@ -106,7 +106,7 @@ goal reachable only lying. **Dead ends** counts states you can reach but never w
 
 `/levels.html` is the level index (mini-maps, validation status, play links); `/?level=<id>` opens
 one level. `/?sheet=<theme>` shows every tile in a theme (`&bridges=0` retracts the bridges), for
-approving readability before scenery; `/?sheet=toybox&toys` stands Toybox's sample toys on its floor; `/?sheet=peaks&aerie` shows Windy Peaks' rock structures and birds up close; `/?sheet=frost&summit` shows Frost Isle's reindeer up close; `/?sheet=splatter&cat` shows Splatter Studio's cat up close; `/?sheet=<theme>&walls` shows a world's walls (raised, sunk, low stone) beside the tiles they mustn't be mistaken for (Starfall's on both floors; `&up` starts on the ceiling); `&theme=<theme>` previews a theme on any level; `&gray` shows
+approving readability before scenery; `/?sheet=toybox&toys` stands Toybox's sample toys on its floor; `/?sheet=peaks&aerie` shows Windy Peaks' rock structures and birds up close; `/?sheet=frost&summit` shows Frost Isle's reindeer up close; `/?sheet=splatter&cat` shows Splatter Studio's cat up close; `/?sheet=hollow` shows The Hollow Deep's tiles with every light lit (`&dark` unlit); `/?sheet=<theme>&walls` shows a world's walls (raised, sunk, low stone) beside the tiles they mustn't be mistaken for (Starfall's on both floors; `&up` starts on the ceiling); `&theme=<theme>` previews a theme on any level; `&gray` shows
 the page in black and white, to check a tile reads without color. In the game,
 F (or `?fps`) toggles a hidden frame-rate readout, which also shows triangles and draw calls. `?slides` turns on the
 slide-end preview (a Settings toggle, off by default) for one visit.

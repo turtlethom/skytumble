@@ -171,7 +171,7 @@ Shipped releases and finished build notes are in `DESIGN-archive.md`, word for w
 
 **Pick up here** (2026-11-23: world 7 settled in a grilling session, nothing built). **Six worlds at 20**, the sixth, **Splatter Studio** (split + paint), played and live (pushed through `f6cf331`). Hand every level over with its directions.
 
-- **Now (2026-11-24):** world 7, *the Chasm* (dark tiles crossed from memory, held and timed light switches, splitting, a dark fall rewinds to lights-out), is recorded in *World 7: the Chasm*. The Chasm Lab is built: `chasmlab-01`…`03` played and liked (02 and 03 favorites; 01's long timed crossing is hard-half material, committed `8bd9c92`), `04` Relay and `05` Underside played and liked (05 reframed, `ad2683d`). Rules for held switches, dark tiles and lights **frozen** 2026-11-24 (*Mechanics*). Next: a look session for the Chasm (grilling), then its tile sheet for approval, then scenery.
+- **Now (2026-11-24):** world 7, *the Chasm* (dark tiles crossed from memory, held and timed light switches, splitting, a dark fall rewinds to lights-out), is recorded in *World 7: the Chasm*. The Chasm Lab is built: `chasmlab-01`…`03` played and liked (02 and 03 favorites; 01's long timed crossing is hard-half material, committed `8bd9c92`), `04` Relay and `05` Underside played and liked (05 reframed, `ad2683d`). Rules for held switches, dark tiles and lights **frozen** 2026-11-24 (*Mechanics*). The look is settled (*The Hollow Deep: the look*): the world is named **The Hollow Deep**. Its tile sheet is approved (`?sheet=hollow`, `&dark`, `&gray`; darkened, lit tiles bordered) and the Chasm Lab wears the look. Next: scenery (cliffs far back with stairs, rising mist, pale wandering wisps).
 - **Where batch 4 differs from its pitch:** Mud Pie became Turnstile (mud was never needed: the idle cube parked on the gate holds the belt junction for less); Masterpiece has no tubes or belts (tubes and pads can't share a level, and belts in place of its pads let a lone cube skip the door hold). Order changed by difficulty and color rotation. Details in *Splatter Studio's levels*.
 - **Done this session (2026-11-22), all committed and pushed:** batches 1-3 (`paint-01`…`15`, all played and liked: "very enjoyable! lots of logical thinking is needed"); the Pad Lab (`paintlab-08`…`10`) with launch pads + splitting + paint **frozen**; walnut tubes in the studio; the level text behind a Hint key (H); a two-step sky map (world overview, then a world's grid of level cards; the Labs the same); a Previous button (P); How To Play entries for splitting, paint and gates, mixing and water, flights and paint, and Toybox's missing glass tubes. Design tools: `search`/`make` carry gates and paint, `ITERS` shortens searches, `lint` reports hidden trays, water, gates and splitters, `flipNS` keeps gate colors and splitter sides.
 - **Staging** (the user's call): `paint-01`…`05` splitting, `06`…`10` the paint introduction, `11`…`20` the hard half with the mix-ins (walls, belts, tubes, planks, launch pads).
@@ -432,6 +432,36 @@ Built (2026-11-24), all won at par in headless Chrome, all played and liked:
 
 - **Build notes:** held switch `O` (in the `switches:` order like any switch), dark tiles `, ; ' "` (light colors 0-3), light switch `*` with a `lamps:` line in reading order (`4`, `held`, `held/1`). Rules: `applyHolds` in `rules.ts` sets a held color's bit from what rests on its switches after every move (after a split too), and a let-go that retracts a bridge drops the block or the idle cube; dark tiles and lamps are floor to the rules. Lighting is worked out from the play so far (`src/game/lights.ts`: `lightingAt`, `darkRewind`, `darkSteps`), so undo needs nothing special. On screen (stand-ins): dark tiles fade in with a thin line in their light's color, without soil; a timed lamp is a round stone with a glowing wisp and a badge counting its moves (raised over a block resting on it); a held lamp the same on a square stone; a held switch a square button with corner brackets that sinks while held. The Hint key shows the dark tiles faintly. Validation: one kind per color, a light color is never a switch color, every dark color has a light and every light dark tiles. Tools: `analyze` and `make` print a lights line (dark steps and turns, crossings made lit, steps onto tiles never shown as UNSEEN, held rolls and let-gos) and mark HOLD / DARK / lit in traces; `lint` lists lights, warns on a light or held switch nothing can rest on, a route that steps on unseen dark tiles (par asks for a guess) and one that crosses everything lit; `play.mjs` takes `MOVES` to play a mistake (z undo, h hint). How To Play: *Held switches* and *Dark tiles and lights*.
 - **Seen while building:** the solver ignores lighting, so a light off the route gets skipped by par (Lantern Bearer's first draft walked the dark path blind at par 11). Every light has to sit where the best route passes anyway, which is now a lint warning (UNSEEN).
+
+**The Hollow Deep: the look** (world 7, settled in a look session 2026-11-24; "yes this looks right"). The name is the user's pick of four place names.
+
+| Area | Decision |
+|---|---|
+| Mood | Eerie, haunted, not horror: carried by far-off wandering wisps (no eyes, no ghosts) |
+| Light | Cold teal twilight (Claude's pick at the user's request: no other world uses it, "I want this biome to stand out"), darkened after the first sheet to a thin teal dusk falling into black ("rather than an abyss") |
+| Below the board | A black void: the dark tiles hang over nothing |
+| Floor | Weathered grey stone |
+| Under the tiles | Broken stone, as if torn from a bridge |
+| Scenery | Cliff walls of bare rock with crumbling stairs and ledges, standing **far back**, below board level near the camera, so a quarter turn never puts one in front of the board. Fallback if code-made cliffs fail twice: sparse crumbling pillars |
+| Motion | Rising mist and drifting far wisps; mist goes first if it runs slowly |
+| Lit dark tiles | The floor's stone with a **glowing border** in their light's color, so the hidden path stands apart from floor even while lit (challenge answer). A faint wash across the stone came first; the user swapped it for the border after the darker sheet |
+| Unlit, rested on | A faint glow spreading from under the block |
+| Light switches | A floating wisp over a stone plinth; timed ones keep a number badge, **iron-rimmed**, the number in the light's color |
+| Far wisps | Pale cold white-teal, smaller than a light's wisp, never over or near the board |
+| Light colors | **No blue lights** in this world (orange, purple, red); blue stays for walls, since it would vanish in the teal haze. The one choice that binds the levels |
+| Walls | Dark iron gates: dense bars in a heavy stone frame with a lintel in the wall's color |
+| Held switch | A square riveted iron plate |
+| Splitter | An iron seam: a riveted plate split by a seam, with an arrow |
+| Goal | An iron-ringed hole. Cold throughout: the lights are the only warmth, on purpose |
+| Block | Pale bone |
+| Interface | Wisp and cracked-stone motifs |
+| Sky map island | A split rock: a dark gap with a tiny bridge, a teal glow from the crack |
+| Lab | The Chasm Lab takes this look: it is the readability test bed |
+| Order | Tile sheet (`?sheet=hollow`) → black-and-white check → approval → cliffs, wisps, mist → menus, arrival, map island |
+
+- **Tile sheet, first build** (2026-11-24): theme `hollow` (`finish.iron` forges the goal's rim with a gold inlay, held switches as riveted plates with a colored inset, the iron seam splitter and the light badges, and turns raised walls into gates: four stone corner posts, a lintel ring in the wall's color, five bars a side; sunk, a flush iron grate). Floor `flagstone`: one worn slab per tile, chipped darker edges, weathering blotches, cracks and pits. Lights: a wisp floating over a plinth (round for timed, square for held), bobbing, with a halo, a dull ember while out; lit dark tiles take a faint wash and edge of their color; a block on an unlit dark tile glows pale from beneath. The page is a teal-to-black gradient with dark teal glass panels. Seen while building: a teal board light turned the bone block mint, so the board is lit near-neutral and the teal lives in the backdrop (as Splatter Studio keeps its board neutral). Black-and-white check passed on the sheet: lit dark tiles read lighter with a white edge, badges and plates read.
+- **Success:** the usual sign-off, plus every tile readable in black and white, plus the five lab levels replayed in the new look.
+- **Risks:** unreadable tiles (the user's pre-mortem pick: lit path vs floor vs dark); teal haze against the purple and red lights; code-made cliffs; gloom over 20 levels (the user chose cold throughout anyway).
 
 **After Toybox: the paint workshop** (split + paint), settled in a grilling session 2026-11-20; nothing is built yet. **Why a new world:** the user plays for fun when there's a world they haven't solved; friends liked Toybox most, then Windy Peaks, then Frost Isle, and First Glade as a fine beginner stage. Alternatives weighed and set aside for now: the endless climb and daily seed, sharing tools (editor, full-level links, cosmetics), a polish-only pass. **Success:** the user replays its levels weeks later, *and* friends rate it highly.
 
@@ -880,6 +910,12 @@ works and what doesn't. Claude writes the code and designs handmade levels from 
 feedback; batches of 5 levels per round.
 
 ## Playtest log
+
+**2026-11-24 — Dark tiles: a light border, no tint.** "instead of the dark tiles inheriting a tint on the blocks, let's just do a light border" → The wash is gone; a lit dark tile is plain stone with a glowing border in its light's color (drawn unlit by the scene, so it shines on the dark stone).
+
+**2026-11-24 — The Hollow Deep's sheet, darker.** "i just want the overall colors to look a bit darker, this just feels like eerie wilderness rather than an abyss. I love the design, just need a darker feel." → The backdrop now falls from a thin teal dusk into black, the board light is dimmer, and the stone, iron and wall frames are a step darker; the bone block, the lights and the colored washes carry the brightness. Black-and-white check passed again: lit dark tiles, badges, plates and gate rings still read.
+
+**2026-11-24 — The Hollow Deep (look session).** Four rounds plus challenge and converge. The user picked eerie, twilight, weathered stone, a black void, cliff walls with stairs, iron gates, a pale bone block, floating wisps with number badges, iron plates and seams, an iron-ringed goal and the name; Claude picked cold teal at the user's request. Challenged: unreadable tiles named as the likeliest failure, so lit dark tiles get a color wash and blue lights are out; gates get dense bars in a heavy frame; cliffs stand far back for quarter turns. Recorded as *The Hollow Deep: the look*.
 
 **2026-11-24 — Chasm rules frozen.** "commit, freeze the rules, and continue on" → Committed `ad2683d`; held switches, dark tiles and lights frozen as built (*Mechanics*). Next: the Chasm's look session.
 

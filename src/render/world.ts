@@ -52,6 +52,8 @@ const COLORS = {
   splitMat: 0x2b3038,
   /** Water in a wash tile: pale, so it never reads as blue paint. */
   wash: 0xd8f1f6,
+  /** The pale glow under a block standing on a dark tile in the dark. */
+  footGlow: 0xd6fff6,
   /** A light switch's stone (a stand-in until the Chasm's look). */
   lampStone: 0x5a5866,
   splitMark: 0xffffff,
@@ -346,7 +348,7 @@ export class World {
   /** The Chasm's dark tiles: unseen until lit (or rested on); `fade` is how much shows, 0-1. */
   private darkTiles: DarkTileView[] = [];
   /** Light switches: a glowing wisp, and for a timed one a label counting its moves of light. */
-  private lampViews: { layer: number; x: number; y: number; color: number; timer: number; glow: THREE.MeshStandardMaterial; label: LampLabel | null; lit: boolean }[] = [];
+  private lampViews: { layer: number; x: number; y: number; color: number; timer: number; glow: THREE.MeshStandardMaterial; label: LampLabel | null; lit: boolean; wisp: THREE.Object3D; halo: THREE.Sprite | null; base: number; phase: number }[] = [];
   private bridges: BridgeView[] = [];
   private walls: WallView[] = [];
   /** Stencil gates: the sheet that sinks while a block of the gate's color stands in it. */
@@ -784,7 +786,9 @@ export class World {
         this.lowWalls[layer].push({ x, y, edge: this.onIslandEdge(layer, x, y) });
         return null;
       }
-      const view = makeWall(GROUP_COLORS[group % GROUP_COLORS.length], wallStone(this.theme));
+      const view = this.theme.finish.iron !== undefined
+        ? makeGate(GROUP_COLORS[group % GROUP_COLORS.length], wallStone(this.theme), this.theme.finish.iron)
+        : makeWall(GROUP_COLORS[group % GROUP_COLORS.length], wallStone(this.theme));
       g.add(floorTile(jitter, this.theme, layer), earth(jitter, this.theme), view.frame, view.pillar);
       this.walls.push({ layer, x, y, tile, group, pillar: view.pillar, up: true });
       return g;
@@ -891,14 +895,35 @@ export class World {
       const pit = box(0.9, 0.5, 0.9, COLORS.hole);
       pit.position.y = -0.35;
       g.add(pit);
-      const { wood, plastic } = this.theme.finish;
+      const { wood, plastic, iron } = this.theme.finish;
+      if (iron !== undefined) {
+        // The Hollow Deep: an iron ring round the hole with a thin gold inlay on top, so the goal keeps its gold.
+        const ironMat = new THREE.MeshStandardMaterial({ color: iron, roughness: 0.5, metalness: 0.5 });
+        const gold = new THREE.MeshStandardMaterial({ color: COLORS.goal, emissive: COLORS.goal, emissiveIntensity: 0.5, roughness: 0.6 });
+        for (const [dx, dz, w, d] of [[0, -0.44, 0.96, 0.08], [0, 0.44, 0.96, 0.08], [-0.44, 0, 0.08, 0.96], [0.44, 0, 0.08, 0.96]]) {
+          const edge = new THREE.Mesh(new THREE.BoxGeometry(w, 0.2, d), ironMat);
+          edge.position.set(dx, -0.1, dz);
+          edge.receiveShadow = true;
+          const inlay = new THREE.Mesh(new THREE.BoxGeometry(w > d ? w - 0.1 : 0.035, 0.01, w > d ? 0.035 : d - 0.1), gold);
+          inlay.position.set(dx, 0.004, dz);
+          g.add(edge, inlay);
+        }
+        for (const rx of [-0.44, 0.44]) {
+          for (const rz of [-0.44, 0.44]) {
+            const rivet = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), new THREE.MeshStandardMaterial({ color: rimColor(iron, 1.5), roughness: 0.5, metalness: 0.5 }));
+            rivet.position.set(rx, 0.01, rz);
+            rivet.scale.y = 0.6;
+            g.add(rivet);
+          }
+        }
+      }
       const rim = new THREE.MeshStandardMaterial({
         color: COLORS.goal,
         emissive: COLORS.goal,
         emissiveIntensity: wood ? 0.3 : plastic ? 0.2 : 0.6,
         roughness: wood ? 0.8 : plastic ? 0.22 : 1,
       });
-      for (const [dx, dz, w, d] of [[0, -0.44, 0.96, 0.08], [0, 0.44, 0.96, 0.08], [-0.44, 0, 0.08, 0.96], [0.44, 0, 0.08, 0.96]]) {
+      for (const [dx, dz, w, d] of iron !== undefined ? [] : [[0, -0.44, 0.96, 0.08], [0, 0.44, 0.96, 0.08], [-0.44, 0, 0.08, 0.96], [0.44, 0, 0.08, 0.96]]) {
         const edge = new THREE.Mesh(new THREE.BoxGeometry(w, 0.2, d), rim);
         edge.position.set(dx, -0.1, dz);
         edge.receiveShadow = true;
@@ -1239,6 +1264,33 @@ export class World {
       g.add(floorTile(jitter, this.theme, layer), earth(jitter, this.theme));
       const { dx, dy } = DIR_DELTA[DIRS[group]];
       const studio = this.theme.id === 'splatter';
+      const iron = this.theme.finish.iron;
+      if (iron !== undefined) {
+        // The Hollow Deep: a riveted iron plate split by a dark seam, with a pale arrow toward the split side.
+        const half = (sign: number) => {
+          const p = box(dx ? 0.44 : 0.9, 0.05, dx ? 0.9 : 0.44, iron, { roughness: 0.5, metalness: 0.5 });
+          p.position.set(dx ? sign * 0.23 : 0, 0.025, dx ? 0 : sign * 0.23);
+          p.receiveShadow = true;
+          return p;
+        };
+        const seam = box(dx ? 0.03 : 0.9, 0.03, dx ? 0.9 : 0.03, 0x0c0e0f, { roughness: 1 });
+        seam.position.y = 0.012;
+        g.add(half(-1), half(1), seam);
+        for (const [rx, rz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+          const rivet = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), new THREE.MeshStandardMaterial({ color: rimColor(iron, 1.5), roughness: 0.5, metalness: 0.5 }));
+          rivet.position.set(rx * 0.38, 0.055, rz * 0.38);
+          rivet.scale.y = 0.6;
+          g.add(rivet);
+        }
+        const arrow = new THREE.Mesh(
+          new THREE.ConeGeometry(0.17, 0.26, 3).rotateX(Math.PI / 2).scale(1, 0.12, 1),
+          new THREE.MeshStandardMaterial({ color: COLORS.splitMark, roughness: 0.5 }),
+        );
+        arrow.rotation.y = Math.atan2(dx, dy);
+        arrow.position.set(dx * 0.24, 0.06, dy * 0.24);
+        g.add(arrow);
+        return g;
+      }
       const mat = studio
         ? new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.04, 0.92), new THREE.MeshStandardMaterial({ map: cuttingMatTexture(), roughness: 0.75 }))
         : box(0.92, 0.04, 0.92, COLORS.splitMat, { roughness: 0.8 });
@@ -1269,23 +1321,32 @@ export class World {
       // it fades on its own; applyLayerAlpha multiplies the fade in through `tubeFade`.
       const color = GROUP_COLORS[group % GROUP_COLORS.length];
       g.add(floorTile(jitter, this.theme, layer));
-      for (const [dx, dz, w, d] of [[0, -0.45, 0.9, 0.05], [0, 0.45, 0.9, 0.05], [-0.45, 0, 0.05, 0.85], [0.45, 0, 0.05, 0.85]]) {
-        const edge = box(w, 0.012, d, color, { roughness: 0.6 });
-        edge.position.set(dx, 0.006, dz);
-        edge.castShadow = false;
+      // A glowing border in the light's color (the user's call, 2026-11-24, over a tint across the stone):
+      // unlit by the scene, so it shines on dark stone and the hidden path stands apart from floor.
+      const edgeMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.25) });
+      for (const [dx, dz, w, d] of [[0, -0.445, 0.9, 0.06], [0, 0.445, 0.9, 0.06], [-0.445, 0, 0.06, 0.83], [0.445, 0, 0.06, 0.83]]) {
+        const edge = new THREE.Mesh(new THREE.BoxGeometry(w, 0.014, d), edgeMat);
+        edge.position.set(dx, 0.007, dz);
         g.add(edge);
       }
+      // A pale glow spreading from under a block that rests on it in the dark; it joins the tile's fade.
+      const glow = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 1.8).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: footGlowTexture(), color: COLORS.footGlow, transparent: true, opacity: 0.95, depthWrite: false }));
+      glow.position.y = 0.006;
+      glow.visible = false;
+      g.add(glow);
       const mats: THREE.Material[] = [];
       g.traverse((o) => {
         const mesh = o as THREE.Mesh;
         if (!mesh.isMesh || Array.isArray(mesh.material)) return;
+        const opacity = mesh.material.opacity;
         mesh.material = mesh.material.clone();
         mesh.material.userData = { tubeFade: 0 };
+        mesh.material.opacity = opacity;
         mesh.castShadow = false;
         mats.push(mesh.material);
       });
       g.visible = false;
-      this.darkTiles.push({ layer, x, y, color: group, obj: g, mats, fade: 0 });
+      this.darkTiles.push({ layer, x, y, color: group, obj: g, mats, fade: 0, glow });
       return g;
     }
 
@@ -1310,13 +1371,32 @@ export class World {
       const wisp = new THREE.Mesh(new THREE.SphereGeometry(0.13, 18, 12), glow);
       wisp.position.y = 0.2;
       g.add(stone, rim, wisp);
-      const label = timer ? new LampLabel(color) : null;
+      const iron = this.theme.finish.iron;
+      let halo: THREE.Sprite | null = null;
+      if (iron !== undefined) {
+        // The Hollow Deep: a will-o'-wisp floating over a carved plinth, with a soft halo, bobbing (frame()).
+        const plinth = timer
+          ? new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.26, 0.26, 8), stoneMat)
+          : new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.26, 0.4), stoneMat);
+        plinth.position.y = 0.17;
+        plinth.castShadow = true;
+        g.add(plinth);
+        rim.position.y = 0.31;
+        rim.scale.setScalar(0.62);
+        wisp.position.y = 0.66;
+        wisp.scale.setScalar(1.5);
+        halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: footGlowTexture(), color, transparent: true, opacity: 0.25, depthWrite: false }));
+        halo.scale.setScalar(1.3);
+        halo.position.y = 0.66;
+        g.add(halo);
+      }
+      const label = timer ? new LampLabel(color, iron) : null;
       if (label) {
-        label.sprite.position.y = 0.62;
+        label.sprite.position.y = iron !== undefined ? 1.12 : 0.62;
         label.set(timer, false);
         g.add(label.sprite);
       }
-      this.lampViews.push({ layer, x, y, color: c, timer, glow, label, lit: false });
+      this.lampViews.push({ layer, x, y, color: c, timer, glow, label, lit: false, wisp, halo, base: wisp.position.y, phase: jitter * Math.PI * 2 });
       return g;
     }
 
@@ -1325,6 +1405,30 @@ export class World {
       // while held and rises when let go (setHolds); a press switch is round and springs back.
       const color = GROUP_COLORS[group % GROUP_COLORS.length];
       g.add(floorTile(jitter, this.theme, layer), earth(jitter, this.theme));
+      const iron = this.theme.finish.iron;
+      if (iron !== undefined) {
+        // The Hollow Deep: a riveted square iron plate set in the floor, its color in an inset panel.
+        const bed = box(0.82, 0.04, 0.82, 0x1b1f21, { roughness: 1 });
+        bed.position.y = 0.02;
+        g.add(bed);
+        const plate = new THREE.Group();
+        const ironMat = { roughness: 0.5, metalness: 0.5 };
+        plate.add(box(0.74, 0.08, 0.74, iron, ironMat));
+        const inset = box(0.46, 0.04, 0.46, color, { roughness: 0.5 });
+        inset.position.y = 0.04;
+        plate.add(inset);
+        for (const [rx, rz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+          const rivet = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), new THREE.MeshStandardMaterial({ color: rimColor(iron, 1.5), ...ironMat }));
+          rivet.position.set(rx * 0.29, 0.045, rz * 0.29);
+          rivet.scale.y = 0.6;
+          plate.add(rivet);
+        }
+        plate.position.y = 0.06;
+        plate.traverse((o) => (o.castShadow = true));
+        g.add(plate);
+        this.holdSwitches.set(cell, { obj: plate, down: false });
+        return g;
+      }
       const sw = new THREE.Group();
       const edge = box(0.7, 0.07, 0.7, rimColor(color), { roughness: 0.6 });
       edge.position.y = -0.01;
@@ -2358,7 +2462,10 @@ export class World {
     const resting = new Set([...blockCells(state.block), ...(state.other ? [[state.other.x, state.other.y]] : [])].map(([x, y]) => `${layer},${x},${y}`));
     const changes: { tile: DarkTileView; from: number; to: number }[] = [];
     for (const d of this.darkTiles) {
-      const to = (lit >> d.color) & 1 || resting.has(`${d.layer},${d.x},${d.y}`) ? 1 : reveal ? DARK_REVEAL : 0;
+      const isLit = !!((lit >> d.color) & 1);
+      const rested = resting.has(`${d.layer},${d.x},${d.y}`);
+      const to = isLit || rested ? 1 : reveal ? DARK_REVEAL : 0;
+      d.glow.visible = rested && !isLit;
       if (to !== d.fade) changes.push({ tile: d, from: d.fade, to });
     }
     const show = (d: DarkTileView, f: number) => {
@@ -2371,12 +2478,14 @@ export class World {
     // Timed lights count down in order; held ones glow while held.
     const timed = this.lampViews.slice().sort((a, b) => a.layer - b.layer || a.y - b.y || a.x - b.x);
     timed.forEach((v, i) => {
-      v.lit = !!((lit >> v.color) & 1) && (v.timer === 0 ? resting.has(`${v.layer},${v.x},${v.y}`) : left[i] > 0);
-      v.glow.emissiveIntensity = v.lit ? 1.6 : 0.25;
+      v.lit = !!((lit >> v.color) & 1) && (v.timer === 0 || left[i] > 0);
+      // Out, a wisp is a dull ember; lit, it blazes with its halo.
+      v.glow.emissiveIntensity = v.lit ? 1.6 : v.halo ? 0.08 : 0.25;
+      if (v.halo) v.halo.material.opacity = v.lit ? 0.9 : 0.08;
       v.label?.set(v.lit ? left[i] : v.timer, v.lit);
       // Over a block resting on the lamp, so the count never hides behind it.
       const on = resting.has(`${v.layer},${v.x},${v.y}`);
-      if (v.label) v.label.sprite.position.y = on ? (state.other || state.block.n === 1 ? 1.45 : 2.45) : 0.62;
+      if (v.label) v.label.sprite.position.y = on ? (state.other || state.block.n === 1 ? 1.45 : 2.45) : v.halo ? 1.12 : 0.62;
     });
   }
 
@@ -2547,6 +2656,13 @@ export class World {
       (g.obj.material as THREE.MeshBasicMaterial).opacity = Math.sin(p * Math.PI) * 0.75;
     }
     this.updateTubeGlass(dt);
+    // The Hollow Deep's wisps bob over their plinths, with their haloes.
+    for (const v of this.lampViews) {
+      if (!v.halo) continue;
+      const y = v.base + Math.sin(now / 700 + v.phase) * 0.05;
+      v.wisp.position.y = y;
+      v.halo.position.y = y;
+    }
     if (this.goalMarker) {
       this.goalMarker.rotation.y += dt * 0.8;
       this.goalMarker.position.y = MARKER_Y + Math.sin(now / 520) * 0.1;
@@ -3063,6 +3179,75 @@ function blockPosition(b: Block): THREE.Vector3 {
  * A raised stone wall, with a thin line of its switch's color set in the ground around it. When it
  * sinks, its top stays flush with the ground inside that line.
  */
+/**
+ * The Hollow Deep's walls: an iron gate in a heavy stone frame (look session 2026-11-24). Raised, four
+ * stone corner posts carry a lintel ring in the wall's color, with dense iron bars on every side, so it
+ * reads as blocked from any view while still showing what's behind. Sunk, an iron grate lies flush in the
+ * floor inside the usual colored edge.
+ */
+function makeGate(color: number, stone: WallStone, iron: number): { frame: THREE.Object3D; pillar: THREE.Object3D } {
+  const frame = new THREE.Group();
+  const [outer, bar] = [WALL_WIDTH + 0.08, 0.05];
+  for (const [dx, dz, w, d] of [[0, -outer / 2 + bar / 2, outer, bar], [0, outer / 2 - bar / 2, outer, bar], [-outer / 2 + bar / 2, 0, bar, outer - 2 * bar], [outer / 2 - bar / 2, 0, bar, outer - 2 * bar]]) {
+    const edge = box(w, WALL_FLUSH + 0.006, d, color, { roughness: 0.6 });
+    edge.position.set(dx, (WALL_FLUSH + 0.006) / 2, dz);
+    edge.castShadow = false;
+    frame.add(edge);
+  }
+  const ironMat = new THREE.MeshStandardMaterial({ color: iron, roughness: 0.55, metalness: 0.5 });
+  // The sunk grate: crossing iron bars over a dark slot.
+  const slot = box(WALL_WIDTH - 0.04, WALL_FLUSH, WALL_WIDTH - 0.04, 0x15191b, { roughness: 1 });
+  slot.position.y = WALL_FLUSH / 2;
+  frame.add(slot);
+  for (let k = -2; k <= 2; k++) {
+    for (const along of [0, 1]) {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(along ? 0.05 : WALL_WIDTH - 0.08, 0.025, along ? WALL_WIDTH - 0.08 : 0.05), ironMat);
+      b.position.set(along ? k * 0.16 : 0, WALL_FLUSH + 0.004, along ? 0 : k * 0.16);
+      frame.add(b);
+    }
+  }
+  const pillar = new THREE.Group();
+  const post = 0.2;
+  const lintel = 0.2;
+  const h = WALL_HEIGHT;
+  const half = WALL_WIDTH / 2;
+  for (const sx of [-1, 1]) {
+    for (const sz of [-1, 1]) {
+      const p = stoneBox(post, h - lintel, post, stone);
+      p.position.set(sx * (half - post / 2), (h - lintel) / 2, sz * (half - post / 2));
+      pillar.add(p);
+    }
+  }
+  // The lintel ring in the wall's color, with a darker rim under it.
+  const ringMat = new THREE.MeshStandardMaterial({ color, roughness: 0.55 });
+  for (const [dx, dz, w, d] of [[0, -half + post / 2, WALL_WIDTH, post], [0, half - post / 2, WALL_WIDTH, post], [-half + post / 2, 0, post, WALL_WIDTH - 2 * post], [half - post / 2, 0, post, WALL_WIDTH - 2 * post]]) {
+    const r = new THREE.Mesh(new THREE.BoxGeometry(w, lintel, d), ringMat);
+    r.position.set(dx, h - lintel / 2, dz);
+    r.castShadow = true;
+    pillar.add(r);
+  }
+  // Dense bars on all four sides, with a cross rail halfway up.
+  const span = WALL_WIDTH - 2 * post;
+  const bars = 5;
+  for (const side of [0, 1, 2, 3]) {
+    const alongX = side < 2;
+    const off = (side % 2 ? 1 : -1) * (half - post / 2);
+    for (let k = 0; k < bars; k++) {
+      const t = -span / 2 + ((k + 0.5) / bars) * span;
+      const b = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, h - lintel, 6), ironMat);
+      b.position.set(alongX ? t : off, (h - lintel) / 2, alongX ? off : t);
+      b.castShadow = true;
+      pillar.add(b);
+    }
+    for (const y of [0.12, (h - lintel) * 0.55]) {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(alongX ? span : 0.05, 0.05, alongX ? 0.05 : span), ironMat);
+      rail.position.set(alongX ? 0 : off, y, alongX ? off : 0);
+      pillar.add(rail);
+    }
+  }
+  return { frame, pillar };
+}
+
 function makeWall(color: number, stone: WallStone): { frame: THREE.Object3D; pillar: THREE.Object3D } {
   const frame = new THREE.Group();
   const [outer, bar] = [WALL_WIDTH + 0.08, 0.05];
@@ -3488,7 +3673,9 @@ function detailMaterials(id: string, shades: number[], style: Theme['floor']['st
             ? meadowTexture(shades, seed)
             : style === 'canvas'
               ? canvasTexture(shades, seed)
-              : detailTexture(shades, seed);
+              : style === 'flagstone'
+                ? flagstoneTexture(shades, seed)
+                : detailTexture(shades, seed);
     const mat = new THREE.MeshStandardMaterial({ map, roughness: 1 });
     mat.userData.keptBetweenLevels = true;
     return mat;
@@ -3665,6 +3852,77 @@ function meadowTexture(shades: number[], seed: number): THREE.CanvasTexture {
 }
 
 /** Layered slate: broad weathered bands, a few fine cracks, and pale flecks where the sun catches it. */
+/**
+ * Weathered flagstone (The Hollow Deep): one worn slab per tile, its edges chipped darker, soft blotches
+ * of weathering, a few long cracks and pits, all in the floor's own greys. Seeded per variant.
+ */
+function flagstoneTexture(shades: number[], seed: number): THREE.CanvasTexture {
+  const size = 192;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  let s = seed * 7919 + 13;
+  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const [dark, base, lit, bright] = shades.map(cssColor);
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, size, size);
+  // Weathering: soft round blotches, lighter and darker.
+  for (let i = 0; i < 16; i++) {
+    const [x, y, r] = [rnd() * size, rnd() * size, 12 + rnd() * 34];
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, i % 3 ? lit : dark);
+    g.addColorStop(1, 'transparent');
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = g;
+    ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  // Worn, chipped edges: a darker band round the slab, bitten in here and there.
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = dark;
+  const band = 7;
+  ctx.fillRect(0, 0, size, band);
+  ctx.fillRect(0, size - band, size, band);
+  ctx.fillRect(0, 0, band, size);
+  ctx.fillRect(size - band, 0, band, size);
+  for (let i = 0; i < 9; i++) {
+    const side = Math.floor(rnd() * 4);
+    const along = rnd() * size;
+    const r = 6 + rnd() * 12;
+    const [x, y] = [[along, 0], [along, size], [0, along], [size, along]][side];
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Long cracks.
+  ctx.globalAlpha = 0.7;
+  ctx.strokeStyle = dark;
+  for (let i = 0; i < 3; i++) {
+    ctx.lineWidth = 1 + rnd() * 1.2;
+    let [x, y] = [rnd() * size, rnd() * size];
+    const a = rnd() * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    for (let step = 0; step < 6; step++) {
+      x += Math.cos(a + (rnd() - 0.5) * 1.2) * 16;
+      y += Math.sin(a + (rnd() - 0.5) * 1.2) * 16;
+      ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  // Pits and grit.
+  for (let i = 0; i < 60; i++) {
+    ctx.globalAlpha = 0.45;
+    ctx.fillStyle = i % 3 ? dark : bright;
+    ctx.beginPath();
+    ctx.arc(rnd() * size, rnd() * size, 0.6 + rnd() * 1.6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
 function slateTexture(shades: number[], seed: number): THREE.CanvasTexture {
   const size = 192;
   const canvas = document.createElement('canvas');
@@ -4214,6 +4472,8 @@ interface DarkTileView {
   obj: THREE.Object3D;
   mats: THREE.Material[];
   fade: number;
+  /** The glow under a block resting on it in the dark. */
+  glow: THREE.Object3D;
 }
 
 /** A flat square ring (a held switch's shape), in the XY plane like a torus. */
@@ -4230,7 +4490,7 @@ class LampLabel {
   private texture: THREE.CanvasTexture;
   private shown = '';
 
-  constructor(private color: number) {
+  constructor(private color: number, private iron?: number) {
     this.canvas.width = this.canvas.height = 128;
     this.texture = new THREE.CanvasTexture(this.canvas);
     this.texture.colorSpace = THREE.SRGBColorSpace;
@@ -4244,12 +4504,30 @@ class LampLabel {
     this.shown = key;
     const g = this.canvas.getContext('2d')!;
     g.clearRect(0, 0, 128, 128);
+    const hex = (c: number) => `#${c.toString(16).padStart(6, '0')}`;
+    if (this.iron !== undefined) {
+      // The Hollow Deep: a dark badge in an iron ring, the number in the light's color, brighter while lit.
+      g.beginPath();
+      g.arc(64, 64, 56, 0, Math.PI * 2);
+      g.fillStyle = lit ? 'rgba(18, 30, 32, 0.95)' : 'rgba(18, 24, 26, 0.85)';
+      g.fill();
+      g.lineWidth = 12;
+      g.strokeStyle = hex(rimColor(this.iron, lit ? 1.9 : 1.4));
+      g.stroke();
+      g.fillStyle = lit ? hex(this.color) : hex(rimColor(this.color, 0.75));
+      g.font = 'bold 76px system-ui, sans-serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(String(n), 64, 68);
+      this.texture.needsUpdate = true;
+      return;
+    }
     g.beginPath();
     g.arc(64, 64, 58, 0, Math.PI * 2);
-    g.fillStyle = lit ? `#${this.color.toString(16).padStart(6, '0')}` : 'rgba(40, 38, 50, 0.85)';
+    g.fillStyle = lit ? hex(this.color) : 'rgba(40, 38, 50, 0.85)';
     g.fill();
     g.lineWidth = 8;
-    g.strokeStyle = lit ? '#ffffff' : `#${this.color.toString(16).padStart(6, '0')}`;
+    g.strokeStyle = lit ? '#ffffff' : hex(this.color);
     g.stroke();
     g.fillStyle = lit ? '#1d1a2b' : '#ffffff';
     g.font = 'bold 76px system-ui, sans-serif';
@@ -4258,4 +4536,22 @@ class LampLabel {
     g.fillText(String(n), 64, 68);
     this.texture.needsUpdate = true;
   }
+}
+
+let sharedFootGlow: THREE.CanvasTexture | null = null;
+
+/** A soft round glow, white at the middle fading to nothing, tinted by its material's color. */
+function footGlowTexture(): THREE.CanvasTexture {
+  if (sharedFootGlow) return sharedFootGlow;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 128;
+  const ctx = canvas.getContext('2d')!;
+  const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, 'rgba(255,255,255,0.9)');
+  g.addColorStop(0.45, 'rgba(255,255,255,0.35)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 128, 128);
+  sharedFootGlow = new THREE.CanvasTexture(canvas);
+  return sharedFootGlow;
 }

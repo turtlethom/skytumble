@@ -9,7 +9,7 @@ import { isLesson, lessonDone, lessonPrompt } from './levels/lessons';
 import { HandmadeLevel } from './levels/format';
 import { MECHANICS, Mechanic, mechanicsIn } from './levels/mechanics';
 import { MENU_LEVEL } from './levels/menuScene';
-import { splatterSheet, tileSheet, toySampleFloor, wallSampleFloor, starWallSampleFloor } from './levels/sheet';
+import { hollowSheet, splatterSheet, tileSheet, toySampleFloor, wallSampleFloor, starWallSampleFloor } from './levels/sheet';
 import { NEUTRAL, THEMES, Theme, themeForLevel } from './render/themes';
 import { World } from './render/world';
 import { ChapterArrival } from './ui/arrival';
@@ -139,6 +139,8 @@ class Game {
   private moves = 0;
   /** After a fall in the dark: how many history steps undo keeps (back to when the light went out). */
   private rewindTo: number | null = null;
+  /** The tile sheet shows every light lit (`?sheet=hollow`). */
+  private forceLit = false;
   private status: Status = 'loading';
   private queued: Dir | 'swap' | null = null;
   private requestId = 0;
@@ -207,7 +209,10 @@ class Game {
     }
     if (params.has('sheet')) {
       // Splatter Studio has tiles of its own: paint, gates, water and the splitter.
-      const sheet = this.themeOverride?.id === 'splatter' ? splatterSheet(params.has('painted')) : tileSheet(Number(params.get('bridges') ?? 15));
+      const id = this.themeOverride?.id;
+      const sheet = id === 'splatter' ? splatterSheet(params.has('painted')) : id === 'hollow' ? hollowSheet() : tileSheet(Number(params.get('bridges') ?? 15));
+      // The Hollow Deep's sheet shows its lights lit, unless `&dark`.
+      if (id === 'hollow' && !params.has('dark')) this.forceLit = true;
       void this.start(sheet, 0);
       return;
     }
@@ -474,7 +479,8 @@ class Game {
     const played = this.played();
     const start = this.history[0]?.state ?? this.state;
     const { lit, left } = lightingAt(level, start, played);
-    this.world.setLights(lit, left, this.state, !$('hint').classList.contains('hidden'), animate);
+    const all = this.forceLit ? 0b1111 : lit;
+    this.world.setLights(all, this.forceLit ? left.map((n) => n || 3) : left, this.state, !$('hint').classList.contains('hidden'), animate);
   }
 
   /** Show one move: the roll, whatever carries the block after it, and the switches it presses. */
