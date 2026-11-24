@@ -16,7 +16,8 @@ fi
 npm run build --silent > "$work/build.log" 2>&1 || { cat "$work/build.log"; exit 1; }
 node_modules/.bin/vite preview --port "$port" --strictPort > "$work/preview.log" 2>&1 &
 server=$!
-trap 'kill $server 2>/dev/null; rm -rf "$work"' EXIT
+# Chrome too, as a safety net (the driver kills its own on exit): an orphaned headless Chrome eats the CPU.
+trap 'kill $server 2>/dev/null; pkill -KILL -f -- "--user-data-dir=/tmp/[s]kytumble-play-" 2>/dev/null; rm -rf "$work"' EXIT
 up=""
 for _ in $(seq 50); do curl -sf "http://localhost:$port/" > /dev/null && up=1 && break; sleep 0.2; done
 [ -n "$up" ] || { echo "The preview server didn't start:" >&2; cat "$work/preview.log" >&2; exit 1; }

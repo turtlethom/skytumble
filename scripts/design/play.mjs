@@ -16,7 +16,7 @@
 // and after a minute alone (it should draw nothing then), then once a key wakes it.
 // Uses CHROME (path to a Chrome/Chromium binary) or Playwright's cached Chromium. Talks to Chrome over
 // the DevTools protocol with a tiny built-in WebSocket client, so it needs no npm dependencies.
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import http from 'node:http';
@@ -41,6 +41,23 @@ const chrome = spawn(findChrome(), [
   '--headless=new', '--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader',
   `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, 'about:blank',
 ], { stdio: 'ignore' });
+// Never leave Chrome behind: a headless Chrome orphaned by a crash kept its GPU process at nine cores
+// (2026-11-24). Whatever ends this script, Chrome goes with it.
+const killChrome = () => {
+  // Every Chrome process (browser, GPU, renderers) carries this run's profile in its command line.
+  spawnSync('pkill', ['-KILL', '-f', '--', `--user-data-dir=${profile}`]);
+  fs.rmSync(profile, { recursive: true, force: true });
+};
+process.on('exit', killChrome);
+for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(signal, () => process.exit(130));
+process.on('uncaughtException', (err) => {
+  console.error(err);
+  process.exit(1);
+});
+process.on('unhandledRejection', (err) => {
+  console.error(err);
+  process.exit(1);
+});
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 let wsUrl;
