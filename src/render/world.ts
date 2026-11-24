@@ -981,6 +981,15 @@ export class World {
       });
       ice.position.y = -0.09;
       g.add(ice, earth(jitter, this.theme));
+      if (this.theme.finish.iron !== undefined) {
+        // The Hollow Deep: a frozen pool set in the weathered stone, a thin stone rim round the ice.
+        const rim = this.theme.floor.detail?.[0] ?? this.theme.floor.color;
+        for (const [dx, dz, w, d] of [[0, -0.455, 0.98, 0.07], [0, 0.455, 0.98, 0.07], [-0.455, 0, 0.07, 0.84], [0.455, 0, 0.07, 0.84]]) {
+          const edge = box(w, 0.03, d, rim, { roughness: 1 });
+          edge.position.set(dx, 0.008, dz);
+          g.add(edge);
+        }
+      }
       const sheen = this.theme.finish.iceSheen;
       if (sheen) {
         // A faint deeper edge, enough to set ice off from a pale floor without framing it like a window.
@@ -2966,8 +2975,9 @@ export class World {
     // Clouds drift below the ground, right where the camera goes to look up at a ceiling.
     for (const c of this.clouds) c.visible = theme.sky === 'clouds' && !this.hasCeiling;
     if (this.scenery) this.scenery.group.visible = false;
-    // The camera turns over on two-floor levels, and only Starfall's surroundings are built for that.
-    this.scenery = this.hasCeiling && theme.sky !== 'stars' ? null : this.sceneryFor(theme.sky);
+    // The camera turns over on two-floor levels: only Starfall's surroundings and The Hollow Deep's chasm
+    // (which mirrors itself when the camera looks up at the ceiling) are built for that.
+    this.scenery = this.hasCeiling && theme.sky !== 'stars' && theme.sky !== 'hollow' ? null : this.sceneryFor(theme.sky);
     if (this.scenery) this.scenery.group.visible = true;
   }
 

@@ -2,7 +2,7 @@ title: Chasm Lab (prototypes)
 
 === chasmlab-01
 par: 16
-name: First Light
+name: Countdown
 idea: Dark tiles are solid but unseen. Stand on the light switch and the path shows for 4 moves, counting down on the switch; then it's dark and you cross from memory. Look as long as you like: only moves count. Fall in the dark and you're back where the light went out.
 guard: off
 lamps: 4
@@ -13,7 +13,7 @@ S##*,,,..,,,,...
 
 === chasmlab-02
 par: 14
-name: Doorstop
+name: Holding the Door
 idea: A held switch keeps its wall down only while something rests on it. One cube holds it while the other stops on the wall's tile; step off, and the wall waits under that cube, so the holder can come round and join it there.
 guard: off
 ...O.........
@@ -32,7 +32,7 @@ S##A,,..,,
 
 === chasmlab-04
 par: 23
-name: Relay
+name: Hand Over
 idea: Split: the new cube lands on the held light. The purple wall needs its held switch held as well, and you have two cubes, so the light goes out before both are across. Study the path while it's lit. One cube crosses and stops on the wall's tile while the other holds the purple switch; when the holder leaves, the wall waits under the parked cube. The holder follows in the dark and joins it there, and the block finds the goal from what you saw.
 guard: off
 switches: 1

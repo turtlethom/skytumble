@@ -43,6 +43,8 @@ const MIST_PUFFS = 26;
 const MIST_RISE = 0.9;
 const MIST_LIFE = 14;
 const WISPS = 16;
+/** The ceiling's height over the ground on two-floor levels (world.ts's CEIL_H). */
+const CEILING = 4;
 
 interface Puff {
   sprite: THREE.Sprite;
@@ -69,7 +71,8 @@ export class HollowScenery implements Scenery {
 
   /** Vertex-colored rock that fades to black lower down the screen (see SCREEN_DARK). */
   private rockMaterial(dark = SCREEN_DARK, lit = SCREEN_LIT): THREE.MeshBasicMaterial {
-    const mat = new THREE.MeshBasicMaterial({ vertexColors: true });
+    // Double-sided: the mirror for a turned-over camera flips every face.
+    const mat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uHeight = this.uniforms.uHeight;
       shader.fragmentShader = shader.fragmentShader
@@ -117,7 +120,13 @@ export class HollowScenery implements Scenery {
     this.uniforms.uHeight.value = canvasHeight;
     // Stairs only on the wall across from the camera: on a side wall they come out beside the board,
     // where a step could pass for a tile (one sat by chasmlab-01's goal).
-    const look = camera.getWorldPosition(this.at).sub(this.group.position);
+    // On a two-floor level the camera turns over to look up at the ceiling: mirror the chasm through the
+    // middle between the floors, so from below it looks just as it does from above.
+    const cam = camera.getWorldPosition(this.at);
+    const below = cam.y < CEILING / 2;
+    this.group.scale.y = below ? -1 : 1;
+    this.group.position.y = below ? CEILING : 0;
+    const look = cam.sub(this.group.position);
     const far = Math.abs(look.x) > Math.abs(look.z) ? (look.x > 0 ? 3 : 1) : look.z > 0 ? 0 : 2;
     this.stairs.forEach((m, side) => (m.visible = side === far));
     for (const p of this.puffs) {

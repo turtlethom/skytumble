@@ -1394,6 +1394,54 @@ Before a move: ↹ press Tab first, to move the other cube (a swap is free; it n
 31-32  ↓ ↓✔
 ```
 
+## `hollow-06` Over and Under
+
+```
+ 1- 5  → → → →⇄ →
+ 6-10  → ↑ ↑ ← ←⇄
+11-15  → → ↑ ↑ →
+16-16  →✔
+```
+
+## `hollow-07` Leap of Faith
+
+```
+ 1- 5  → ↑ → ↓ ←
+ 6-10  ↑ → ↓ →✈ →
+11-15  ↓ ↓ ← ← ←
+16-16  ←✔
+```
+
+## `hollow-08` Where It Stops
+
+```
+ 1- 5  → → ↑ → →
+ 6-10  → ↓ → ↓ ←
+11-15  ← ↑ ↑ ↑ →
+16-20  → ↓ → → →
+21-22  → →✔
+```
+
+## `hollow-09` Hidden Footholds
+
+```
+ 1- 5  → → → ↓ ↓
+ 6-10  → → → ↑ →
+11-15  ↓ ← ↑ → ↑
+16-19  ← ↓ → →✔
+```
+
+## `hollow-10` Night Shift
+
+```
+ 1- 5  → →⇄ ↑ → →
+ 6-10  → ↑● → → ↓
+11-15  ↓⇄ → ↓ ↓ ↓
+16-20  →● ← ↑ → →
+21-25  ↑ ↑ → ↓ ←
+26-30  ↓ → → ↑ ↑✔
+```
+
 ## `lab-01` Glide
 
 ```
@@ -1922,7 +1970,7 @@ Before a move: ↹ press Tab first, to move the other cube (a swap is free; it n
  6- 6  →✔
 ```
 
-## `chasmlab-01` First Light
+## `chasmlab-01` Countdown
 
 ```
  1- 5  → → → → ↓
@@ -1931,7 +1979,7 @@ Before a move: ↹ press Tab first, to move the other cube (a swap is free; it n
 16-16  →✔
 ```
 
-## `chasmlab-02` Doorstop
+## `chasmlab-02` Holding the Door
 
 ```
  1- 5  → →✂ → ↹↑ ↑●
@@ -1947,7 +1995,7 @@ Before a move: ↹ press Tab first, to move the other cube (a swap is free; it n
 11-11  ↓✔
 ```
 
-## `chasmlab-04` Relay
+## `chasmlab-04` Hand Over
 
 ```
  1- 5  → →✂ ↹↓ ↓● ↹↓

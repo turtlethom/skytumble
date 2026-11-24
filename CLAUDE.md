@@ -183,11 +183,12 @@ The process that produced the Frost chapter:
    a wall hides what matters, flip the board north to south, since nothing behind a tall piece shows.
 6. **Fix the ending.** Searches often leave 3–6 moves of shuffling around a cramped goal island.
    Put the goal in line with how the block arrives (and remove start-island busywork the same way).
-7. **Check the story against the trace.** Write the `name`/`idea` text from the actual solution and
+7. **Name it something no level has used.** Every name is unique across all chapters, labs included (the user: reusing one is "a big no-no"); `tests/levels.test.ts` fails on a new repeat. Check `grep -h '^name:' src/levels/*.txt` before pitching names.
+8. **Check the story against the trace.** Write the `name`/`idea` text from the actual solution and
    re-read it whenever the level changes (a stale "double back" description cost a playtest round).
-8. **Validate and record par:** add the level to its chapter file, then
+9. **Validate and record par:** add the level to its chapter file, then
    `npm run levels:check -- --fill-par`, then `npm test`.
-9. **Play it for real** (below), then hand it to the user with specific questions.
+10. **Play it for real** (below), then hand it to the user with specific questions.
 
 Difficulty within a chapter should climb in both par and explored states; the finale should clearly
 exceed the levels before it (frost-08: 22 moves / 387 states vs frost-07's 18 / 66).

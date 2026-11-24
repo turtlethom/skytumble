@@ -57,3 +57,73 @@ lamps: held/3 held
 S##]#,.,I*#"".."
 ....*.....O"".."
 ....O..........G
+
+=== hollow-06
+par: 16
+name: Over and Under
+idea: Each floor's light shows the other floor's path. Stand on the round light and hold Space to look up at the red path on the ceiling: it stays lit only just past the flip. Up there, the orange light shows the ground's path: look down, flip back, and finish from memory. Each floor has one wrong turn.
+lamps: 4/3 4
+.............
+S##*##+..,,,G
+.........,...
+.........,...
+......#,,,,,.
+---
+.............
+......#""""".
+........."...
+........."...
+......+##*...
+
+=== hollow-07
+par: 16
+name: Leap of Faith
+idea: Rest on the square light and the dark islands past the pads show, with a mark where each flight lands. Only one pad's flight lands on stone: line up to stand on it, fly, and cross the far side from memory.
+lamps: held
+.*###R.,......
+S####R...,,,..
+.####R...,.,..
+...........,..
+.....G,,,,,,,.
+
+=== hollow-08
+par: 22
+name: Where It Stops
+idea: A lying block slides across frozen pools until it leaves the ice, and in this rink every stop is a dark tile: where there's none, it slides off into the void. Rest on the square light and learn where the stops are, then cross the rink from memory. A block standing on ice holds still.
+lamps: held
+...,,,,,......
+...,~~~~......
+S#*,~.~~~~~~,.
+...,~~~~~~~~,.
+......,,,,,,,#G
+
+=== hollow-09
+par: 19
+name: Hidden Footholds
+idea: Planks break under a standing block, and turning means standing up. The stones you can stand on are dark: in the dark, a stone among the planks looks just like a hole. Rest on the square light and learn which gaps are stone, then cross, standing only where it's solid. The last stones by the goal decide how you arrive.
+lamps: held
+...ffffffff..
+...ff.fffff..
+S#*,fffffff..
+...ffff.f,,fG
+...fff,ff,,..
+
+=== hollow-10
+par: 30
+name: Night Shift
+idea: The red light on the ground shows the ceiling's path (look up with Space), and it's out almost as soon as you flip. On the ceiling the purple switch opens the gate to the orange light, which shows the ground's maze, but the same press raised a gate down there, in the way of the goal. On the ground the purple switch drops it again: plan the way round from what you saw before it moved.
+switches: 1 1
+lamps: 2/3 3
+..................
+S#*+.....#,,.,,,.G
+..........,,I,,,.,
+..........,,,,,,.,
+..........,,o.,i,,
+..................
+---
+..................
+...#.....+........
+..."""""."........
+..."""""."........
+....."oI"*........
+..................

@@ -161,5 +161,7 @@ const opts = [
   on.length ? `!on ${on.join(' ')}` : '',
   shape !== 2 ? `!shape ${shape === 1 ? 'cube' : 'tall'}` : '',
   ...paintOpts(paint, gates),
+  // The Chasm's light switches, so analyze reads them back as they were searched (held, not the default timer).
+  lamps?.length ? `!lamps ${lamps.map((l) => `${l.timer || 'held'}${l.color ? `/${l.color}` : ''}`).join(' ')}` : '',
 ];
 console.log([`@score ${results[0].s.toFixed(1)} seed ${seedArg}`, ...opts.filter(Boolean), ...results[0].rows].join('\n'));
