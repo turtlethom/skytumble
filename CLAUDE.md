@@ -52,6 +52,7 @@ prefix (`wind-`) for a whole chapter, so playtest notes can be acted on directly
 npm run -s analyze -- <file|id>...        # templates read as all-open; par, states, dead ends, pad/ice uses, untouched tiles (*)
                                           #   and special pieces the solution never touches (UNUSED);
                                           #   held→floor par: what keeping a hand on held switches costs;
+                                          #   backstop→off par: par if an idle cube may never hold a belt's push;
                                           #   unsolvable → diagnosis. TRACE=1 moves · DIAG=1 diagnosis
                                           #   always · BLOCK=1 print as a design block (copy to a draft)
 npm run -s sim -- <file|id> RRDL [name]   # replay moves (T = Tab, swap cubes); board at the end (SHOW=1: after every move)
@@ -59,7 +60,8 @@ npm run -s search -- <template> <palette> <parLo> <parHi> 1-4 2 "chain,belt→pa
                                           # seeds 1-4 in parallel, best first; stops at once with a
                                           #   diagnosis if the template can't be solved even all-floor;
                                           #   ITERS=<n> steps per restart (default 3000; paint fields need far fewer);
-                                          #   HELD=<k> rewards each move held switches add to par (else they're laid as floor)
+                                          #   HELD=<k> rewards each move held switches add to par (else they're laid as floor);
+                                          #   BACKSTOP=<k> rewards each move a backstop saves (want "backstop" to ask for one)
 npm run -s lattice -- 5 3 26 36 1 150 2 > out.txt
                                           # routing puzzles: columns rows parLo parHi seed seconds colors;
                                           #   MAZE=1 fills the rest with low stone, HEDGES=0 leaves hedges

@@ -89,6 +89,33 @@ export function heldFloor(level: Level): Level | null {
   return { ...level, tiles: flat(level), ...(level.ceiling ? { ceiling: { ...level.ceiling, tiles: flat(level.ceiling) } } : {}) };
 }
 
+/**
+ * Backstops: moves where a belt's push was held by the idle cube (Undertow). A cube left on a belt
+ * stays put while the other moves, so it stops the next one riding the current: the count of moves
+ * in `steps` whose push it held. `noBackstopPar` is the par with every such move forbidden: how much
+ * the trick is needed.
+ */
+export function noBackstopPar(level: Level): number | null {
+  const sol = solve(level, initialState(level), (cur, steps, r) => {
+    // After a swap in the same step, the cube that was moving is the idle one.
+    const idle = steps.length > 1 ? cur.block : cur.other;
+    return !(idle && (r.held ?? []).some((h) => h.belt && h.x === idle.x && h.y === idle.y));
+  });
+  return sol ? sol.moves.length : null;
+}
+
+export function backstops(level: Level, steps: Move[]): number {
+  let st = initialState(level);
+  let n = 0;
+  for (const m of steps) {
+    const r = play(level, st, m);
+    const idle = st.other;
+    if (m !== 'swap' && idle && (r.held ?? []).some((h) => h.belt && h.x === idle.x && h.y === idle.y)) n++;
+    st = r.state;
+  }
+  return n;
+}
+
 /** Groups that some switch in the level presses. */
 function switchGroups(level: Level): Set<number> {
   const tiles = [...level.tiles, ...(level.ceiling?.tiles ?? [])];

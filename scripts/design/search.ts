@@ -2,7 +2,7 @@
 //   npx vite-node scripts/design/search.ts <template> <palette> <parLo> <parHi> [seed] [restarts] [want]
 // The template is a design block (see lib.ts) whose '?' cells are filled from <palette> (repeat a
 // character to weight it, e.g. "~~~#.f") and whose '%' cells become ice or empty. Hill-climbs to
-// reward: par in range, distinct ice and pad uses (and each one listed in <want>, e.g. "slide→switch", "chain"),
+// reward: par in range, distinct ice and pad uses (and each one listed in <want>, e.g. "slide→switch", "chain", "backstop"),
 // switches pressed, belt pushes, explored states; and penalizes tiles the solution never touches.
 // Env: CLUTTER (penalty per untouched filled cell, default 0.5), PRESSES (bonus per switch, default 10),
 // WALLS (penalty per switch-wall color the level doesn't need to move, default 40; 0 turns the check off).
@@ -12,6 +12,8 @@
 // HELD (bonus per move that keeping a hand on held switches adds to par, default 0 = off): against the
 // level with its held switches and their bridges as floor. Without it a search with switches in the
 // palette lays them as plain floor, since floor adds states.
+// BACKSTOP (bonus per move that forbidding the idle cube to hold a belt's push adds to par, default 0 =
+// off; unsolvable counts as 10): without it, a backstop in the solution may save only a move.
 // Prints the best layout as a design block, ready for analyze.ts.
 // A seed range (`1-4`) or list (`1,5,9`) runs one search per seed in parallel and prints every result,
 // best first: save the output to a file and run analyze.ts on it.
@@ -25,7 +27,7 @@ import { fileURLToPath } from 'node:url';
 import { initialState, step } from '../../src/game/rules';
 import { solve } from '../../src/game/solver';
 import { flipUses, iceUses, padUses, shapeUses } from '../../src/levels/validate';
-import { heldFloor, wallColors } from './checks';
+import { backstops, heldFloor, noBackstopPar, wallColors } from './checks';
 import { diagnose } from './explore';
 import { build, paintOpts, parseBlock, touched } from './lib';
 
@@ -40,6 +42,7 @@ const pressBonus = Number(process.env.PRESSES ?? 10);
 const wallPenalty = Number(process.env.WALLS ?? 40);
 const plankBonus = Number(process.env.PLANKS ?? 0);
 const heldBonus = Number(process.env.HELD ?? 0);
+const backstopBonus = Number(process.env.BACKSTOP ?? 0);
 let seed = Number(seedArg);
 const rand = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
 const pick = (xs: string) => xs[Math.floor(rand() * xs.length)];
@@ -73,6 +76,9 @@ function score(rows: string[], floor = -Infinity): number {
   const par = sol.moves.length;
   const ice = iceUses(level, sol.moves);
   const uses: string[] = [...ice.uses, ...padUses(level, sol.moves), ...flipUses(level, sol.moves), ...shapeUses(level, sol.moves)];
+  // Split cubes: the idle cube holding a belt's push counts once per move it does.
+  const stops = backstops(level, sol.steps);
+  if (stops) uses.push('backstop');
   const pushes = ice.pushes;
   const seen = touched(level, sol.moves);
   const pressed = new Set<string>();
@@ -85,7 +91,7 @@ function score(rows: string[], floor = -Infinity): number {
   const untouched = slots.filter(([x, y]) => rows[y][x] !== '.' && !seen.has(`${x},${y}`)).length;
   let s = -Math.max(0, Number(lo) - par, par - Number(hi)) * 4;
   s += want.filter((w) => uses.includes(w)).length * 15;
-  s += uses.length * 8 + Math.min(pushes, 5) * 1.5 + pressed.size * pressBonus;
+  s += uses.length * 8 + Math.min(pushes, 5) * 1.5 + pressed.size * pressBonus + Math.min(stops, 4) * 6;
   s += Math.min(sol.explored, 600) * 0.05;
   s -= untouched * clutter;
   // The wall check re-solves twice per color, so only pay for it when the score could still count.
@@ -93,6 +99,10 @@ function score(rows: string[], floor = -Infinity): number {
   // One solve per plank, so skip it when even every plank counting couldn't reach the best so far.
   const planks = slots.filter(([x, y]) => rows[y][x] === 'f').length;
   if (plankBonus && s + planks * plankBonus >= floor) s += plankBonus * neededPlanks(rows, par);
+  if (backstopBonus && stops) {
+    const without = noBackstopPar(level);
+    s += backstopBonus * Math.min(without === null ? 10 : without - par, 10);
+  }
   if (heldBonus) {
     const flat = heldFloor(level);
     const plain = flat && solve(flat);

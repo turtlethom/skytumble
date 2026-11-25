@@ -6,7 +6,7 @@ import solutions from '../SOLUTIONS.md?raw';
 import { directions, solutionsMarkdown } from '../scripts/design/arrows';
 import { explore, movesText, pathTo } from '../scripts/design/explore';
 import { levelColors, lightReport } from '../scripts/design/checks';
-import { block, Draft, dropUnreachable, heldFloor, idleSpecials, quickRepresses, flipNS, hidden, lint, plainWalls, plankify, regrow, strip, switchOrder, toLevel, wallColors } from '../scripts/design/checks';
+import { backstops, block, Draft, dropUnreachable, heldFloor, idleSpecials, noBackstopPar, quickRepresses, flipNS, hidden, lint, plainWalls, plankify, regrow, strip, switchOrder, toLevel, wallColors } from '../scripts/design/checks';
 
 const draft = (rows: string[], switches: number[] = []): Draft => ({ rows, switches, on: [], shape: 2 });
 
@@ -204,5 +204,22 @@ describe('design tools', () => {
     expect(solve(rail)!.moves.length).toBe(6);
     expect(solve(flat)!.moves.length).toBeLessThanOrEqual(6);
     expect(heldFloor(toLevel(draft(['S#G'])))).toBeNull();
+  });
+
+  it('count backstops: an idle cube holding the push of a belt, and the par without them', () => {
+    // Two currents: the first cube parks in the second's last lane, and the second is held beside it.
+    const rivers = toLevel(draft([
+      '....vvvv...^^^...',
+      '...#vvvv...^^^...',
+      'S##Avvvv...^^^...',
+      '...#vvvv...^^^##.',
+      '....vvvv...^^^###',
+      '....vvvv#..^^^..#',
+      '....vvvv###^^^..G',
+      '....vvvv...^^^...',
+    ]));
+    const sol = solve(rivers)!;
+    expect(backstops(rivers, sol.steps)).toBeGreaterThan(0);
+    expect(noBackstopPar(rivers)).toBe(sol.moves.length + 1);
   });
 });

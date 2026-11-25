@@ -11,7 +11,7 @@ import { Tile } from '../../src/game/types';
 import { solve } from '../../src/game/solver';
 import { flipUses, iceUses, padUses, shapeUses } from '../../src/levels/validate';
 import { diagnose, explore } from './explore';
-import { heldFloor, levelColors, lightReport, lightText } from './checks';
+import { backstops, heldFloor, noBackstopPar, levelColors, lightReport, lightText } from './checks';
 import { build, describeMotions, designBlock, loadDesigns, paintText, textRow, touched } from './lib';
 
 const env = (k: string) => process.env[k] === '1';
@@ -80,6 +80,10 @@ for (const arg of process.argv.slice(2)) {
     const hf = heldFloor(level);
     const heldPlain = hf && solve(hf);
     const heldText = hf ? `  held→floor par: ${heldPlain ? heldPlain.moves.length : 'unsolvable'}` : '';
+    if (backstops(level, sol.steps)) splitUses.add('backstop');
+    // Split cubes on belts: the par without a cube ever holding the other's push.
+    const nb = level.tiles.includes(Tile.Splitter) && level.tiles.includes(Tile.Conveyor) ? noBackstopPar(level) : undefined;
+    const backstopText = nb === undefined ? '' : `  backstop→off par: ${nb ?? 'unsolvable'}`;
     const pads = [...padUses(level, sol.steps), ...flipUses(level, sol.steps), ...shapeUses(level, sol.steps), ...splitUses];
     // Swaps are free; their share of all actions is the swap-tedium measure.
     const swaps = sol.steps.length - sol.moves.length;
@@ -89,7 +93,7 @@ for (const arg of process.argv.slice(2)) {
     console.log(
       `par ${sol.moves.length}  states ${sol.explored}  dead ends ${dead}/${ex.nodes.size}  ` +
         `uses [${[...u.uses, ...pads].join(', ')}]  pushes ${u.pushes}  presses [${pressed.join(' ')}]  ` +
-        `| specials→floor par: ${plain ? plain.moves.length : 'unsolvable'}${heldText}${swapText}`,
+        `| specials→floor par: ${plain ? plain.moves.length : 'unsolvable'}${heldText}${backstopText}${swapText}`,
     );
     const seen = touched(level, sol.steps);
     console.log(rows.map((r, y) => [...r].map((c, x) => ('.-'.includes(c) || seen.has(`${x},${y}`) ? c : '*')).join('')).join('\n'));

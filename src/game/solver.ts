@@ -1,4 +1,4 @@
-import { initialState, successors } from './rules';
+import { StepResult, initialState, successors } from './rules';
 import { Dir, Level, Move, State, Tile } from './types';
 
 export interface Solution {
@@ -44,8 +44,11 @@ export function stateKey(level: Level, s: State, splits = level.tiles.includes(T
   return (blockKey(level, s, { x: lo.x, y: lo.y, o: 'S', n: 1 }) * 64 + loColor) * (cells * 8 + 1) + (hi.y * level.width + hi.x) * 8 + hiColor + 1;
 }
 
-/** Breadth-first search for the shortest solution, or null if the level is unsolvable. */
-export function solve(level: Level, from: State = initialState(level)): Solution | null {
+/**
+ * Breadth-first search for the shortest solution, or null if the level is unsolvable. `allow`, for the
+ * design tools, skips moves it rejects (the par a level would have without some trick).
+ */
+export function solve(level: Level, from: State = initialState(level), allow?: (from: State, steps: Move[], r: StepResult) => boolean): Solution | null {
   const start = from;
   const splits = level.tiles.includes(Tile.Splitter);
   const paints = hasPaint(level);
@@ -60,6 +63,7 @@ export function solve(level: Level, from: State = initialState(level)): Solution
     const curKey = key(cur);
     for (const { steps, result: r } of successors(level, cur)) {
       if (r.outcome === 'fall' || r.outcome === 'bump') continue;
+      if (allow && !allow(cur, steps, r)) continue;
       const k = key(r.state);
       if (parent.has(k)) continue;
       parent.set(k, { prev: curKey, steps, state: r.state });
