@@ -1349,15 +1349,22 @@ export class World {
       g.traverse((o) => {
         const mesh = o as THREE.Mesh;
         if (!mesh.isMesh || Array.isArray(mesh.material)) return;
-        const opacity = mesh.material.opacity;
+        // A floor material shared between levels holds whatever fade its floor last had (out, while the camera
+        // is on the other floor), so start the copy from its true values: copying a faded one left the tile
+        // body unseen for the whole level, its outline alone showing (hollow-10, entered from another level).
+        const kept = mesh.material.userData.keptBetweenLevels;
+        const opacity = kept ? 1 : mesh.material.opacity;
+        const transparent = kept ? false : mesh.material.transparent;
         mesh.material = mesh.material.clone();
         mesh.material.userData = { tubeFade: 0 };
         mesh.material.opacity = opacity;
+        mesh.material.transparent = transparent;
+        mesh.material.depthWrite = true;
         mesh.castShadow = false;
         mats.push(mesh.material);
       });
       g.visible = false;
-      this.darkTiles.push({ layer, x, y, color: group, obj: g, mats, fade: 0, glow });
+      this.darkTiles.push({ layer, x, y, color: group, obj: g, mats, fade: 0, target: 0, gen: 0, glow });
       return g;
     }
 
@@ -2471,13 +2478,17 @@ export class World {
   setLights(lit: number, left: number[], state: State, reveal = false, animate = true): void {
     const layer = state.layer ?? 0;
     const resting = new Set([...blockCells(state.block), ...(state.other ? [[state.other.x, state.other.y]] : [])].map(([x, y]) => `${layer},${x},${y}`));
-    const changes: { tile: DarkTileView; from: number; to: number }[] = [];
+    // Compared with where each tile is heading, not where its fade is now: an undo, Tab or the Hint key
+    // during a fade used to leave the older fade running to the wrong end (lit tiles left dark).
+    const changes: { tile: DarkTileView; from: number; to: number; gen: number }[] = [];
     for (const d of this.darkTiles) {
       const isLit = !!((lit >> d.color) & 1);
       const rested = resting.has(`${d.layer},${d.x},${d.y}`);
       const to = isLit || rested ? 1 : reveal ? DARK_REVEAL : 0;
       d.glow.visible = rested && !isLit;
-      if (to !== d.fade) changes.push({ tile: d, from: d.fade, to });
+      if (to === d.target && (animate || to === d.fade)) continue;
+      d.target = to;
+      changes.push({ tile: d, from: d.fade, to, gen: ++d.gen });
     }
     const show = (d: DarkTileView, f: number) => {
       d.fade = f;
@@ -2485,7 +2496,11 @@ export class World {
       for (const m of d.mats) m.userData.tubeFade = f;
     };
     if (!animate) changes.forEach((c) => show(c.tile, c.to));
-    else if (changes.length) void this.tween(LIGHT_FADE_MS, (t) => changes.forEach((c) => show(c.tile, c.from + (c.to - c.from) * easeOut(t))));
+    else if (changes.length) {
+      void this.tween(LIGHT_FADE_MS, (t) => {
+        for (const c of changes) if (c.tile.gen === c.gen) show(c.tile, c.from + (c.to - c.from) * easeOut(t));
+      });
+    }
     // Timed lights count down in order; held ones glow while held.
     const timed = this.lampViews.slice().sort((a, b) => a.layer - b.layer || a.y - b.y || a.x - b.x);
     timed.forEach((v, i) => {
@@ -4484,6 +4499,9 @@ interface DarkTileView {
   obj: THREE.Object3D;
   mats: THREE.Material[];
   fade: number;
+  /** Where its fade is heading, and which fade owns it: a newer one (or an instant change) stops the older. */
+  target: number;
+  gen: number;
   /** The glow under a block resting on it in the dark. */
   glow: THREE.Object3D;
 }
