@@ -443,6 +443,9 @@ class Game {
       if (result.dropped) await this.world.dropTwin();
       else await this.world.fall(level, result.state.block, result.broke);
       if (scene !== this.scene) return;
+      // Keys pressed while the block fell were queued as moves (the status was busy): drop them, or the
+      // next real move would be followed by a ghost of the last one (the user's report, 2026-11-25).
+      this.queued = null;
       this.status = 'fallen';
       // In the Tutorial the panel says what went wrong, in place of the prompt.
       const id = this.lessonId();
@@ -455,6 +458,7 @@ class Game {
       this.queued = null;
       await this.world.win();
       if (scene !== this.scene) return;
+      this.queued = null;
       this.status = 'won';
       this.showPrompt('');
       this.recordWin();
@@ -571,6 +575,7 @@ class Game {
       if (entry.counted) this.moves--;
     }
     this.rewindTo = null;
+    this.queued = null;
     this.state = prev;
     this.status = 'playing';
     this.world.syncState(prev);
@@ -587,6 +592,7 @@ class Game {
     this.history = [];
     this.moves = 0;
     this.rewindTo = null;
+    this.queued = null;
     this.status = 'playing';
     this.world.syncState(this.state);
     this.refreshLights(false);

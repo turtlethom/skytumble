@@ -12,7 +12,9 @@
 // howto-NN.png every HOWTO_MS (default 500) for HOWTO_SHOTS shots (default 16), one loop of its scene.
 // MOVES='RRRRUzh' plays these instead of the solution (U D L R roll, T Tab, z undo, h the Hint key),
 // for checking a mistake on screen (a fall in the dark and its rewind); with STEPS=1, a shot after each.
-// A '!' sends the next key without waiting for the game to go idle (MOVES='RRD!z': an undo mid-fade);
+// A '!' sends the next key without waiting for the game to go idle, and the key before it doesn't wait
+// either, waiting RUSH_MS (60) instead (MOVES='RRD!z': an undo mid-fade; RUSH_MS=400 'L!L!LrR': arrows
+// during a fall, then Restart and one move);
 // p and n are Previous and Next, for what carries over between levels in one page (MOVES='pnRR').
 // FRAMERATE=1 skips playing: on the first level it reports how often the scene draws after a key, idle,
 // and after a minute alone (it should draw nothing then), then once a key wakes it.
@@ -245,7 +247,7 @@ if (process.env.FRAMERATE === '1') {
   check('leaving it for a level: title', await untilTitle());
 } else
 for (const [id, solved] of Object.entries(solutions)) {
-  const letters = { U: 'up', D: 'down', L: 'left', R: 'right', T: 'swap', z: 'KeyZ', h: 'KeyH', p: 'KeyP', n: 'KeyN', '!': 'rush' };
+  const letters = { U: 'up', D: 'down', L: 'left', R: 'right', T: 'swap', z: 'KeyZ', h: 'KeyH', p: 'KeyP', n: 'KeyN', r: 'KeyR', '!': 'rush' };
   const moves = process.env.MOVES ? [...process.env.MOVES].map((c) => letters[c]) : solved;
   await send('Page.navigate', { url: `${base}/?level=${id}${process.env.QUERY ? `&${process.env.QUERY}` : ''}` });
   // A fresh load shows the chapter title, then the island rises. On a slow load the title comes late,
@@ -300,6 +302,8 @@ for (const [id, solved] of Object.entries(solutions)) {
         await sleep(Number(process.env.FRAME_MS ?? 150));
         await shot(`${id}-frame${String(f).padStart(2, '0')}`);
       }
+    } else if (moves[i + 1] === 'rush') {
+      await sleep(Number(process.env.RUSH_MS ?? 60));
     } else {
       await sleep(200);
       await idle();
