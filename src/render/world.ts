@@ -1151,18 +1151,31 @@ export class World {
       );
       disc.position.y = 0.03;
       disc.receiveShadow = true;
-      const { plastic, switchBase } = this.theme.finish;
-      if (plastic && switchBase !== undefined) {
-        // The same length-says-the-shape sign, as a small model of the block clipped onto a peg.
-        (disc.material as THREE.MeshStandardMaterial).color.set(switchBase);
-        (disc.material as THREE.MeshStandardMaterial).roughness = 0.3;
+      const { plastic, switchBase, iron } = this.theme.finish;
+      if ((plastic && switchBase !== undefined) || iron !== undefined) {
+        // The same length-says-the-shape sign, as a small model of the block on a peg: clipped on in
+        // Toybox; in The Hollow Deep, carved in the block's bone on a riveted iron plinth.
+        const base = iron ?? switchBase!;
+        const mat = disc.material as THREE.MeshStandardMaterial;
+        mat.color.set(base);
+        mat.roughness = iron !== undefined ? 0.5 : 0.3;
+        if (iron !== undefined) {
+          mat.metalness = 0.5;
+          for (let k = 0; k < 4; k++) {
+            const a = Math.PI / 4 + (k * Math.PI) / 2;
+            const rivet = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), new THREE.MeshStandardMaterial({ color: rimColor(iron, 1.5), roughness: 0.5, metalness: 0.5 }));
+            rivet.position.set(Math.cos(a) * 0.3, 0.065, Math.sin(a) * 0.3);
+            rivet.scale.y = 0.6;
+            g.add(rivet);
+          }
+        }
         const peg = new THREE.Mesh(
           new THREE.CylinderGeometry(0.055, 0.055, 0.12, 14),
-          new THREE.MeshStandardMaterial({ color: rimColor(switchBase, 0.78), roughness: 0.3 }),
+          new THREE.MeshStandardMaterial({ color: rimColor(base, 0.78), roughness: mat.roughness, metalness: mat.metalness }),
         );
         peg.position.y = 0.11;
         const modelLen = [0, 0.22, 0.44, 0.66][group];
-        const model = rounded(modelLen, 0.15, 0.22, this.theme.block.color, 0.03, { roughness: 0.2 });
+        const model = rounded(modelLen, 0.15, 0.22, this.theme.block.color, 0.03, { roughness: iron !== undefined ? 0.7 : 0.2 });
         model.position.y = 0.235;
         model.castShadow = true;
         // A groove between each cube-sized part, so the model counts out its length.

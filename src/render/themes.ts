@@ -228,7 +228,9 @@ const HOLLOW: Theme = {
   earth: { soil: 0x2e3335, hanging: 0x3a3f42, style: 'shards' },
   fragile: { light: 0x75665a, dark: 0x5a4e44, weathered: true },
   // Ice glows a touch on its own (iceSheen), so the frozen pools read in the dusk.
-  finish: { switchBase: 0x44494c, iron: 0x3a4044, iceSheen: true },
+  // Tubes framed in weathered iron like the gates, a shade lighter so they hold against the void (Toybox's
+  // toy blue clashed with the cold stone and read as a blue wall's color).
+  finish: { switchBase: 0x44494c, iron: 0x3a4044, tube: 0x566066, iceSheen: true },
   // Dark weathered ashlar for the gates' frames and for low stone that never moves: well below the floor.
   wall: {
     style: 'ashlar',

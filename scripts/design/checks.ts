@@ -315,6 +315,9 @@ export function hidden(level: Level): string[] {
     [Tile.Pad]: 'pad', [Tile.Flip]: 'ring', [Tile.FlipLocked]: 'locked ring', [Tile.Door]: 'tube', [Tile.ShapeSwitch]: 'shape switch', [Tile.Goal]: 'goal',
     // Splatter Studio: a hidden tray, water, gate or splitter hides a color or a split from the player.
     [Tile.Tray]: 'tray', [Tile.Wash]: 'water', [Tile.Gate]: 'gate', [Tile.Splitter]: 'splitter',
+    // The Chasm: a dark tile hidden while lit is a tile the player never gets to memorize
+    // (hollow-13's first platforms sat behind its tube line).
+    [Tile.Dark]: 'dark tile', [Tile.Lamp]: 'light', [Tile.HoldSwitch]: 'held switch',
   };
   const out: string[] = [];
   level.tiles.forEach((t, i) => {

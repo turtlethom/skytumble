@@ -127,3 +127,73 @@ S#*+.....#,,.,,,.G
 ..."""""."........
 ....."oI"*........
 ..................
+
+=== hollow-11
+par: 27
+name: Crosscurrent
+idea: Lie on the square light and the dark ground shows; the two rivers of belts always do. A river carries the block one tile downstream on every move it lies wholly on its belts. Cross the south-flowing one from high up and the north-flowing one from low down, so each current sets you down on dark ground.
+lamps: held
+.......vvv,,,,^^^.....
+......,vvv,..,^^^.....
+......,vvv,..,^^^,,,#G
+S#*,..,vvv,..,^^^,....
+...,,,,vvv...,^^^.....
+...,,,,vvv...,^^^.....
+.......vvv....^^^.....
+
+=== hollow-12
+par: 28
+name: Changeling
+idea: Lie on the square light to see the way. Halfway, a switch makes you tall, and a lying tall block rests on its two ends: it can lie across two rows of stones with nothing between them, where a normal block would fall. Plan that half for the tall block before you set off. At the far end a switch makes you normal again for the last few steps.
+lamps: held
+.........,,,,.....,,,G
+...,,,............,,..
+...,,,,..,,,,,,...,,..
+S#*,.,,,,t..,..,,.,n..
+....,,,.....,,,,,,....
+....,,,...............
+....,,,.....,,,,......
+
+=== hollow-13
+par: 37
+name: Last Train
+idea: Rest on the square light and the platforms show. The glass line carries the cube to the next stop in one move: an open gate is a stop, a shut one brakes the ride before it. At each stop, get off, find the switch in the dark and come back: blue opens the second stop, orange the third, and blue again the last. A dark path along the near edge reaches the third stop's platform early, but its gate stays shut until orange.
+shape: cube
+switches: 0 2 2
+lamps: held/1
+S*===#===J===H===j===;C
+.....;;..;;..;;........
+.....;;..;o..;;........
+....o.;......;o........
+....;;;;;;;;;;.........
+
+=== hollow-14
+par: 44
+name: Hands Full
+idea: Lie half on the purple light to see the first field, then stand on the splitter: the new cube pops onto the orange switch and holds the gate open. Cross in the dark to the red light, which shows the second field behind the blue gate near the start. The blue switch is the very next tile, and one cube can't hold both: look, then step onto it and hold the gate while the other cube goes through and crosses from memory. Join by the goal.
+switches: 2 0
+lamps: held/3 held/1
+........;;;*O...
+........;.;.;...
+......;;;...;;;.
+...O..;......;..
+S#*A#H;......;"G
+....".........".
+...."J".."""..".
+......""""."".".
+............""".
+
+=== hollow-15
+par: 48
+name: Double Exposure
+idea: The way to the goal is a mix of orange and purple dark tiles, and neither color alone makes a path: you see it only with both lights on at once. The round orange light behind the blue gate lights for eight moves, just enough to reach the square purple one if you go straight there, and every roll of either cube counts. So put a cube on the blue switch first, then run. The red switch past the square light lays the bridge onto the path; join up and cross it from memory.
+switches: 2 3
+lamps: held/1 8
+G;,..........
+.,;..........
+.;,;.........
+;,;,.........
+,;........,,*
+;,;33O...,,.o
+.....#...,,..
+S##]###J*,,..

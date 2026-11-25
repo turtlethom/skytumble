@@ -110,7 +110,7 @@ export function splatterSheet(painted: boolean): Level {
  * The Hollow Deep's tiles (`?sheet=hollow`): dark tiles in the three light colors (no blue: it would
  * vanish in the teal haze) beside their light switches (a timed orange, a held purple, a timed red),
  * held switches as iron plates, iron gates raised and sunk, low stone, the iron seam splitter, the
- * iron-ringed goal, frozen pools of ice, planks, belts and a press switch to compare. The lights show lit; `&dark` leaves them
+ * iron-ringed goal, shape switches (cube, normal, tall) on iron plinths, frozen pools of ice, a glass tube in iron, planks, belts and a press switch to compare. The lights show lit; `&dark` leaves them
  * out, and a roll east puts the block on a dark tile in the dark (its footing glow). Not a puzzle.
  */
 export function hollowSheet(): Level {
@@ -122,9 +122,9 @@ export function hollowSheet(): Level {
       '#################',
       '#*#*#*##,,,#;;;##',
       '##########,#;#"##',
-      '#]##00##G#"""###',
+      '#]##00##G#"""#cnt',
       '#################',
-      'S,,#^#v##~~~######',
+      'S,,#^#v##~~~#===##',
     ],
     [0, 1, 0, 1, 2],
     1,

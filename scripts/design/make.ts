@@ -24,7 +24,7 @@ const out = outArg ?? template.replace(/\.txt$/, '') + '.make.txt';
 
 // 1. Lint the template as its most open version, so mistakes show before minutes of searching.
 const t = parseBlock(readFileSync(template, 'utf8').trim().split('\n'));
-const open: Draft = { rows: t.rows.map((r) => r.replace(/\?/g, '#').replace(/%/g, '~')), switches: t.switches, on: t.on, shape: t.shape, ...(t.paint ? { paint: t.paint } : {}), ...(t.gates ? { gates: t.gates } : {}) };
+const open: Draft = { rows: t.rows.map((r) => r.replace(/\?/g, '#').replace(/%/g, '~')), switches: t.switches, on: t.on, shape: t.shape, ...(t.paint ? { paint: t.paint } : {}), ...(t.gates ? { gates: t.gates } : {}), ...(t.lamps ? { lamps: t.lamps } : {}) };
 // A switch with nothing to move is expected when the search is the one placing the walls.
 const placesWalls = /[HIJKhijk0-9]/.test(palette);
 const warnings = lint(open).filter((l) => !l.startsWith('WARN: unsolvable') && !(placesWalls && l.includes('moves nothing')));

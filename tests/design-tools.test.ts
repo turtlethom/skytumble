@@ -79,7 +79,8 @@ describe('design tools', () => {
     // West of the middle, a tube one south and one east covers the tile (toy-15's cube switch).
     expect(hidden(toLevel(draft(['.c.......', '#S===####', '.......G.'])))).toEqual(['shape switch at 1,0 is behind the tube at 2,1']);
     // A tube behind a tube, and a tile with only floor in front, say nothing.
-    expect(hidden(toLevel(draft(['..|......', 'S#|####G.', '..|......'])))).toEqual([]);
+    expect(hidden(toLevel(draft(['..|......', 'S#|####G.', '..|......'])))).toEqual([]);    // A dark tile behind a tube can't be seen even while it's lit.
+    expect(hidden(toLevel({ ...draft(['.,.......', '*S===####', '.......G.']), lamps: [{ color: 0, timer: 0 }] }))).toEqual(['dark tile at 1,0 is behind the tube at 2,1']);
   });
 
   it('lint the mistakes that cost the most rounds', () => {
