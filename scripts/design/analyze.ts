@@ -11,7 +11,7 @@ import { Tile } from '../../src/game/types';
 import { solve } from '../../src/game/solver';
 import { flipUses, iceUses, padUses, shapeUses } from '../../src/levels/validate';
 import { diagnose, explore } from './explore';
-import { levelColors, lightReport, lightText } from './checks';
+import { heldFloor, levelColors, lightReport, lightText } from './checks';
 import { build, describeMotions, designBlock, loadDesigns, paintText, textRow, touched } from './lib';
 
 const env = (k: string) => process.env[k] === '1';
@@ -76,6 +76,10 @@ for (const arg of process.argv.slice(2)) {
       st = r.state;
     }
     const plain = solve(build(rows.map((l) => (/^-{3,}/.test(l) ? l : l.replace(/[~^v<>UDLR+\[\]AVruys{]/g, '#'))), switches, on, level.startShape ?? 2));
+    // Held switches and their bridges as floor: how many moves keeping a hand on a held switch costs.
+    const hf = heldFloor(level);
+    const heldPlain = hf && solve(hf);
+    const heldText = hf ? `  held→floor par: ${heldPlain ? heldPlain.moves.length : 'unsolvable'}` : '';
     const pads = [...padUses(level, sol.steps), ...flipUses(level, sol.steps), ...shapeUses(level, sol.steps), ...splitUses];
     // Swaps are free; their share of all actions is the swap-tedium measure.
     const swaps = sol.steps.length - sol.moves.length;
@@ -85,7 +89,7 @@ for (const arg of process.argv.slice(2)) {
     console.log(
       `par ${sol.moves.length}  states ${sol.explored}  dead ends ${dead}/${ex.nodes.size}  ` +
         `uses [${[...u.uses, ...pads].join(', ')}]  pushes ${u.pushes}  presses [${pressed.join(' ')}]  ` +
-        `| specials→floor par: ${plain ? plain.moves.length : 'unsolvable'}${swapText}`,
+        `| specials→floor par: ${plain ? plain.moves.length : 'unsolvable'}${heldText}${swapText}`,
     );
     const seen = touched(level, sol.steps);
     console.log(rows.map((r, y) => [...r].map((c, x) => ('.-'.includes(c) || seen.has(`${x},${y}`) ? c : '*')).join('')).join('\n'));

@@ -75,6 +75,20 @@ export function tryLevel(d: Draft): Level | null {
 
 export const parOf = (level: Level | null): number | null => (level ? solve(level)?.moves.length ?? null : null);
 
+/**
+ * The level with its held switches as floor, and the bridges they hold as floor too (reversed ones
+ * included): the par a held rail would have if keeping a hand on it cost nothing. Null when the level
+ * has no held switch. Bridges of a held color that a press switch also moves turn to floor as well;
+ * walls of a held color stay as they start, so a level whose held switches open gates reads unsolvable.
+ */
+export function heldFloor(level: Level): Level | null {
+  const layers = [level, ...(level.ceiling ? [level.ceiling] : [])];
+  const held = new Set(layers.flatMap((l) => l.tiles.flatMap((t, i) => (t === Tile.HoldSwitch ? [l.groups[i]] : []))));
+  if (!held.size) return null;
+  const flat = (l: { tiles: Tile[]; groups: number[] }) => l.tiles.map((t, i) => (t === Tile.HoldSwitch || ((t === Tile.Bridge || t === Tile.BridgeReversed) && held.has(l.groups[i])) ? Tile.Floor : t));
+  return { ...level, tiles: flat(level), ...(level.ceiling ? { ceiling: { ...level.ceiling, tiles: flat(level.ceiling) } } : {}) };
+}
+
 /** Groups that some switch in the level presses. */
 function switchGroups(level: Level): Set<number> {
   const tiles = [...level.tiles, ...(level.ceiling?.tiles ?? [])];

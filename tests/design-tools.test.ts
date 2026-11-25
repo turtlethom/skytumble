@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { solve } from '../src/game/solver';
+import { Tile } from '../src/game/types';
 import { findLevel } from '../src/levels';
 import solutions from '../SOLUTIONS.md?raw';
 import { directions, solutionsMarkdown } from '../scripts/design/arrows';
 import { explore, movesText, pathTo } from '../scripts/design/explore';
 import { levelColors, lightReport } from '../scripts/design/checks';
-import { block, Draft, dropUnreachable, idleSpecials, quickRepresses, flipNS, hidden, lint, plainWalls, plankify, regrow, strip, switchOrder, toLevel, wallColors } from '../scripts/design/checks';
+import { block, Draft, dropUnreachable, heldFloor, idleSpecials, quickRepresses, flipNS, hidden, lint, plainWalls, plankify, regrow, strip, switchOrder, toLevel, wallColors } from '../scripts/design/checks';
 
 const draft = (rows: string[], switches: number[] = []): Draft => ({ rows, switches, on: [], shape: 2 });
 
@@ -193,5 +194,15 @@ describe('design tools', () => {
     const two = { ...draft(['S*,,G', '.*;;.']), lamps: [{ color: 0, timer: 3 }, { color: 1, timer: 0 }] };
     expect(flipNS(two).lamps).toEqual([{ color: 1, timer: 0 }, { color: 0, timer: 3 }]);
     expect(block('x', two)).toContain('!lamps 3 held/1');
+  });
+
+  it('price a held rail: its switches and bridges as floor', () => {
+    // Riding lying across a switch and the bridge it holds; as floor, the block simply walks.
+    const rail = toLevel(draft(['..S......', '..OOOOO..', '..#0000..', '......G..']));
+    const flat = heldFloor(rail)!;
+    expect(flat.tiles.filter((t) => t === Tile.HoldSwitch || t === Tile.Bridge)).toHaveLength(0);
+    expect(solve(rail)!.moves.length).toBe(6);
+    expect(solve(flat)!.moves.length).toBeLessThanOrEqual(6);
+    expect(heldFloor(toLevel(draft(['S#G'])))).toBeNull();
   });
 });

@@ -9,6 +9,9 @@
 // Without that penalty, searches with switch walls mostly find walls that never have to move.
 // PLANKS (bonus per plank in a '?' cell whose swap to floor lowers par, default 0 = off): without it a
 // search with planks in the palette keeps them only where they never matter, since floor adds states.
+// HELD (bonus per move that keeping a hand on held switches adds to par, default 0 = off): against the
+// level with its held switches and their bridges as floor. Without it a search with switches in the
+// palette lays them as plain floor, since floor adds states.
 // Prints the best layout as a design block, ready for analyze.ts.
 // A seed range (`1-4`) or list (`1,5,9`) runs one search per seed in parallel and prints every result,
 // best first: save the output to a file and run analyze.ts on it.
@@ -22,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { initialState, step } from '../../src/game/rules';
 import { solve } from '../../src/game/solver';
 import { flipUses, iceUses, padUses, shapeUses } from '../../src/levels/validate';
-import { wallColors } from './checks';
+import { heldFloor, wallColors } from './checks';
 import { diagnose } from './explore';
 import { build, paintOpts, parseBlock, touched } from './lib';
 
@@ -36,6 +39,7 @@ const clutter = Number(process.env.CLUTTER ?? 0.5);
 const pressBonus = Number(process.env.PRESSES ?? 10);
 const wallPenalty = Number(process.env.WALLS ?? 40);
 const plankBonus = Number(process.env.PLANKS ?? 0);
+const heldBonus = Number(process.env.HELD ?? 0);
 let seed = Number(seedArg);
 const rand = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
 const pick = (xs: string) => xs[Math.floor(rand() * xs.length)];
@@ -89,6 +93,11 @@ function score(rows: string[], floor = -Infinity): number {
   // One solve per plank, so skip it when even every plank counting couldn't reach the best so far.
   const planks = slots.filter(([x, y]) => rows[y][x] === 'f').length;
   if (plankBonus && s + planks * plankBonus >= floor) s += plankBonus * neededPlanks(rows, par);
+  if (heldBonus) {
+    const flat = heldFloor(level);
+    const plain = flat && solve(flat);
+    if (flat) s += heldBonus * Math.min(par - (plain ? plain.moves.length : par - 10), 10);
+  }
   return s;
 }
 
