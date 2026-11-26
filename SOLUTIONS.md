@@ -1530,6 +1530,19 @@ Before a move: ↹ press Tab first, to move the other cube (a swap is free; it n
 31-34  ← ← ← ↑✔
 ```
 
+## `hollow-18` Stretch
+
+```
+ 1- 5  → → → ↓ →
+ 6-10  → ↓● ↓ → →
+11-15  →● ↑ →● ↑ ←
+16-20  ↓ ↓ ←● ← ↑●
+21-25  ↑ ←● ↓● →● ↑●
+26-30  ←● ↓● ↓● ↓● →●
+31-35  →● → → →● →
+36-36  →✔
+```
+
 ## `lab-01` Glide
 
 ```
