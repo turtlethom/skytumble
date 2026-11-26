@@ -1543,6 +1543,19 @@ Before a move: ↹ press Tab first, to move the other cube (a swap is free; it n
 36-36  →✔
 ```
 
+## `hollow-19` Somersault
+
+```
+ 1- 5  → ↓ ↓ → ↑
+ 6-10  → ↑ → ↓ →✈⇄
+11-15  ← ↑ → ↑ ←
+16-20  ↓ ↓ → ↓ →
+21-25  → ↑✈⇄ ↑ ← ↓
+26-30  ← ↑ ← ↓ →
+31-35  ↑ ←✈⇄ ↑ ← ↓
+36-38  → → ↑✔
+```
+
 ## `lab-01` Glide
 
 ```
