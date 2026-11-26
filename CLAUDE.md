@@ -85,7 +85,8 @@ npm run -s lint -- <file|id>...           # before solving: switches in reading 
                                           #   skippable belts, goal only reachable lying, what raised
                                           #   walls and tubes hide (and whether a north-south flip fixes it), a board
                                           #   too big for the camera, pads aimed at walls (where each stops,
-                                          #   a short stop over nothing, a sideways hop onto a wall); any belt that never
+                                          #   a short stop over nothing, a sideways hop onto a wall); pieces on both floors'
+                                          #   same cells (the other floor shows through); any belt that never
                                           #   pushes or pad that never fires from any reachable position
 npm run -s walls -- <file|id>...          # each switch color's walls and bridges fixed one way, then the
                                           #   other: must both change par. PLAIN=1 turns unneeded walls to floor

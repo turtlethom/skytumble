@@ -6,7 +6,7 @@ import solutions from '../SOLUTIONS.md?raw';
 import { directions, solutionsMarkdown } from '../scripts/design/arrows';
 import { explore, movesText, pathTo } from '../scripts/design/explore';
 import { levelColors, lightReport } from '../scripts/design/checks';
-import { backstops, block, Draft, dropUnreachable, heldFloor, idleSpecials, noBackstopPar, quickRepresses, flipNS, hidden, lint, plainWalls, plankify, regrow, strip, switchOrder, toLevel, wallColors } from '../scripts/design/checks';
+import { backstops, block, Draft, dropUnreachable, floorOverlaps, heldFloor, idleSpecials, noBackstopPar, quickRepresses, flipNS, hidden, lint, plainWalls, plankify, regrow, strip, switchOrder, toLevel, wallColors } from '../scripts/design/checks';
 
 const draft = (rows: string[], switches: number[] = []): Draft => ({ rows, switches, on: [], shape: 2 });
 
@@ -221,5 +221,11 @@ describe('design tools', () => {
     const sol = solve(rivers)!;
     expect(backstops(rivers, sol.steps)).toBeGreaterThan(0);
     expect(noBackstopPar(rivers)).toBe(sol.moves.length + 1);
+  });
+
+  it('warn when two floors put pieces on the same cells, but not for rings lined up to flip', () => {
+    const stacked = toLevel(draft(['S#+#O#G', '-------', '..#.O.#']));
+    expect(floorOverlaps(stacked).join(' ')).toContain('1 cells have pieces on both floors (4,0)');
+    expect(floorOverlaps(toLevel(draft(['S#+#O#G', '-------', '..#..O#'])))).toEqual([]);
   });
 });

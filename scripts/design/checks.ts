@@ -386,6 +386,23 @@ export function hidden(level: Level): string[] {
 }
 
 /** Warnings about a draft: the mistakes that cost the most rounds of solving and diagnosing. */
+/**
+ * Two floors draw at the same cells, so the other floor's pieces show through: on the ceiling, the
+ * ground's bridges under the ceiling's switch field made it unreadable (hollow-20's first build). A
+ * cell where both floors have a visible piece (anything but floor, dark floor, a flip ring or the
+ * goal) is an overlap; rings and landings that line up for a flip are the point, so rings don't count.
+ */
+export function floorOverlaps(l: Level): string[] {
+  if (!l.ceiling) return [];
+  const plain = new Set([Tile.Empty, Tile.Floor, Tile.Dark, Tile.Flip, Tile.FlipLocked, Tile.Goal]);
+  const cells: string[] = [];
+  l.tiles.forEach((t, i) => {
+    const u = l.ceiling!.tiles[i];
+    if (!plain.has(t) && !plain.has(u)) cells.push(`${i % l.width},${Math.floor(i / l.width)}`);
+  });
+  return cells.length ? [`WARN: ${cells.length} cells have pieces on both floors (${cells.slice(0, 6).join(' ')}${cells.length > 6 ? ' ...' : ''}): the other floor shows through, so keep each floor's pieces off the other's cells`] : [];
+}
+
 export function lint(d: Draft): string[] {
   const out: string[] = [];
   const level = tryLevel(d);
@@ -404,6 +421,7 @@ export function lint(d: Draft): string[] {
   // Depth costs more than width: the camera looks north at an angle, so a deep board pulls it back
   // further. star-20's first fresh build (13 deep) looked too small to the user; star-17 (9 deep) framed well.
   else if (l.height > 10) out.push(`WARN: ${l.height} rows deep: the camera pulls back until the board looks small (aim for 10 or fewer; star-17 is 9)`);
+  out.push(...floorOverlaps(l));
   // Switches, in the reading order that `switches:` follows.
   const list: string[] = [];
   let count = 0;
